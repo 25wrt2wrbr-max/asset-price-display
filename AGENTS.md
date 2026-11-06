@@ -816,8 +816,7 @@ historical outcome study and its raw data live in `pse_backtest.py` and
 present the reported frequencies as individual-stock probabilities.
 
 ```sh
-cd ~/Documents/asset-price-display
-python3 server.py        # http://127.0.0.1:8000/
+python3 server.py        # started from the project folder; http://127.0.0.1:8000/
 ```
 
 `README.md` is the full reference. This file is the working notes: invariants that

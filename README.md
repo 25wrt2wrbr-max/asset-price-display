@@ -38,10 +38,10 @@ build step.
 
 ## Run it
 
-The project lives in `~/Documents/asset-price-display`:
+From inside the project folder:
 
 ```sh
-cd ~/Documents/asset-price-display
+cd asset-price-display     # wherever you put it
 python3 server.py
 ```
 

@@ -7,8 +7,7 @@ step**. The only real dependency is the **Moli** browser (`~/.local/bin/moli`),
 because Yahoo's chart API answers plain HTTP clients with a 429.
 
 ```sh
-cd ~/Documents/asset-price-display
-python3 server.py        # http://127.0.0.1:8000/
+python3 server.py        # started from the project folder; http://127.0.0.1:8000/
 ```
 
 `README.md` is the full reference — architecture, sources, every table's rules.
