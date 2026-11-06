@@ -57,6 +57,7 @@ and `trend`, and keeps the server's "no dependencies" property.
 
 from __future__ import annotations
 
+import datetime
 import json
 import math
 import threading
@@ -105,6 +106,19 @@ OUTLOOK_BARS = 400
 # Type ids the socket accepts. "1w" hangs; "1W" works.
 TIMEFRAME_DAILY = "1D"
 TIMEFRAME_WEEKLY = "1W"
+
+# The exchange's own clock, used by exactly one rule: is today's bar finished?
+# pse.com.ph's published schedule (read 2026-11-04) runs 9:00 pre-open, 9:30
+# open, 12:00-13:00 recess, 14:45 pre-close, 15:00 closing VWAP session and
+# **15:15 market close**. That is the only moment a day's volume stops growing,
+# so it is what `completed_trade` asks. A couple of minutes past the bell are
+# allowed for the closing print to land in the daily bar.
+#
+# No holiday calendar lives here on purpose: on a holiday there is no bar dated
+# today, so `completed_trade` falls through to the last session that traded
+# without needing to know the exchange was shut.
+SESSION_CLOSE = datetime.time(15, 15)
+CLOSING_PRINT_DELAY = datetime.timedelta(minutes=2)
 
 # In-page deadline. The socket answers in 2-3s; past this nothing useful is
 # coming, and a bounded wait keeps the whole request inside SUBPROCESS_TIMEOUT
@@ -833,6 +847,87 @@ def price_hint(pricescale, price: float) -> int:
     return max(2, crypto.price_hint(price))
 
 
+def completed_trade(points: list[dict], volumes: list, now: float | None = None
+                    ) -> tuple[int | None, float | None, float | None]:
+    """The newest **finished** session's (stamp, traded shares, traded value).
+
+    "How much money moved through this name" is `close * volume` on a bar -- the
+    same product `bullish.py` and `onset.py` rank the tables on, so a chart
+    readout and a table row describe one session the same way.
+
+    Why today's bar waits for the bell
+    -----------------------------------
+    The reader asked for the last **completed** trading day, and the provider
+    gives no way to tell a finished bar from a forming one: TradingView's daily
+    payload carries today's candle from the opening bell, and nothing in the
+    frame says whether it has stopped moving (the same gap `pse_outlook` works
+    around by discarding today's candle outright). So the clock does the work
+    instead, from the exchange's own published schedule:
+
+        pse.com.ph, trading hours (read 2026-11-04)
+        9:00 pre-open / 9:30 open / 12:00-13:00 recess / 14:45 pre-close
+        15:00 closing VWAP session / **15:15 market close**
+
+    A bar dated today is therefore the session **so far** until `SESSION_CLOSE`,
+    and today's finished session from `CLOSING_PRINT_DELAY` past it (the closing
+    print takes a moment to land in the daily bar). A bar dated tomorrow is
+    always refused -- that is a clock disagreement, not a session.
+
+    No holiday calendar is needed and none is invented: on a holiday there is no
+    bar dated today at all, so the walk falls through to the last day that
+    actually traded. A suspension behaves the same way.
+
+    Read at **read** time, not fetch time (`server.chart_data`), for the reason
+    `lastBarBasis` is: a payload fetched at 10:30 and served at 16:00, or
+    tomorrow from a disk copy, must not still be answering for the day it was
+    fetched on. The rule is a pure function of the bars and the clock, so nothing
+    outside the drawn series is invented.
+
+    Two refusals, neither of them a zero:
+
+    * **No volume at all.** The PSE index carries none, and a bar whose volume
+      field did not survive parsing is silence rather than a session that
+      traded nothing. `onset`'s own rule ("a missing volume is not a
+      zero-volume session") applies.
+    * **A zero-volume bar.** The same silence inside the series: a name that did
+      not trade that day has no traded value to report, and PHP 0.00 beside a
+      live price would read as a claim about demand rather than absence of
+      prints.
+
+    A weekly series is refused by the caller, not here: a week's volume times
+    its close is not a trading *day*'s value.
+    """
+    if not points or not volumes:
+        return None, None, None
+    now = time.time() if now is None else now
+    now_manila = datetime.datetime.fromtimestamp(now, pse_outlook.MANILA)
+    today = now_manila.date()
+    # Today's bar is a finished session only after the exchange's own close --
+    # plus the moment the closing print needs to reach the daily bar. Before
+    # that it is the session so far, and reporting it would print a partial day
+    # as though it were complete.
+    close_at = now_manila.replace(
+        hour=SESSION_CLOSE.hour, minute=SESSION_CLOSE.minute,
+        second=0, microsecond=0) + CLOSING_PRINT_DELAY
+    today_is_final = now_manila >= close_at
+    for i in range(len(points) - 1, -1, -1):
+        try:
+            stamp = int(points[i]["t"])
+            close = float(points[i]["c"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        day = datetime.datetime.fromtimestamp(stamp, pse_outlook.MANILA).date()
+        if day > today:
+            continue                    # a stamp ahead of the clock: not a session
+        if day == today and not today_is_final:
+            continue                    # today, still trading
+        volume = volumes[i] if i < len(volumes) else None
+        if not volume or not close > 0:
+            return None, None, None
+        return stamp, float(volume), close * float(volume)
+    return None, None, None
+
+
 def chart(symbol: str, span: str, interval: str) -> dict:
     """Daily/weekly bars for a PSE security, in the server's payload shape.
 
@@ -928,6 +1023,10 @@ def chart(symbol: str, span: str, interval: str) -> dict:
         "boardLot": lot,
         "minInvestment": lot_cost,
         "points": used,
+        # Shares per bar, aligned with `points` (the shape `crypto.chart` ships),
+        # so the last *completed* session's value can be read off at read time
+        # instead of being frozen into this payload -- see `completed_trade`.
+        "volumes": used_volumes,
         "longTermContext": pse_outlook.context(points) if interval == "1d" else None,
         "trend": trend_call,
         "source": "TradingView",
@@ -1089,6 +1188,9 @@ def _build_chart(symbol: str, rows, meta: dict, span: str, interval: str) -> dic
     import markets
     lot, lot_cost = markets.minimum_investment(last)
 
+    # `volumes` beside `points`, exactly as `chart()` ships them, so the
+    # batched route a warmed row is stored through cannot omit what the
+    # single-symbol route carries (see `completed_trade` for the read-time rule).
     return {
         "symbol": symbol,
         "name": meta.get("name") or symbol,
@@ -1101,6 +1203,7 @@ def _build_chart(symbol: str, rows, meta: dict, span: str, interval: str) -> dic
         "boardLot": lot,
         "minInvestment": lot_cost,
         "points": used,
+        "volumes": used_volumes,
         "longTermContext": pse_outlook.context(points) if interval == "1d" else None,
         "trend": trend_call,
         "source": "TradingView",

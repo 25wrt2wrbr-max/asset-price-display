@@ -1,9 +1,519 @@
 # asset-price-display — agent notes
 
+## The rail row carries the odds too (2026-11-04)
+
+Asked for by name: "add 3-month profit odds figure in watchlist section." The
+chart has printed that number since 2026-11-01, as a stat-line under the price
+(`drawProfitOdds`); every watchlist row now prints the same figure on a third
+line, under its name and its window's move:
+
+> **AAPL** [Neutral] ········································ **$332.50**
+> Apple Inc. ················································ ▲ +7.47%
+> 3-month odds **0.69**
+
+Five rules:
+
+1. **It is the chart's own number, off the chart's own payload.** A watch quote
+   *is* the `/api/chart` response (`quoteSummary` keeps `data`), so the row reads
+   `quote.data.profitProbability`. No second estimate, no second fetch, and no
+   way for a row and the chart its click opens to disagree about the odds — the
+   same property the pill has had since 2026-10-31.
+2. **Above/below 0.5 is the only colour it adds**, through the same
+   `--delta-up` / `--delta-down` tokens `.stat-value.above` / `.below` use, so
+   green in the rail and green under the price mean one thing without a key.
+   The label stays muted: it is a footnote to the row, not a third hero.
+3. **Missing is missing, three ways.** A yield (`TVC:PH10Y` — no estimate by
+   design), a series the model refuses (short, weekly, constant-return), and a
+   row still loading or failed all render **no line at all**, so the row keeps
+   its two-line 58 px shape instead of a defaulted 0.50 or a dash. `probability
+   .estimate` is the only source, and where it answers nothing the rail says
+   nothing.
+4. **One paragraph of claim, two tooltips.** The long "what this number is and
+   is not" text was lifted out of `drawProfitOdds` into `profitOddsClaim(r)`,
+   and both the stat-line and the row's odds line call it. Two copies of a
+   paragraph that specific are two paragraphs that would eventually disagree.
+5. **The figure is in the row's accessible name** — `Chart Apple Inc. (AAPL),
+   trend Neutral, three-month profit odds 0.69` — because a tooltip is not
+   available to a screen reader, and the line is now part of what the row says.
+
+Measured 2026-11-04 through the page (five rows seeded: AAPL, `PSE:PHR`,
+`FUND:BPI-INFRA`, `TVC:PH10Y`, BTC-USD) against the same symbols' `/api/chart`
+payloads: **0.69 / 0.81 / 0.18 / none / 0.77**, matching `probability.estimate`
+(0.6942 / 0.8125 / 0.1798 / null / 0.7686) exactly; the bond row drew no line and
+stayed 58 px tall while the other four grew to 76 px. No row overflowed at the
+396 px rail or wrapped at the 340 px one, and the name never had to ellipsize.
+`ZB=F` (0.39) and `USDPHP=X` (0.85) carry one too — futures and currency pairs
+are classes the model covers — so only a yield or a refused series loses the
+line. Page-only change: `index.html` (one CSS block, the row builder, the
+extracted tooltip). No Python module touched.
+
+## A PSE chart says what traded — on a finished day (2026-11-04)
+
+Asked for by name: "for PSE / Philippines stocks, on the main price display also
+show last trading day's volume in PHP", then pinned twice — "does this the
+volume only shows for the trading day that has only been completed", and "when
+3:15pm comes, will the trading volume now give me the volume for today?" It is
+now a fourth stat-line under the price, and it reports **only finished
+sessions**, switching at the exchange's own 3:15 p.m. bell:
+
+> Trading volume **₱55.40M** · 49.5K shares · Nov 3, last completed session
+
+The figure is `close × volume` on the newest drawn bar that is a finished
+session, in pesos — the same product `bullish.py` and `onset.py` rank the tables
+on. Checked live 2026-11-04 (04:49 Manila, market shut, newest bar Nov 3)
+against the "Most traded Philippines" table, which ranks the TradingView
+scanner's `Value.Traded` from a different endpoint: **ICT 1,901,441,880, BDO
+375,081,872, BPI 217,171,600, AC 215,339,520 — identical to the peso on all four**
+(ratio 1.0000), which settles both the formula and the units: the socket's volume
+field is shares.
+
+Six rules:
+
+1. **The bell decides, from the exchange's own published schedule.** `pse.com.ph`
+   (read 2026-11-04) closes the market at **3:15 p.m.**, after a 15:00–15:15
+   closing VWAP session; `SESSION_CLOSE` is that clock and `CLOSING_PRINT_DELAY`
+   (2 min) is the moment the closing print needs to reach the daily bar. Before
+   the bell today's bar is the session so far and the figure is the previous
+   session's; from it, today's closing volume is the figure. Demonstrated on live
+   TEL bars with a synthetic Nov 4 bar carrying 9,999 shares: **09:31, 12:30,
+   15:05 and 15:16 all reported Nov 3 (49,465 shares, ₱55,400,800) — 15:18 and
+   16:40 reported Nov 4 (9,999 shares)**. Asking at 15:15 exactly is asking during
+   the closing print, which is why the delay exists.
+2. **No holiday calendar is invented.** On a holiday there is no bar dated today,
+   so the walk falls through to the last day that actually traded, before and
+   after the bell alike. A suspension behaves the same way.
+3. **Decided at read time, in `chart_data` — not frozen into the payload.**
+   `pse.chart` and `_build_chart` ship `volumes` aligned with `points` (the
+   `crypto.chart` shape), and the route picks the bar with `now`. A chart fetched
+   at 10:30 and served at 16:00, or tomorrow from a disk copy, therefore reports
+   the freshest finished session the bars actually hold instead of the day it was
+   fetched on. `test_the_decision_is_made_at_read_time_not_fetch_time` pins that
+   the bar which was "today" at fetch time becomes the answer the next day.
+4. **Missing is missing, never ₱0.00.** The PSE index ships no volume (five-field
+   bars), a bar whose volume field did not parse ships none, and a **zero-volume**
+   bar is silence too — `onset`'s own rule that "a missing volume is not a
+   zero-volume session". All read `None` and the page hides the line:
+   `PSE:PSEI` answered `tradedDay: null`, `tradedShares: null`,
+   `tradedTurnover: null`, while `TEL` and `PHR` did not.
+5. **Daily only.** A weekly bar's volume is a week's, so close times volume is not
+   a *trading day*'s value; the route refuses `interval != "1d"`.
+6. **It leaves no stale figure behind.** The line is *cleared*, not just hidden,
+   for a non-PSE chart — `AAPL` and `TVC:PH10Y` carry no `tradedTurnover` and the
+   readout is empty in the DOM, one inspector away from misreading a peso number
+   as a claim about a bond. The day is formatted in **UTC**, because a PSE bar is
+   stamped at the Manila open (01:30 UTC) and local-time formatting would name
+   the previous day for a reader west of Manila.
+
+Scope: the chart's own display only. The recent table and the leaderboards already
+carry the same peso figure in their volume column, computed from their own fetch
+of the same bars; nothing there changed. `test_pse_volume.py` covers it (15 tests,
+wire mocked, every one pinning the clock it means to test so none of them depends
+on when the suite runs); suite: 334 tests OK.
+
+## A delisted pair is not a price (2026-11-03)
+
+The reader said XMR's graph was old. It was — by two years and eight months —
+and the cause was not Yahoo:
+
+- Binance keeps a **delisted** pair in `/api/v3/ticker/price` at its last price
+  forever, so `XMRUSDT` still answered **$118.70**, and its newest kline was
+  **2024-02-20 02:59:59** while Monero traded at **$625.94** (Kraken `XMRUSD`
+  625.63, CoinGecko 625.39, measured 12:00 UTC).
+- `crypto.coin("XMR-USD")` therefore said "chartable", `crypto.chart` drew the
+  90 daily bars ending Feb 2024, and the hero read `$118.70` — a 2023-11 →
+  2024-02 date range under today's page.
+- Worse, `crypto.latest_close` returned that frozen $118.70, so
+  `server.yahoo_is_wrong` compared it with Yahoo's *correct* live $625.94, found
+  a 425% gap, and **threw the good chart away** for the dead one (`REROUTE_GAP`
+  is 20%). Yahoo alone was right; the reroute was the bug.
+
+Measured the same day across the index: 132 of the top 250 coins had a `USDT`
+pair and **five were dead** — XMR (2024-02-20), DAI (2020-08-12), BTT
+(2022-01-17), BEAM (2023-01-26), LIT (2025-02-10).
+
+Five rules:
+
+1. **The bars are the evidence.** `_is_trading(rows)` reads the newest bar's
+   close stamp; `STALE_BAR_DAYS` = 5 means the pair has stopped. A live daily
+   pair's newest bar closes in the future (it is forming), so the test is
+   one-sided — only silence fails. Apply it wherever bars are read (`chart`
+   *and* `latest_close`), because a per-symbol grudge list would go stale the
+   day Binance delists the next pair.
+2. **A dead pair gets Kraken, not Yahoo, when Kraken trades the coin.**
+   `/0/public/OHLC`, plain HTTPS, no key, 720 rows per request whatever the
+   interval (so a `5y` daily request draws two years and claims no more, the
+   same honest cap as `ondo.MAX_SPAN_DAYS`). Kraken answered for all five dead
+   ones with a bar stamped today; the payload names `Kraken` as its source and
+   exchange. Two quotes are tried, `USD` then `USDT` (`BTTUSD` exists,
+   `BTTUSDT` does not). Its rows are rewritten into Binance's shape (close =
+   open + one interval) so one drawing loop, one freshness test and one
+   `last_bar_date` serve both venues.
+3. **An unknown Kraken pair is a 200 with an error list, not a failure
+   status** — "not listed" is read from the body, and a transport failure on one
+   quote falls through to the next. Both failing is "no Kraken series", never an
+   exception: the caller still has Yahoo.
+4. **No venue trading means no chart, not an old one.** `chart()` raises, so the
+   route keeps Yahoo (current for `XMR-USD`) rather than drawing 2024.
+5. **A delisted pair is not a second opinion.** `latest_close` answers None, so
+   `yahoo_is_wrong` returns False and Yahoo's live series stands — the exact
+   inversion that started this. Verified after the fix: `XMR-USD` → Yahoo CCC,
+   93 bars 2026-08-03 → 2026-11-03, hero **$623.63**, `lastBarBasis: live`,
+   badge Neutral · leaning bullish +0.626, odds 0.92; `BTT-USD`, `BEAM-USD`,
+   `LIT-USD` → **Kraken** with today's bar (`BTT-USD` was drawing three months
+   of zeros from Yahoo, whose series for it is broken while its live price is
+   not); `PEPE-USD` still Binance; `BTC-USD` still agrees with Yahoo and stays
+   there.
+
+Also fixed while in the file: `_klines` **quotes** the ticker. Binance lists
+pairs whose base asset is not ASCII (`币安人生USDT`), and pasting the name into
+the URL raised inside urllib, so the pair read as an outage.
+
+One poisoned disk copy existed (`.cache/…`: the Binance payload stored under the
+Yahoo chart key, newest point 2024-02-20) and was deleted — a live fetch
+overwrites that key, but nothing should rescue it offline. `test_crypto.py`
+covers all of this (22 tests, wire mocked); suite: 319 tests OK.
+
+## The session trading now has no bar yet (2026-11-03)
+
+The reader asked why AAPL's newest point read "close" at Nov 2's price on the
+morning of Nov 3 — "Nov 3 trading day hasn't begun yet" — with Ondo's `AAPLon`
+quoting a live price. Measured at 04:15 New York the same morning, so the
+numbers are on the record:
+
+- `/api/chart?symbol=AAPL&range=3mo&interval=1d` ended at **2026-11-02 14:30Z,
+  338.32**, `lastBarBasis: "close"`, `session.coversLastBar: false`, `lastPrint`
+  Nov 2 16:00:01 New York.
+- Yahoo's daily payload carried `fulldayPrice: **322.13**` — the pre-market
+  print, from the 5-minute pre/post series 322.40 → 323.47 → 322.33 → 322.13 at
+  04:00–04:15. `full_day_close` correctly refused to date that Tuesday price to
+  Monday's bar.
+- Ondo agreed with it: header **323.39**, and 1 AAPLon = 1.0034 AAPL, so
+  322.13 × 1.0034 = 323.2 — the token was quoting the same pre-market print, not
+  a premium.
+
+So nothing was mislabelled (338.32 really is Monday's close), but the live price
+was nowhere on screen: both folds only ever touch the newest *bar*, and between
+one session's close and the next session's first bar the newest bar belongs to
+an older session. Fixed at the reader's direction — draw the print as a point of
+its own, from **Yahoo**, not from Ondo (their choice on both counts).
+
+Five rules:
+
+1. **`live_print` (fetch time) keeps the print out of the bars.** The stamp is
+   the session's **regular open** — exactly where the day's real bar will land —
+   so the real bar replaces the point instead of doubling it. It refuses
+   without an extended session, without a usable `fulldayPrice`, without a
+   schedule, when the newest bar is already that session's (`full_day_close`
+   owns that case), and when the newest bar is more than `LIVE_BAR_GAP_DAYS` = 5
+   old (a halt is not a session that is trading).
+2. **`live_point` (read time) draws it only while that session trades.** Applied
+   in `chart_data` beside `weekend_proxy`, on the copy, before the re-score, so
+   the badge reads the drawn bars. Drawn only when `now` is inside the payload's
+   own `pre` or `post` window; from 20:00 to 04:00 New York Yahoo folds nothing
+   and reports the regular close again, so **nothing is added** and the newest
+   bar keeps its close. That stretch is a gap in the source — do not fill it by
+   repeating the close as a live price, and do not reach for Ondo to fill it
+   without being asked.
+3. **It reads `pre` or `after`, never `close`.** A `livePointStamp` matching the
+   newest point short-circuits `last_bar_basis`: before the regular close it is
+   "pre", after it "after". That is what stops a memo entry fetched at 09:28 from
+   labelling a pre-market price "close" when it is served at 09:31.
+4. **A disk copy adds nothing.** `cached` is refused: a copy fetched hours ago
+   must not invent a price for a session it never saw. It draws the bars it
+   stored and says how old they are.
+5. **The point is real but not a bar.** The recent table's US rows still score
+   completed bars (`yahoo_bars` is untouched), so during an extended window a
+   row's price is the last bar's close while the chart's newest point is the
+   print. Stated rather than hidden; if the reader ever wants the table to carry
+   it too, that is a change in `recent.scan`, not in `live_print`.
+
+Checked live 2026-11-03 04:15 New York through the page: hero `$323.20`, meta
+`AAPL · NasdaqGS · equity · via Yahoo · last bar is a pre-market price`, badge
+Neutral +0.145, odds 0.66, 66 points. Same sweep: BTC-USD `live`, PSE `close`,
+`TVC:PH10Y` `close`, `FUND:BPI-INFRA` `close`, `USDPHP=X` `live` — all
+unchanged. `test_live_point.py` covers it (14 tests, wire mocked); suite: 297
+tests OK.
+
+## A token Yahoo has no spelling for (2026-11-02)
+
+The reader typed `ousg` into the search box and it answered nothing. Measured
+the same day, so the gap is on the record:
+
+- `query2/v1/finance/search?q=ousg` → **200 with an empty quote list**, fuzzy off,
+  on both query hosts; `q=ondo` answers seven Ondo tokenized *stocks* (`ONDO-USD`,
+  `QQQON-USD`, `USOON-USD`, ...) and never this one.
+- `v1/finance/lookup?query=ousg` → `total: 0` across every type.
+- The **chart route 404s every spelling**: `OUSG`, `OUSG-USD`, `OUSG-OND`,
+  `OUSG29256-USD`.
+- Yahoo does carry the sibling token — `usdy` resolves to `USDY29256-USD`, "Ondo
+  US Dollar Yield USD" — so this is one instrument the index does not hold, not
+  an outage.
+
+So the VTV fix cannot reach it: `probe_ticker` asks the chart route whether the
+query *is* a symbol, and there is no symbol for this one to be.
+
+**What it is.** OUSG is Ondo's **Short-Term U.S. Government Bond Fund** token: a
+share of a T-bill fund, traded on Ethereum (`0x1b19c1...bee92`) and mirrored on
+Polygon and Solana. It accrues — 90 days ran 116.12 → 117.11, about 2.4%
+annualised — so a three-month window on it is essentially always bullish, the
+same true statement `phfunds` makes about a money-market fund.
+
+**Where the price comes from.** `ondo.py`, reading DeFiLlama's coins API
+(`coins.llama.fi/chart/ethereum:<address>?span=N&period=1d`) over plain HTTPS,
+no key. Two checks before it was trusted:
+
+- The number **agrees with CoinGecko to the sixth decimal** (117.106259 on both,
+  same minute) — the same on-chain market underneath. CoinGecko was rejected as
+  the *bars* source only because its free tier is 5 requests/minute, fine for one
+  cached index lookup and not for a chart the page re-reads every minute.
+- The **span is capped at 500 days**: `span=500` answers, `span=600` is HTTP 400.
+  So a `2y` or `5y` request draws the 500 days that exist and claims no more.
+
+Five rules:
+
+1. **The prefix is ours, because Yahoo has no spelling to borrow.** `ONDO:OUSG`
+   is the symbol a row carries and a URL keys on (the `FUND:`/`TVC:` pattern).
+   A bare `OUSG` typed into the box still charts — but only after Yahoo refuses
+   it (`ondo.alias`, called in `chart_data`'s Yahoo branch exactly as
+   `rates.chart_alias` is), so a listing that one day trades under the bare
+   ticker keeps its own chart. The payload then names `ONDO:OUSG`, and the page's
+   refresh clock and watchlist follow that spelling.
+2. **The newest point is `liveLastBar`.** DeFiLlama stamps the last point at the
+   moment of the request and carries the current price, so the bar says live —
+   and `server.last_bar_basis` refuses that word for any copy served from disk.
+   Verified: `/api/chart?symbol=ONDO:OUSG` → `lastBarBasis: "live"`, the same
+   payload with `cached: true` → `"close"`.
+3. **Search rows are shaped like Yahoo's and de-duplicated**, added beside the
+   coin, PSE and fund supplements. Every word of the query must appear in the
+   token's ticker, name or aliases, so `ousg`, `ondo`, `ondo short term` and
+   `short-term treasury` all find it while `ondo qqq` (a Yahoo-listed Ondo stock)
+   does not. An exact ticker hit (`ONDO:OUSG` for "ousg", relevance 0) leads on
+   its own; the bare word "treasury" leaves it behind the futures curve.
+4. **The warmer has a token leg** (`_warm_batch_tokens`), because an `ONDO:`
+   symbol sent down the Yahoo leg is a guaranteed 404 per pass. Confirmed on
+   disk: `ondo:ONDO:OUSG:3mo:1d` is stored after the page added it to the
+   watchlist.
+5. **The odds line needs a class, and gets a new one: `token`.** Calendar days
+   (a token trades every day, so three months is ~92 sessions, not ~65) and the
+   crypto round trip (0.20% — it is swapped, not subscribed). The number comes
+   out **0.99**: the drawn window is almost a straight line that steps up, and
+   under a stationary normal-log-return model that is near-certain. That is the
+   model being what it is, not a bug, and the tooltip still says it is not a
+   calibrated success rate.
+
+Checked live 2026-11-02 through the page: the dropdown shows
+`ONDO:OUSG | Ondo Short-Term U.S. Government Bond Fund | Ondo`; the chart reads
+`ONDO:OUSG · Ondo · tokenized fund · via DeFiLlama · last bar is a live price`,
+hero `$117.1063`, `+0.85% three-month move, since Aug 5`, badge **Bullish +0.757**
+(90 bars), odds **0.99**; the watchlist row carries a Bullish pill and `+0.85%`.
+
+Not done, deliberately: OUSG is on no table and in no sweep — this fixes the
+search box and the chart. `test_ondo.py` covers all of it (21 tests, wire
+mocked); suite: 283 tests OK.
+
+## A ticker Yahoo's search refuses is still reachable (2026-11-02)
+
+The reader reported VTV missing from the search box. The cause was not a filter
+or a table: `query2.finance.yahoo.com/v1/finance/search?q=vtv` answers **HTTP
+500** on both query hosts, every parameter shape, fuzzy on or off — while VTV
+charts normally, `/v1/finance/quoteType/?symbol=VTV` resolves it, and `q=vt`
+lists it third. Measured across 45 common US tickers the same day: 44 answered
+normally, so this is one index quirk, not an outage. The route raised on the 500
+*in `produce()`, before any supplement ran*, so the page showed no suggestions.
+
+- `api_search`'s producer now treats a refused search as an **empty answer**,
+  not a failed route, so the coin/PSE/fund/FX/rates supplements still answer. A
+  Moli failure (the browser) still raises: that is not the index.
+- `server.probe_ticker` + `_chart_meta_row`: when Yahoo returned no rows and the
+  query *is* a ticker (`TICKER_RE`), the query is resolved through the **chart
+  route** — the same route a click uses — and offered only if it draws. The row
+  carries the route's `longName`, `fullExchangeName` and `instrumentType`, which
+  must be in `KEEP_QUOTE_TYPES`; there must be at least one bar.
+- `markets.yahoo_symbol` supplies the spelling (`brk.b` → `BRK-B`), so the row
+  probed is the chart that answers.
+- Multi-word queries are probed by their first word **only when every other word
+  is in `INSTRUMENT_WORDS`** (`etf`, `fund`, `stock`, `index`, …) — `vtv etf`
+  resolves, "the long bond" must never resolve to `THE` (Target Hospitality).
+  Prose is never guessed at.
+- Not fixed, deliberately: a *name* query the index answers without the ticker.
+  `vanguard value` returns `VVIAX` and the tokenized `VTVON-USD` and no `VTV`;
+  no probe can recover a row the index never offered. Say so rather than adding
+  a curated alias unless the reader asks for one.
+
+`test_search.py` covers the probe (11 tests, browser mocked); the live route was
+checked end to end — `/api/search?q=vtv` → one row, the page's dropdown shows
+`VTV | Vanguard Morningstar Value ETF | NYSEArca`, and clicking it charts VTV
+(64 points, neutral, odds 0.69). Suite: 262 tests OK.
+
+## Chart-only profit probability correction (2026-11-01)
+
+The reader explicitly replaced the class-base-rate model described below.
+`probability.estimate` now uses only the displayed daily log returns: sample mean
+`m`, sample standard deviation `s`, count `n`, and future three-calendar-month
+session count `H`. `P = Φ((H*m − log(1+cost))/(s*sqrt(H+H²/n)))`; the variance
+includes uncertainty in the estimated mean. Crypto uses calendar days, others
+weekdays (no holiday calendar). Classes supply only cost/calendar, no up-rates.
+The UI says “chart-based estimate”, with model assumptions in the tooltip.
+This is an uncalibrated stationary independent normal-log-return model, not a
+validated success frequency. Do not claim otherwise. Keep it separate from the
+badge. Short/invalid/constant-return/weekly series receive no estimate; yields
+remain excluded. Futures now receive the same chart-only estimate (weekday
+calendar, assumed .20% notional round trip), at the reader's request after the
+missing RBJ27.NYM readout. This estimates a long contract price gain, not account
+profitability; expiry/rolls/margin are not modeled. Results are bounded to .01–.99.
+The older “shape is not an input” rule, class constants and old test description
+below are historical and superseded by this explicit user request.
+
 A local web page that charts an asset's last three months and labels the trend
 (bullish / bearish / neutral). Python 3 stdlib server, vanilla-JS frontend, no
 install step, no build step. The only dependency is the **Moli** browser, because
 Yahoo answers plain HTTP clients with a 429.
+
+## The chart states the odds of profit (2026-11-01)
+
+Under the price the chart now prints one number: **the probability, 0 to 1, that
+this asset is higher in three months.** Asked for by name — "just give me a
+number from 0 to 1 ... mention this number in the main price graph".
+
+`probability.py` computes it; `server.chart_data` attaches it to every payload as
+`profitProbability` (one insertion point, after the badge is re-scored, so every
+source — Yahoo, Binance, TradingView, ECB, funds, bonds — carries it);
+`index.html`'s `drawProfitOdds` renders it as
+
+> 3-month profit odds **0.41** · crypto base rate, net of 0.20% costs
+
+Five rules:
+
+1. **The chart's shape is not an input, deliberately.** Twenty research modules
+   in this repo looked for a three-month edge inside the drawn window and landed
+   between 41% and 52%; the ones that cleared 51% had intervals straddling it and
+   mostly matched an always-up call on the same cases. Feeding the badge's score
+   into this number would dress that coin flip back up as a forecast. So two US
+   stocks of similar volatility carry the same number, and
+   `test_the_charts_shape_is_not_an_input` fails if anyone ever wires the trend
+   in. **This is not the badge reinterpreted** — `trend.py` says the score is not
+   a probability, and that still holds; this is a separate number beside it.
+2. **The number is a measured base rate, adjusted — never invented.** Each class
+   carries its own three-month up-rate and its own typical volatility, both taken
+   from saved studies:
+
+   | class | up-rate | windows | σ (3 mo) | round trip |
+   |---|---:|---:|---:|---:|
+   | US equity / ETF / index | 60.77% | 62,535 | 13.40% | 0.25% |
+   | fund (incl. the 47 PH funds) | 59.46% | 16,738 | 7.71% | 0.50% |
+   | currency pair | 52.22% | 7,854 | 4.25% | 0.05% |
+   | crypto | 43.92% | 3,436 | 36.86% | 0.20% |
+   | PSE stock | 40.92% | 10,706 | 21.23% | 1.20% |
+
+   The up-rates are `research/forecast-validation-extended.json`'s `baseline`
+   blocks (`forecast_extended_validation.py`), PSE's included, and
+   `test_probability.py` reads that file and fails if `CLASSES` drifts from it.
+   The σ column is the median rolling 63-day realised volatility over every
+   saved daily history of that class — `research/market-history-extended.json`
+   (517 symbols) and `research/pse-history.json` (244). Recompute it with:
+
+   ```sh
+   cd research && python3 - <<'EOF'
+   import json, math, statistics
+   from collections import defaultdict
+   for path, only in (("market-history-extended.json", None), ("pse-history.json", "PSE")):
+       d = json.load(open(path)); by = defaultdict(list)
+       for sym, rows in d["bars"].items():
+           cls = "PSE" if only else d["universe"][sym]
+           cl = [r[1] for r in rows if r[1]]
+           rets = [math.log(b / a) for a, b in zip(cl, cl[1:]) if a > 0 and b > 0]
+           for s in range(0, len(rets) - 62, 21):
+               w = [r for r in rets[s:s + 63] if r is not None]
+               if len(w) >= 50: by[cls].append(statistics.pstdev(w) * math.sqrt(63))
+       for cls, v in by.items(): print(cls, round(statistics.median(v), 4), len(v))
+   EOF
+   ```
+
+   The model is `μ = σ_class · Φ⁻¹(p_up)`, then `P = Φ((μ − cost) / σ)`, with σ
+   the asset's own realised volatility shrunk halfway to its class's. That makes
+   a typical member reproduce its own class's up-rate less costs — the property
+   `test_a_typical_member_reproduces_its_class_base_rate` pins — and makes a
+   wilder asset read nearer 0.5. `μ` is bookkeeping that turns a measured
+   frequency into a probability at a measured volatility; it is **not** an
+   expected return and must never be printed as one.
+3. **Two classes ship no number at all: a yield and a futures contract.** No
+   three-month up-rate has been measured for Philippine yields, and a borrowed
+   0.50 anchor would print a figure driven only by the cost term; a futures
+   contract has no long-run drift to measure and the equity rate would overstate
+   it. The readout is hidden and its text cleared — invariant 3 in spirit, a
+   missing number rather than a defaulted 0.5. `/api/chart?symbol=TVC:PH10Y` and
+   `ZB=F` both answer `profitProbability: null`.
+4. **It may disagree with the badge, and that is correct.** BTC-USD reads
+   `Neutral` with the odds at 0.41; PHR reads `Neutral · leaning bullish` at 0.45.
+   One describes the last three months, the other describes a population. Do not
+   "fix" either to match the other.
+5. **The tooltip carries the whole claim**, because the bare figure would read as
+   a forecast for *this* asset: the population size, how the windows were
+   measured, the volatility adjustment, the cost, and the survivorship warning
+   (today's listed instruments only — delisted losers are missing, so the
+   up-rates read high).
+
+`.`stat-line` is the shared style for "a stat readout, not a second hero" — the
+minimum-investment line and the odds line both use it. The odds line sits between
+the price's delta and the trend note, so the number is one of the first things
+under the price without becoming a second headline.
+
+`test_probability.py` covers it (22 tests: the distribution functions, class
+mapping, the base-rate reproduction, the vol monotonicity, the clamps, the
+no-yield/no-futures rule, and the constants agreeing with the saved studies).
+Suite: 257 tests OK.
+
+## The peso's weekend comes from Coins.ph (2026-11-01)
+
+`PHP=X` (which is also `USDPHP=X` — one series, two spellings) is charted on the
+FX week: Monday to Friday, shut from Saturday morning Manila to Monday 05:00. So
+a weekend chart ended at Friday's close, which is when a Philippine reader is
+most likely to look. Those two days now come from **Coins.ph's USDC/PHP book** —
+`coinsph.py`, `api.pro.coins.ph/openapi/quote/v1/klines`, 1,000 daily bars,
+Coinbase-Pro shaped, plain HTTPS (a `moli_fallback` net is registered, not needed).
+
+Measured 2026-11-01 before the change was made, so the number's standing is on
+the record:
+
+- **Coverage** 400 bars to 2025-09-28 with every calendar day present; demand
+  went to the reader who asked for "Sat and Sun data from Coins" rather than to
+  the delta-splice alternative, which the correlation below rules out.
+- **Level** USDC/PHP ran median **+0.09** / mean **+0.13** pesos above the
+  interbank over 259 shared days (sd 0.20, range −0.29…+1.50). A domestic
+  premium, not a rate — so a weekend bar carries the stablecoin's price and the
+  page names it.
+- **Movement** corr(USDC/PHP Fri→Sun, USD/PHP Fri→Mon) = **0.07** across 51
+  weekends, same direction 27/51, sd 0.12% against the interbank's 0.52%. Do not
+  present a weekend bar as a forecast of the Monday reopen, and do not
+  "improve" the fill by applying the stablecoin's *change* to Friday's close —
+  that was option B and it injects movement measured as noise.
+
+Four rules:
+
+1. **Manila days decide the weekend.** `coinsph.manila_day` buckets every stamp
+   by UTC+8, so Yahoo's Sunday 21:00 GMT reopen is *Monday* and a year of bars
+   holds 52 Mondays, 52 Fridays, no Sundays and one stray Saturday (a forming
+   bar carrying Friday's close). That Saturday bar is **replaced**, a weekday
+   never is. UTC-date bucketing gives 22 Fridays / 30 Sundays in the same year —
+   the off-by-one this rule exists to avoid.
+2. **The fill runs to today, not to the last bar Yahoo drew** — on a Monday
+   before 05:00 the FX series still ends Friday and the weekend must still show.
+3. **The badge scores the drawn bars** (invariant 1): a 3-month peso chart is
+   91 bars, not 66 (26 proxy). Longer than the 63 backtested daily bars; stated,
+   not hidden.
+4. **The page names the price.** `lastBarBasis` gains `weekend`, the meta line
+   counts proxy bars, a hovered weekend point reads `USDC/PHP`, and the table
+   caption says what those rows are.
+
+One fetch serves every span (60 s TTL — the chart's own clock; 7-day fallback so
+the page can say how old the reading is). An outage is a no-op: Yahoo's bars
+stand. The kline rows are stamped in **milliseconds** — read as seconds they
+land in the year 58,000 and every weekend falls outside every window (this was a
+real bug here, caught only by the live route: `test_coinsph.py` now pins the
+scaling). Tested in `test_coinsph.py` (24 tests); suite 235 tests, one
+pre-existing failure in `test_leaning` unrelated to this work (its synthetic
+91-bar series is 90 days long, so `onset.leaning`'s window trim drops the oldest
+bar and scores one bar fewer than `trend.classify`).
 
 ## The Treasury curve is a price, and now it is reachable (2026-10-31)
 
@@ -207,14 +717,17 @@ badge is.
 | `server.py` | Static server + Yahoo proxy + background sweeps. Routes: `/api/chart`, `/api/search`, `/api/top`, `/api/bullish`, `/api/cryptobull`, `/api/recent`, `/api/health`, `POST /api/watch`. |
 | `trend.py` | The classifier: `classify(closes, volumes)`. Version 2: enter score ≥ 0.25 and t ≥ 1.96, hold ≥ 0.15 / t ≥ 1.0 for 10 bars, whole window, ramp-weighted. `trend_v1.py` is the frozen research copy. |
 | `onset.py` | The shared "since when" walk — one window, one label, one answer to *when did this turn?* — and `turn`, which says *why* it turned (`turn` / `flat` / `against`). The window's **shape** is per source: `months=` for Yahoo, days for the rest. |
+| `probability.py` | The 0–1 chance the asset is higher in three months: the asset class's measured up-rate, adjusted for the asset's own volatility and the round trip. Deliberately not a function of the chart's shape. No number for a yield or a futures contract. |
 | `recent.py` | The combined "recently bullish assets" table: US stocks, Philippine stocks, crypto, US Treasury futures, Philippine bond yields, Philippine funds, each dated. |
 | `rates.py` | The US Treasury futures curve (ZT…UB): the contracts, the search rows and synonyms that make each findable, the bare-ticker chart alias, and the quote precision. |
 | `phfunds.py` | The 47 Philippine funds — daily NAVPU from TOAP's UITF register, PIFA's NAV history and BPI Wealth's own pages — and the chart a fund row opens. |
+| `coinsph.py` | Coins.ph's USDC/PHP daily bars — the peso pair's Saturdays and Sundays, the two days the FX week does not trade. `is_usd_php`, `manila_day`, `fill`. |
+| `ondo.py` | The Ondo tokens Yahoo has no spelling for — OUSG, the short-term Treasury fund token: its on-chain identity, the DeFiLlama price series, the `ONDO:` chart route and the search rows. |
 | `tv.py` | The Philippine government bond yields — the TradingView symbols, their names, their daily bars, and the chart a bond row opens. |
 | `bullish.py` | The Philippine sweep: every PSE name that is bullish now, dated to the bar its run began on. |
-| `pse.py` | PSE universe (TradingView scanner) and bars (browser-backed TradingView chart socket); `history_many` is the socket `tv.py` borrows. |
+| `pse.py` | PSE universe (TradingView scanner) and bars (browser-backed TradingView chart socket); `history_many` is the socket `tv.py` borrows. `completed_trade` is the last finished session's peso turnover the chart prints. |
 | `markets.py` | The two most-traded tables and the PSE board-lot table; `us_universe()` feeds the recent table. |
-| `crypto.py` / `cryptobull.py` | Coin identity (CoinGecko), bars (Binance), and the 24-hour most-traded crypto table. |
+| `crypto.py` / `cryptobull.py` | Coin identity (CoinGecko), bars (Binance, and Kraken for a pair Binance has stopped trading), and the 24-hour most-traded crypto table. |
 | `ecb.py` | ECB reference rates via Frankfurter, for currency crosses Yahoo fabricates. |
 | `diskcache.py` | Durable on-disk copy of every upstream answer under `.cache/`. |
 | `index.html` | The whole frontend — markup, CSS, charts, tables. |
@@ -497,6 +1010,52 @@ this many".
   queues six per host; the server serialises uncached Yahoo fetches through
   Moli's profile lock). Nothing is capped to hide that.
 
+## A dragged row scrolls the rail itself (2026-11-02)
+
+Rearranging a long watchlist was done by hand. The rail does scroll (`max-height:
+60vh`), but a drag reports where the pointer is only while the pointer **moves**,
+so a row carried to the bottom edge sat there and the list never followed. A row
+can also only be dropped where a row already is — rows reflow under the pointer —
+so a target below the fold could not be reached at all without lifting the row,
+scrolling, and dragging again.
+
+`dragScrollStep` is a `requestAnimationFrame` loop with its own clock, started by
+`dragover` and stopped by `endDrag`, by a `dragleave` of the list itself, or by
+reaching an end. Five rules:
+
+1. **The band is 56 px inside the visible slice of the rail**, and the speed ramps
+   linearly from 120 px/s on entering it to 900 px/s at the edge. Distance is per
+   *second*, not per frame: the same gesture must travel the same way at 25 Hz as
+   at 60, and the first version (24 px per frame) crawled at 550 px/s under Moli's
+   headless layout renderer.
+2. **Each push re-places the row** through `dragPlaceAt` — the body of the old
+   dragover handler, extracted so the event and the loop are one rule. Without it
+   the list would scroll *past* a stationary pointer and the row would stay where
+   the pointer last was.
+3. **The scroller is whichever box actually moves**: the list on a wide page, the
+   page itself in the stacked layout under 1000 px, where the rail has no
+   `max-height` and only the document scrolls. The band is measured on the rail's
+   on-screen slice, so a stacked rail taller than the window still has an edge to
+   aim at.
+4. **It stops at an end rather than spinning** — a frame whose `scrollTop` did not
+   move ends the loop, and the next `dragover` restarts it.
+5. **Nothing survives the gesture.** `endDrag` cancels the frame and clears the
+   pointer, so a drag ended by Escape or by a release outside the window leaves no
+   loop running, and the cancel path still restores the original order. The commit
+   is also untouched: the order is mutated live as a preview and `drop` is still
+   the only thing that writes it.
+
+Checked live 2026-11-02 through Moli, 40 rows (2,320 px of rows in a 648 px rail,
+1,672 px of travel), **one** synthetic `dragover` in the bottom band and the
+pointer then held still: the rail scrolled to the end on its own, `TEST1` arrived
+at position 40 of 40, and `drop` saved it. The top band carried a row back to
+position 1; the middle of the list neither scrolled nor reordered; a `dragleave`
+to the document stopped the loop while one with a row as `relatedTarget` did not;
+the stacked branch scrolled the page by 695 px; a cancelled drag restored the
+original order and left `dragScrollRaf`/`dragPointY`/`dragSymbol` at zero/null.
+Keyboard reorder (↑/↓/Home/End) and the quote rows were re-checked unchanged.
+Page-only change; no Python module touched.
+
 ## Recently bullish assets (built 2026-10-29)
 
 One table across five markets — US stocks, Philippine stocks, crypto, the
@@ -767,6 +1326,13 @@ promoted — "health" still finds the health-care stocks first.
 - **TradingView bond symbols need zero padding**: `TVC:PH02Y`, `TVC:PH05Y`,
   `TVC:PH10Y`. `TVC:PH5Y` is not the instrument.
 - **Binance** → plain HTTPS is fine (`data-api.binance.vision` mirror).
+- **DeFiLlama** → plain HTTPS is fine (`coins.llama.fi`), and it prices the Ondo
+  tokens Yahoo does not carry. Its chart endpoint **caps a span at 500 days**
+  (`span=500` answers, `span=600` is HTTP 400), which is why `ondo.MAX_SPAN_DAYS`
+  clips a longer request rather than failing the symbol.
+- **Coins.ph** → plain HTTPS is fine for the kline and ticker endpoints, but the
+  rows are stamped in **milliseconds** (`1793491200000`), and the page's own JS
+  is CORS-blocked from them.
 - **ECB** → Frankfurter API, no key.
 - **Philippine listings** are absent from Yahoo entirely; they come from the
   TradingView scanner and the chart socket.

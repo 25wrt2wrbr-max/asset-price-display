@@ -19,7 +19,9 @@ see [Philippine stocks](#philippine-stocks-yahoo-carries-none)) come from
 TradingView, and currency crosses with no dollar leg (`EURPHP=X`, `EURJPY=X` —
 see [Currency crosses Yahoo fabricates](#currency-crosses-yahoo-fabricates))
 get their history from ECB reference rates. The chart's meta line always names
-the source it used.
+the source it used. One instrument Yahoo has no spelling for at all — `OUSG`,
+Ondo's short-term Treasury fund token — is priced from its on-chain market
+instead (see [A token Yahoo has no spelling for](#a-token-yahoo-has-no-spelling-for-2026-11-02)).
 
 Below the chart: the two most-traded tables, [Most traded crypto — 24
 hours](#most-traded-crypto--24-hours) — the day's heaviest coins, kept only
@@ -63,11 +65,11 @@ Stop with `Ctrl-C`.
 | | |
 |---|---|
 | **Python** | 3.8 or newer. Nothing to install. |
-| **Moli** | Required for Yahoo price data, the PSE histories and the bond yields. Not needed for crypto (Binance), currency fixes (ECB) or the Philippine funds — their registries answer plain HTTPS. Put the `moli` binary on `PATH`, or set `MOLI_BIN` to its path. |
+| **Moli** | Required for Yahoo price data, the PSE histories and the bond yields. Not needed for crypto (Binance, Kraken), currency fixes (ECB) or the Philippine funds — their registries answer plain HTTPS. Put the `moli` binary on `PATH`, or set `MOLI_BIN` to its path. |
 
 Moli is the only real dependency, and it is not optional for Yahoo-sourced or
-PSE symbols — see below. (The CoinGecko/Binance crypto path does *not* use it,
-and neither does PSE *search*, which needs no browser.)
+PSE symbols — see below. (The CoinGecko/Binance/Kraken crypto path does *not* use
+it, and neither does PSE *search*, which needs no browser.)
 
 ### Why Moli is required
 
@@ -102,9 +104,11 @@ Install Moli from its latest release: <https://github.com/lexmount/moli/releases
 |---|---|
 | `server.py` | Static file server + Yahoo proxy + the background sweeps. Routes: `/api/chart`, `/api/search`, `/api/top`, `/api/bullish`, `/api/cryptobull`, `/api/recent`, `/api/health`, and `POST /api/watch` (the page declaring its watchlist). |
 | `markets.py` | The two most-traded tables (TradingView scanner) and the PSE board-lot table. |
-| `crypto.py` | Coin identity (CoinGecko) and bars (Binance) for coins Yahoo gets wrong. |
+| `crypto.py` | Coin identity (CoinGecko) and bars (Binance, or Kraken for a coin Binance has delisted) for coins Yahoo gets wrong. |
 | `cryptobull.py` | The most-traded crypto of the last 24 hours, filtered to the bullish ones. |
 | `ecb.py` | ECB daily reference rates (via the Frankfurter API, no key) for currency crosses Yahoo fabricates — the honest history for pairs with no dollar leg. |
+| `coinsph.py` | Coins.ph's USDC/PHP daily bars — the peso pair's Saturdays and Sundays, the two days the FX week does not trade. |
+| `ondo.py` | The Ondo tokens Yahoo has no spelling for — OUSG, the short-term Treasury fund token: its on-chain identity, the DeFiLlama price series, the `ONDO:` chart route and the search rows that make it findable. |
 | `pse.py` | PSE universe (TradingView scanner) and bars (the browser-backed TradingView chart socket) for Philippine listings Yahoo does not carry — and the socket `tv.py` borrows for the bond yields. |
 | `bullish.py` | Every PSE stock that is bullish now, each dated to the bar its run began on. |
 | `onset.py` | The shared "since when" walk — one window, one label, one answer to *when did this turn?* — plus `turn`, which says *why* (`turn` / `flat` / `against`). |
@@ -215,6 +219,44 @@ Checked after the change: all 50 US tickers in the recent table's universe match
 their own chart's badge and newest price, VFIAX and SWPPX gain their 10-30 NAV,
 and the FX, futures, crypto, PSE, bond and fund paths are untouched.
 
+### The session trading now has no bar yet (2026-11-03)
+
+Both folds above only reach the newest *bar*, so they only work when that bar is
+the session that is trading. From the 16:00 bell until the next day's daily bar
+appears, the chart's newest bar belongs to an **older** session, and the market
+moving on it was invisible: measured 2026-11-03 at 04:15 New York, AAPL had
+printed **322.13** in pre-market against a Monday close of **338.32**, and the
+page showed 338.32 labelled "close" while Ondo's `AAPLon` quoted 322.13 × 1.0034
+shares per token = 323.2. `fulldayPrice` already held 322.13 — the day guard
+correctly refused to date it to Monday's bar — and nothing drew it anywhere.
+
+`server.live_print` takes that price out of the bars, and `server.live_point`
+(pure read time, on a copy, next to the weekend proxy) appends it as the newest
+point:
+
+* stamped at the session's **regular open**, which is exactly where the day's
+  real bar will land — so the real bar replaces it rather than sitting beside it;
+* drawn only while one of *that session's* `pre`/`post` windows is open now. From
+  20:00 to 04:00 New York Yahoo folds nothing and reports the regular close
+  again, so nothing is added and the newest bar keeps its own close. That stretch
+  is a gap in the source and is not papered over by repeating a close as a live
+  price;
+* worded by the clock, never "close": `pre` before/during the regular session,
+  `after` once it has closed. A memo or disk copy served into the next window
+  therefore cannot relabel it;
+* never taken from a disk fallback (`cached`), which would invent a price for a
+  session that copy never saw;
+* refused when the newest bar is more than `LIVE_BAR_GAP_DAYS` (5) old — a halt
+  or a dead listing is not a session that is trading.
+
+Checked live 2026-11-03 04:15 New York: `/api/chart?symbol=AAPL` → 66 points,
+`lastBarBasis: "pre"`, `livePrint {t: 1793716200, c: 323.2}`; the page reads
+`$323.20`, "last bar is a pre-market price", badge Neutral +0.145, odds 0.66.
+BTC-USD still `live`, PSE, bonds, funds still `close`. The recent table's US rows
+keep scoring completed bars — a partial pre-market print is not a bar — so a row
+and the chart can disagree on the newest *price* during an extended window; the
+badge on both is still one `trend.classify` call over their own bars.
+
 ### Hovering a point says whether it is a close, a live price or after-hours (2026-10-31)
 
 The tooltip under the crosshair used to label every point "close", which was
@@ -223,10 +265,10 @@ and it can be the last extended-hours print. Each point now says which:
 
 | Label | When | The number is |
 |---|---|---|
-| `close` | any bar but the newest; or the newest one outside every session window | that session's official close |
+| `close` | any bar but the newest; or the newest one outside every session window while nothing is trading | that session's official close |
 | `live` | the newest bar, its regular session is open, and a trade printed in the last 30 minutes | the last trade |
-| `pre-market` | the newest bar, an extended print was folded in, and the pre-market window is open | the last pre-market trade |
-| `after-hours` | the same fold, with the post-market window open | the last after-hours trade of that session |
+| `pre-market` | the newest bar, an extended print was folded in, and the pre-market window is open — or the newest *point* is today's date carrying the session's print before/during its regular hours | the last pre-market trade |
+| `after-hours` | the same fold, with the post-market window open — or that point once the regular session has closed | the last after-hours trade of that session |
 
 `server.last_bar_basis` makes the call from the payload's own
 `currentTradingPeriod` — Yahoo's pre, regular and post windows — plus
@@ -292,6 +334,7 @@ So a second source fills the gap, split by what each is good at:
 |---|---|---|
 | Identity | CoinGecko `/coins/markets` | ranks coins by market cap, which is what separates the real Jupiter (rank 78) from the dead one (~4234) |
 | Bars | Binance `data-api.binance.vision/api/v3/klines` | OHLCV with real volume, no key, no rate limit |
+| Bars, when Binance has delisted the pair | Kraken `/0/public/OHLC` | still trades the coin, and the bars say so |
 
 Crypto asks Binance's **market-data mirror**, `data-api.binance.vision`, not
 `api.binance.com`: the main host answers HTTP 451 *"Service unavailable from a
@@ -304,13 +347,30 @@ same paths, without the geo gate.
 Neither needs Moli: both answer plain HTTP clients with permissive CORS, unlike
 Yahoo.
 
+**A listed pair is not a trading pair.** Binance keeps a delisted pair in
+`ticker/price` at its last price forever, so `XMRUSDT` still answered `$118.70`
+on 2026-11-03 while Monero traded at `$625.94` — and its newest kline was
+`2024-02-20`. Because the ticker "resolved to a chartable coin", `XMR-USD` drew
+that 2024 window under today's date. Measured the same day, 132 of the top 250
+had a `USDT` pair and five were dead: XMR (2024-02-20), DAI (2020-08-12), BTT
+(2022-01-17), BEAM (2023-01-26), LIT (2025-02-10). The fix is in the bars, not in
+a list: `crypto.STALE_BAR_DAYS` (5) of silence means the pair is not trading, and
+the coin is then read from **Kraken**, which answers for all five with a bar
+stamped today (`XMRUSD` `$624.60`, `BTTUSD` `3.63e-07`, `BEAMUSD` `$0.004076`,
+`LITUSD` `$0.0931`, `DAIUSD` `$0.99958`). When neither venue trades the coin,
+nothing is drawn rather than something old — the chart route then keeps Yahoo,
+which is current for `XMR-USD` and honest about having nothing for `BTT-USD`
+(whose Yahoo series is three months of zeros).
+
 **Only crypto Yahoo gets wrong is rerouted.** The test is objective, not a
 name heuristic: Yahoo must report `instrumentType == CRYPTOCURRENCY` *and*
-disagree with Binance's last close by more than 20% (`REROUTE_GAP` in
+disagree with the venue's last close by more than 20% (`REROUTE_GAP` in
 `server.py`). Jupiter is ~1000× off, so it reroutes; `BTC-USD`, `ETH-USD` and
 `SOL-USD` agree to a fraction of a percent, so they stay on Yahoo — by design.
 A symbol Yahoo 404s on but Binance lists (e.g. `PEPE-USD`) reroutes too, so this
-fixes more than Jupiter.
+fixes more than Jupiter. A delisted pair contributes no such comparison at all
+(`crypto.latest_close` answers None), which is what stopped the frozen `$118.70`
+from making Yahoo's live `$625.94` look like the wrong instrument.
 
 Two limits worth knowing:
 
@@ -359,7 +419,9 @@ served keyless by the [Frankfurter](https://frankfurter.dev) API
 - **Pairs with a dollar leg keep Yahoo** (`USDPHP=X`, `EURUSD=X`): their
   Sunday bars are genuine — the FX week really does open Sunday 21:05 GMT —
   and Yahoo's series for them is real. Pairs outside the ECB's 30
-  currencies (e.g. `TWDPHP=X`) stay with Yahoo too.
+  currencies (e.g. `TWDPHP=X`) stay with Yahoo too. The peso pair's *weekend*
+  is the one exception, and it is filled from a different venue — see the next
+  section.
 
 ### Finding the crosses in search
 
@@ -377,6 +439,145 @@ that adds the hidden cross when the query names one of its legs: `krw`,
 Yahoo's own and ranked by the same `relevance` sort as everything else, so
 they surface where Yahoo showed nothing and never crowd a query Yahoo
 already answers.
+
+### Finding a ticker the index refuses (2026-11-02)
+
+Yahoo's search does not only hide instruments — for some queries it **fails
+outright**. Measured 2026-11-02, every spelling of `vtv` answered the search API
+with **HTTP 500** on both query hosts, with and without parameters, and with
+fuzzy matching on or off; the same instrument charted normally (`/v8/finance/
+chart/VTV` → 200), resolved through `/v1/finance/quoteType/?symbol=VTV`, and
+appeared third in the answer to `vt`. One index bug, not a missing instrument —
+and 44 of 45 common tickers checked in the same pass answered normally, so it is
+a quirk of that query rather than a general outage.
+
+The search box had no way to reach it: the route raised on the 500 before any
+supplement ran, so a reader typing `vtv` got an error, which the page renders as
+no suggestions at all.
+
+Two things changed, both in `server.py`:
+
+- **A refused search is an empty answer, not a failed route.** The supplements
+  (coins, PSE, funds, FX crosses, Treasury contracts) still answer, so one
+  index hiccup can no longer blank a query they could have answered. A Moli
+  failure — the browser itself — still raises, because that is not the index.
+- **`probe_ticker` asks the chart route whether the query *is* a ticker.** It
+  fires only when Yahoo returned no rows at all, only for a word shaped like a
+  ticker (`VTV`, `BRK.B`, `BTC-USD`, `GC=F`, `^GSPC`, `JPYPHP=X`), and offers a
+  row only for a symbol the chart route actually draws — with the name and venue
+  that route reports (`Vanguard Morningstar Value ETF`, `NYSEArca`), and in the
+  spelling it charts (`brk.b` is probed as `BRK-B`). A dead ticker still
+  resolves to nothing, so this widens what is reachable without inventing rows.
+
+A multi-word query is probed by its first word only when the rest names the
+*kind* of thing wanted (`vtv etf`), so the fallback cannot turn prose into a
+ticker: "the long bond" must never resolve to `THE`.
+
+What this does **not** fix: a *name* query the index answers without the ticker.
+`vanguard value` returns `VVIAX` and the tokenized `VTVON-USD` and no `VTV`,
+because VTV is simply absent from that answer — no probe can recover a row the
+index never offered.
+
+### A token Yahoo has no spelling for (2026-11-02)
+
+`OUSG` is Ondo's Short-Term U.S. Government Bond Fund token — a share of a T-bill
+fund, traded on Ethereum and mirrored on Polygon and Solana. It is in **no** answer
+Yahoo gives: `/v1/finance/search?q=ousg` returns an empty quote list, `/v1/finance/lookup?query=ousg`
+reports `total: 0`, and the chart route 404s every spelling (`OUSG`, `OUSG-USD`,
+`OUSG29256-USD`) — while the sibling `USDY29256-USD` does exist, so the index gap
+is Yahoo's, not an outage. The VTV fallback above cannot help, because it asks the
+chart route whether the query *is* a symbol and there is no symbol for this one to
+be.
+
+`ondo.py` supplies what Yahoo does not:
+
+* **The price**, from DeFiLlama's coins API
+  (`coins.llama.fi/chart/ethereum:<address>?span=N&period=1d`), plain HTTPS, no key.
+  It agrees with CoinGecko to the sixth decimal (117.106259 on both, same minute);
+  CoinGecko is only rejected as the bars source because its free tier allows five
+  requests a minute. The endpoint caps a span at 500 days, so a longer range draws
+  the 500 days that exist.
+* **The search row**, shaped like Yahoo's own, carrying the `ONDO:` prefix — the
+  same device `FUND:` and `TVC:` use, since a bare `OUSG` could one day be a real
+  ticker. Every word of a query must appear in the token's ticker, name or aliases,
+  so `ousg`, `ondo short term` and `short-term treasury` find it and `ondo qqq`
+  (a Yahoo-listed Ondo stock) does not.
+* **The chart**, keyed `ondo:ONDO:OUSG:<span>:<interval>`, routed before the Yahoo
+  URL is built. A bare `OUSG` typed into the box charts too, but only after Yahoo
+  refuses it — the `rates.chart_alias` rule — and the payload then names
+  `ONDO:OUSG`, which the page's refresh clock and watchlist follow.
+
+Two things the chart says about itself: its newest point is stamped at the request
+and carries the price trading now, so the meta line reads *last bar is a live
+price* (never from a disk copy — `server.last_bar_basis` refuses that word there);
+and its profit odds use a `token` class — calendar days, a 0.20% round trip — because
+a token trades every day and is swapped rather than subscribed. That number reads
+**0.99**, which is the model applied to a series that steps upward almost in a
+straight line, not a prediction; the tooltip carries the assumptions.
+
+The instrument accrues, so a three-month window on it is essentially always
+bullish — the same true statement the fund section makes about a money-market fund.
+
+## The peso's weekend comes from Coins.ph (2026-11-01)
+
+USD/PHP — `PHP=X`, which is also spelled `USDPHP=X` — is charted on the FX
+week: Monday to Friday, closing Friday evening Manila time and reopening Monday
+05:00. A reader who opens the peso on a Saturday or a Sunday therefore used to
+see Friday's close and nothing after it, which is exactly when a Philippine
+reader looks at the peso.
+
+Those two days now come from **Coins.ph's USDC/PHP order book**
+(`api.pro.coins.ph/openapi/quote/v1/klines`, Coinbase-Pro shaped): a venue that
+trades every day, quoted in pesos, for the dollar-pegged token. `coinsph.py`
+fetches 1,000 daily bars (back to 2024-02-06), keys each one by its **Manila
+calendar day**, and splices in the Saturdays and Sundays Yahoo does not chart.
+
+What was measured on 2026-11-01, so the number's standing is on the record:
+
+- **Coverage:** 400 bars to 2025-09-28, every calendar day present — 57 of each
+  weekday, Saturdays and Sundays included.
+- **Level:** over 259 shared days the stablecoin ran a median **+0.09** and a
+  mean **+0.13** pesos above the interbank rate (sd 0.20, range −0.29 to
+  +1.50). That head is a domestic premium, not a rate; it is why a weekend bar
+  carries the stablecoin's own price and the page names it, rather than being
+  smoothed into Friday's close.
+- **Movement, honestly:** across 51 measured weekends the stablecoin's
+  Friday→Sunday change correlated **0.07** with the interbank's Friday→Monday
+  change (same direction 27/51), with a 0.12% standard deviation against the
+  interbank's 0.52%. The weekend book is quiet and domestic; the offshore
+  market that reopens Monday is where the peso moves. The weekend bars say what
+  a dollar cost in pesos on Coins.ph that day — they are not a forecast of the
+  reopen.
+
+Four rules the implementation keeps:
+
+1. **Manila days decide what a weekend is.** Every stamp is read as the Manila
+   calendar day it falls in, which is also what makes Yahoo's series line up:
+   its Sunday 21:00 GMT reopen is *Monday* 05:00 in Manila, so a year of Yahoo
+   bars holds 52 Mondays and 52 Fridays and no Sundays at all — and one stray
+   Saturday, a forming bar carrying Friday's close under a Saturday stamp. That
+   bar is **replaced**; a weekday never is. (Reading by UTC date instead gives
+   22 Fridays and 30 Sundays in the same year — the off-by-one the Manila rule
+   exists to avoid.)
+2. **The fill runs to today, not to the last bar Yahoo drew.** On a Monday
+   morning before 05:00 the FX series still ends on Friday, and a weekend that
+   happened must not be missing because the other source has not caught up.
+3. **The badge scores the bars the chart draws** (invariant 1). A three-month
+   peso chart is 91 bars instead of 66 — 26 of them the stablecoin's — and
+   `trend.classify` reads all 91. That is a longer window than the 63 daily
+   bars the backtest validated, and it is stated here rather than hidden.
+4. **The page says whose price a weekend point is.** `lastBarBasis` gains
+   `weekend` on a weekend newest bar ("last bar is Coins.ph's USDC/PHP weekend
+   price"), the meta line counts the proxy bars ("26 weekend bars are Coins.ph
+   USDC/PHP"), a hovered weekend point reads `USDC/PHP` instead of "close", and
+   the table caption says Saturday and Sunday rows are the stablecoin's price.
+
+It is one fetch for every span (60 s, the chart's own clock; a week-old copy is
+still served when the exchange does not answer, so the page can say how old the
+weekend reading is). An outage is a no-op: the chart keeps the bars Yahoo drew.
+Plain HTTPS answers this endpoint, so no browser is needed; `moli_fallback` is
+registered as a net. A `2y` or `5y` chart is filled back as far as the 1,000
+bars reach and stays Yahoo's before that.
 
 ## Philippine stocks Yahoo carries none of
 
@@ -1256,9 +1457,7 @@ return. The app's current badge remains a description of past prices; it has
 currently selected instruments: 35 US equities, 18 funds, 11 cryptocurrencies
 and 10 currency pairs. `research/market-history.json` holds the bars and
 exchange time zones. The PSE comparison uses the existing 244-listing
-`research/pse-history.json`. Those raw history files, and
-`research/market-history-extended.json`, are generated by the collect commands
-and are not included in this tree. Samples use completed daily bars and the first
+`research/pse-history.json`. Samples use completed daily bars and the first
 available close each month; an outcome is the close on or after the target,
 at most ten calendar days late. An unchanged price is neither a correct
 bullish nor a correct bearish call. Yahoo uses its three-calendar-month
@@ -1796,6 +1995,42 @@ trade returns. These repeatedly examined years are exploratory, not a fresh
 holdout; intervals do not account for model search. A prospective, point-in-time
 evaluation is needed before deployment.
 
+#### The odds of profit, on the chart (2026-11-01)
+
+Under the price the chart prints one figure: **the estimated probability, 0 to 1,
+of a positive three-month price return after assumed round-trip costs**, using
+only the daily prices displayed in the graph. This replaces the class base-rate
+model at the reader's request. It is separate from the descriptive trend badge.
+
+`probability.py` fits the sample mean `m` and standard deviation `s` of the `n`
+drawn daily log returns. With `H` future sessions, it calculates:
+
+```
+P = normal_cdf((H*m - log(1 + cost)) / (s*sqrt(H + H*H/n)))
+```
+
+The predictive variance includes future price noise and uncertainty in the
+estimated mean. Crypto uses every calendar day in the next three calendar
+months; other supported assets use weekdays (exchange holidays are not modeled).
+Class mappings supply only calendars and assumed costs, never return priors.
+Results are bounded to 0.01–0.99. Short, invalid, constant-return and weekly
+series receive no estimate; yields remain excluded. Futures now use their own
+displayed returns and weekday calendar, with an assumed 0.20% round-trip cost
+relative to notional value. Their estimate is for a long contract price gain,
+not leveraged account profitability; expiry, rolls and margin are not modeled.
+
+The page prints `3-month profit odds … · chart-based estimate, net of …% costs`.
+Its tooltip states the independent stationary normal-log-return assumption and
+limitations: this is not empirically calibrated, regimes and fat tails can break
+the model, and taxes/currency conversion are excluded. Tests cover the formula,
+response to chart returns, mean uncertainty, calendars, costs and missing data.
+
+**The watchlist row prints the same figure** (added 2026-11-04), as a third line
+under its name and its window's move — `3-month odds 0.69`, coloured above/below
+0.5 like the stat-line. It is read from the row's own chart payload, so the rail
+and the chart it opens cannot disagree about the odds; a yield, a refused series
+or a row that has not answered yet draws no line at all rather than a default.
+
 #### Research judgment on the chart
 
 **The chart no longer shows a research-judgment line** (removed 2026-10-31 at the
@@ -2220,6 +2455,11 @@ the `trend.py` docstring.
   answer different questions and may disagree on purpose: the pill is the
   classifier's verdict on the window, the percentage is how far the window
   actually moved.
+- **And the row's odds** (added 2026-11-04) — `3-month odds 0.69` on a third
+  line, read from the same payload's `profitProbability`, so the rail and the
+  chart agree about the next three months exactly as they do about the last
+  three. A yield, a series `probability.estimate` refuses, or a row still
+  loading draws no line at all. See "The chart states the odds of profit".
 - **Yahoo "no data" arrives as HTTP 404** with a `chart.error` object, so the
   server treats only 5xx as a transport failure. The message is surfaced on the
   page instead of a traceback.

@@ -15,6 +15,7 @@ venue that actually trades the one we resolved.
     identity   CoinGecko /coins/markets   one call, cached, top 250 by cap
     bars       Binance /api/v3/klines     OHLCV, no key, no rate limit
                (via data-api.binance.vision, the geo-unrestricted mirror)
+               Kraken /0/public/OHLC      for a coin Binance has stopped trading
 
 Why not CoinGecko for the bars
 ------------------------------
@@ -36,6 +37,31 @@ not automatically chartable; `coin()` checks both. A coin Binance does not list
 (e.g. CRO, LEO) returns None and the caller stays on Yahoo. The pair list moves,
 so treat that count as a snapshot, not a constant.
 
+Why "the pair exists" is not "the pair trades"
+---------------------------------------------
+Binance keeps a **delisted** pair in `ticker/price` at its last price forever, so
+the pair list cannot see the difference between a coin trading now and one that
+stopped years ago. Measured 2026-11-03, 132 of the top 250 had a `USDT` pair and
+five of them were dead: `XMRUSDT` answered $118.70 until its bars were asked for
+(they stop 2024-02-20, while Monero traded at $625.94 and Yahoo's own `XMR-USD`
+carried that price), `DAIUSDT` stops 2020-08-12, `BTTUSDT` 2022-01-17,
+`BEAMUSDT` 2023-01-26 and `LITUSDT` 2025-02-10. A frozen price is worse than no
+price: it made `XMR-USD` draw a 2024 window as though it were today's chart, and
+-- through `latest_close` -- it made Yahoo's *correct* live price look like the
+wrong instrument.
+
+So the bars are the evidence, and `chart()`/`latest_close()` read them:
+`STALE_BAR_DAYS` of silence means the pair is not trading, and the coin is then
+read from **Kraken**, which still answers for all five (2026-11-03: XMRUSDT →
+Kraken `XMRUSD` $624.60, `BTTUSD` 3.63e-07, `BEAMUSD` $0.004076, `LITUSD`
+$0.0931, `DAIUSD` $0.99958 -- each a live bar stamped today, and Kraken's 720
+daily rows cover two years). Kraken is a *fallback venue*, not a second pair
+list: a coin Binance never listed still returns None from `coin()` and stays on
+Yahoo, because widening that would reroute every coin whose Yahoo chart merely
+reads low. When neither venue is trading the coin, nothing is drawn -- the chart
+route then keeps Yahoo's series, which knows what `BTT-USD` is not (its three
+months are all zeros while the price is $0.00000036).
+
 Standard library only, so it imports only `trend` and shares the server's
 "no dependencies" property.
 """
@@ -46,6 +72,7 @@ import json
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 
 import trend
@@ -64,6 +91,21 @@ BINANCE_TICKER = "https://data-api.binance.vision/api/v3/ticker/price"
 BINANCE_KLINES = "https://data-api.binance.vision/api/v3/klines"
 BINANCE_24HR = "https://data-api.binance.vision/api/v3/ticker/24hr"
 
+# The fallback venue, for a coin Binance has stopped trading. Plain HTTPS, no
+# key; `pair=` takes the concatenated name (`XMRUSD`) and the answer comes back
+# under the exchange's own spelling (`XXMRZUSD`), which is why the response is
+# read by "the one key that is not `last`" rather than by the name we asked for.
+KRAKEN_OHLC = "https://api.kraken.com/0/public/OHLC"
+# Kraken quotes USD and USDT separately and they are not always both listed
+# (`BTTUSD` exists, `BTTUSDT` does not), so both are tried, USD first: it is the
+# pair the exchange itself prices in, and the one a dollar chart means.
+KRAKEN_QUOTES = ("USD", "USDT")
+# Kraken answers at most 720 rows per request whatever the interval, so a five
+# year daily request draws two years and claims no more -- the same honest cap
+# `ondo.MAX_SPAN_DAYS` puts on a DeFiLlama span.
+KRAKEN_MAX_BARS = 720
+KRAKEN_INTERVALS = {"1d": 1440, "1w": 10080}
+
 # The index and the pair list barely move, and CoinGecko's budget is 5/minute,
 # so an hour is deliberately conservative.
 INDEX_TTL = 3600
@@ -71,6 +113,15 @@ PAIRS_TTL = 3600
 # A last-close probe backs the "Yahoo is charting something else" test, so it
 # only has to be fresh enough to catch a collision.
 CLOSE_TTL = 300
+
+# How much silence at the end of a pair's bars means it is not trading any more.
+# Binance leaves a delisted pair in `ticker/price` indefinitely (see the module
+# header): XMRUSDT's newest bar is 2024-02-20, DAIUSDT's 2020-08-12. Five days is
+# far past any living daily pair's newest bar -- a pair that trades at all closes
+# a bar today, and the newest one is usually still forming -- and far short of a
+# dead one's years. A genuinely thin coin that misses five days in a row is
+# better served by Yahoo's series than by a chart that stops mid-week.
+STALE_BAR_DAYS = 5
 
 HTTP_TIMEOUT = 20
 UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AssetPriceDisplay/1.0"
@@ -256,16 +307,139 @@ def is_chartable(symbol: str) -> bool:
     return coin(symbol) is not None
 
 
+def _newest_close_ms(rows) -> float | None:
+    """The close stamp of the last well-formed bar, in milliseconds."""
+    for row in reversed(rows or []):
+        try:
+            return float(row[6])
+        except (IndexError, TypeError, ValueError):
+            continue
+    return None
+
+
+def last_bar_date(rows) -> str | None:
+    """The UTC day of the newest bar, for saying *how* old a series is.
+
+    The bar's **open** stamp is its day -- that is where the chart plots it, and
+    for a daily bar (Binance closing at 23:59:59.999, Kraken at open+24h) the two
+    read the same date.
+    """
+    for row in reversed(rows or []):
+        try:
+            return time.strftime("%Y-%m-%d", time.gmtime(float(row[0]) / 1000))
+        except (IndexError, TypeError, ValueError):
+            continue
+    return None
+
+
+def _is_trading(rows, now: float | None = None) -> bool:
+    """Does this pair have a bar recent enough to be today's price?
+
+    A live daily pair's newest bar closes in the future (it is still forming), so
+    the test is one-sided: only silence past `STALE_BAR_DAYS` fails. An empty
+    answer fails too -- nothing to draw is not a series.
+    """
+    close_ms = _newest_close_ms(rows)
+    if close_ms is None:
+        return False
+    now = time.time() if now is None else now
+    return now - close_ms / 1000.0 <= STALE_BAR_DAYS * 86400
+
+
 def _klines(ticker: str, interval: str, limit: int) -> list:
-    url = f"{BINANCE_KLINES}?symbol={ticker}&interval={interval}&limit={int(limit)}"
+    # The ticker is quoted, not pasted: Binance lists pairs whose base asset is
+    # not ASCII (`币安人生USDT`), and an unencoded name raises inside urllib, so
+    # the pair read as an outage -- `coin()` said chartable and every bars
+    # request failed. Quotes are the only characters that need it, exactly as
+    # the server's chart URL does for a symbol.
+    url = (f"{BINANCE_KLINES}?symbol={urllib.parse.quote(ticker, safe='')}"
+           f"&interval={interval}&limit={int(limit)}")
     rows = _get_json(url)
     if not isinstance(rows, list):
         raise CryptoError(f"unexpected klines payload for {ticker}")
     return rows
 
 
+def _kraken_raw(base: str, interval: str) -> list | None:
+    """Kraken's own rows for `base`, or None when it does not list the coin.
+
+    An unknown pair is a **200 with an error list** (`["EQuery:Unknown asset
+    pair"]`), not a failure status, so "not listed" has to be read from the body.
+    A `CryptoError` here is a transport failure on one quote; the next quote is
+    tried, and both failing reads as "no Kraken series" rather than raising --
+    the caller still has Yahoo.
+    """
+    minutes = KRAKEN_INTERVALS.get(interval, 1440)
+    for quote in KRAKEN_QUOTES:
+        try:
+            payload = _get_json(
+                f"{KRAKEN_OHLC}?pair={base + quote}&interval={minutes}")
+        except CryptoError:
+            continue
+        if not isinstance(payload, dict) or payload.get("error"):
+            continue
+        result = payload.get("result")
+        if not isinstance(result, dict):
+            continue
+        for key, rows in result.items():
+            if key != "last" and isinstance(rows, list) and rows:
+                return rows
+    return None
+
+
+def _kraken_rows(base: str, interval: str, limit: int) -> list:
+    """Kraken's bars rewritten into the shape the rest of this module reads.
+
+    Its row is `[time, open, high, low, close, vwap, volume, count]` stamped in
+    **seconds** with no close stamp, so the close of a bar is its open plus one
+    interval -- the same fact Binance states in its own sixth field, which lets
+    `_is_trading`, `last_bar_date` and the drawing loop stay one code path. The
+    newest row is the interval still forming, exactly as Binance's is.
+
+    Returns [] when the coin is not on Kraken, so a caller can treat "no venue
+    trades it" as one case.
+    """
+    rows = _kraken_raw(base, interval)
+    if not rows:
+        return []
+    span_ms = KRAKEN_INTERVALS.get(interval, 1440) * 60 * 1000
+    out: list[list] = []
+    for row in rows[-max(1, min(KRAKEN_MAX_BARS, int(limit))):]:
+        try:
+            open_ms = int(row[0]) * 1000
+            close = float(row[4])
+            volume = float(row[6])
+        except (IndexError, TypeError, ValueError):
+            continue        # tolerate a malformed row rather than lose the series
+        out.append([open_ms, None, None, None, close, volume, open_ms + span_ms])
+    return out
+
+
+def _bars(resolved: dict, interval: str, limit: int) -> tuple[list, str]:
+    """The newest bars for a coin, and the venue that answered: (rows, venue).
+
+    Binance first -- it is the venue the index resolved the coin against -- and
+    Kraken when Binance's pair has stopped trading. When neither is trading, the
+    dead Binance rows are handed back so the caller can say *how* old they are.
+    """
+    rows = _klines(resolved["ticker"], interval, limit)
+    if _is_trading(rows):
+        return rows, "Binance"
+    kraken = _kraken_rows(resolved["symbol"], interval, limit)
+    if kraken:
+        return kraken, "Kraken"
+    return rows, "Binance"
+
+
 def latest_close(symbol: str, interval: str = "1d") -> float | None:
-    """Last completed close, for the disagreement test. Cheap and cached."""
+    """Last completed close, for the disagreement test. Cheap and cached.
+
+    None means "no independent price", which the caller reads as "trust Yahoo".
+    A delisted Binance pair is exactly that case: its frozen price is not a
+    second opinion about the coin (it is what made Yahoo's live `XMR-USD` look
+    wrong), so the pair is skipped and Kraken is asked -- and if Kraken does not
+    trade it either, the answer is None.
+    """
     resolved = coin(symbol)
     if resolved is None:
         return None
@@ -278,10 +452,13 @@ def latest_close(symbol: str, interval: str = "1d") -> float | None:
     value = None
     try:
         rows = _klines(resolved["ticker"], interval, 2)
-        for row in reversed(rows):
-            if int(row[6]) <= now * 1000:  # skip an in-progress bar
-                value = float(row[4])
-                break
+        if not _is_trading(rows, now):
+            rows = _kraken_rows(resolved["symbol"], interval, 2)
+        if _is_trading(rows, now):
+            for row in reversed(rows):
+                if int(row[6]) <= now * 1000:  # skip an in-progress bar
+                    value = float(row[4])
+                    break
     except (CryptoError, IndexError, TypeError, ValueError):
         value = None
     with _lock:
@@ -308,8 +485,8 @@ def price_hint(price: float) -> int:
 def chart(symbol: str, span: str, interval: str) -> dict:
     """Daily/weekly bars for a resolved coin, in the server's payload shape.
 
-    Raises CryptoError when the symbol is not chartable or has no bars, so the
-    caller can fall back to Yahoo.
+    Raises CryptoError when the symbol is not chartable, has no bars, or is
+    trading on neither venue, so the caller can fall back to Yahoo.
     """
     resolved = coin(symbol)
     if resolved is None:
@@ -320,12 +497,22 @@ def chart(symbol: str, span: str, interval: str) -> dict:
     # is Binance's per-request maximum.
     days = RANGE_DAYS.get(span, RANGE_DAYS["3mo"])
     if interval == "1wk":
-        binance_interval = "1w"
+        source_interval = "1w"
         limit = max(1, min(1000, days // 7))
     else:
-        binance_interval = "1d"
+        source_interval = "1d"
         limit = days
-    rows = _klines(resolved["ticker"], binance_interval, limit)
+    rows, venue = _bars(resolved, source_interval, limit)
+
+    if not _is_trading(rows):
+        # `coin()` said yes because Binance still lists the pair, but a listed
+        # pair is not a trading one (see the module header) and Kraken did not
+        # have it either. Drawing what is left would put a 2024 window under
+        # today's date, so this refuses instead and the caller keeps Yahoo --
+        # which is current for XMR, and, for BTT, honest about having nothing.
+        raise CryptoError(
+            f"{resolved['symbol']} is not trading on Binance or Kraken "
+            f"(newest bar {last_bar_date(rows) or 'missing'})")
 
     points: list[dict] = []
     volumes: list[float] = []
@@ -347,10 +534,10 @@ def chart(symbol: str, span: str, interval: str) -> dict:
             if index != len(rows) - 1:
                 continue
             live = True
-        # 8 decimals is Binance's own tick precision for micro-priced coins.
-        # Rounding looser than that collapses a PEPE-class series (which lives
-        # around $0.0000034) onto $0.000003 / $0.000004 / $0.000005 -- a chart
-        # of three steps.
+        # 8 decimals is Binance's own tick precision for micro-priced coins (and
+        # enough for Kraken's, which prints BTT at ten). Rounding looser than
+        # that collapses a PEPE-class series (which lives around $0.0000034) onto
+        # $0.000003 / $0.000004 / $0.000005 -- a chart of three steps.
         points.append({"t": open_ms // 1000, "c": round(close, 8)})
         volumes.append(volume)
 
@@ -371,7 +558,7 @@ def chart(symbol: str, span: str, interval: str) -> dict:
         "symbol": f"{resolved['symbol']}-USD",
         "name": f"{resolved['name']} USD",
         "currency": "USD",
-        "exchange": "Binance",
+        "exchange": venue,
         "type": "CRYPTOCURRENCY",
         "priceHint": price_hint(last),
         "previousClose": previous,
@@ -388,7 +575,7 @@ def chart(symbol: str, span: str, interval: str) -> dict:
         # fresh, never from a disk fallback.
         "liveLastBar": live,
         "trend": trend_call,
-        "source": "Binance",
+        "source": venue,
         "coinRank": resolved["rank"],
     }
 

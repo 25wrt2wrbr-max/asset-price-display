@@ -251,6 +251,20 @@
   .watch-chg { font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-secondary); white-space: nowrap; }
   .watch-chg.up { color: var(--delta-up); }
   .watch-chg.down { color: var(--delta-down); }
+  /* The chart's 3-month profit odds, in the rail: the same number the stat-line
+     under the price prints, from the same payload, so a row and the chart it
+     opens cannot disagree. Sized as a footnote, not a second hero, and given
+     its own line so it is never read as part of the percentage beside it. */
+  .watch-odds {
+    display: flex; align-items: baseline; gap: 5px;
+    font-size: 11px; color: var(--text-muted); white-space: nowrap;
+  }
+  .watch-odds-val {
+    font-weight: 600; font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+  }
+  .watch-odds-val.above { color: var(--delta-up); }
+  .watch-odds-val.below { color: var(--delta-down); }
 
   .remove-btn {
     flex: none; cursor: pointer; background: none; border: 0; border-radius: 7px;
@@ -356,18 +370,23 @@
   .delta-val.up { color: var(--delta-up); }
   .delta-val.down { color: var(--delta-down); }
 
-  /* ---- minimum investment ----
-     A stat readout, not a second hero: the chart's headline number is the price,
-     so this is a label and a value at body scale rather than another 48px figure
-     competing with it. It sits here for the PSE only, which is the only market
-     with a board lot, and it is absent from the DOM entirely for every other
-     symbol rather than sitting empty under the price. */
-  .min-invest { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-  .min-invest[hidden] { display: none; }
-  .min-invest .stat-label { color: var(--text-secondary); font-size: 13.5px; }
+  /* ---- stat readouts: minimum investment, three-month profit odds ----
+     Not a second hero: the chart's headline number is the price, so these are a
+     label and a value at body scale rather than another 48px figure competing
+     with it. The minimum-investment line sits here for the PSE only, which is
+     the only market with a board lot, and is absent from the DOM entirely for
+     every other symbol rather than sitting empty under the price. The odds line
+     is present for every measured asset class and absent for a yield or a
+     futures contract, which have none. Either way an absent readout is hidden,
+     never zeroed. */
+  .stat-line { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .stat-line[hidden] { display: none; }
+  .stat-line .stat-label { color: var(--text-secondary); font-size: 13.5px; }
   /* Proportional figures, like the hero: one standalone value, not a column. */
-  .min-invest .stat-value { font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
-  .min-invest .stat-note { color: var(--text-muted); font-size: 11.5px; }
+  .stat-line .stat-value { font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
+  .stat-line .stat-value.above { color: var(--delta-up); }
+  .stat-line .stat-value.below { color: var(--delta-down); }
+  .stat-line .stat-note { color: var(--text-muted); font-size: 11.5px; }
 
   /* ---- table view toggle ---- */
   .toggle-row { display: flex; justify-content: flex-end; margin-top: 4px; }
@@ -708,13 +727,32 @@
 
         <p class="hero" id="hero" hidden>—</p>
         <p class="hero-delta" id="heroDelta" hidden></p>
+        <!-- The one number about the *next* three months: a 0-1 probability of
+             profit, printed as a plain figure. It is not the badge in another
+              form: a chart-based model estimate -- see `drawProfitOdds`.
+              Hidden when the series cannot support an estimate. -->
+        <p class="stat-line" id="profitOdds" hidden>
+          <span class="stat-label">3-month profit odds</span>
+          <span class="stat-value" id="profitOddsValue">—</span>
+          <span class="stat-note" id="profitOddsNote"></span>
+        </p>
         <!-- The smallest cheque that buys the stock. PSE only: the board lot is
              the exchange's own rule, so nothing else has a minimum investment to
              report and the readout is left out of the DOM for those symbols. -->
-        <p class="min-invest" id="minInvest" hidden>
+        <p class="stat-line" id="minInvest" hidden>
           <span class="stat-label">Min. investment</span>
           <span class="stat-value" id="minInvestValue">—</span>
           <span class="stat-note" id="minInvestNote"></span>
+        </p>
+        <!-- How much money changed hands on the last trading day the chart
+             draws -- close times volume on the newest bar, in pesos. A PSE
+             readout only (the bars come from TradingView, which is the one
+             source here that ships volume alongside the price), and left out
+             of the DOM for an index, which has no volume to report. -->
+        <p class="stat-line" id="lastVolume" hidden>
+          <span class="stat-label">Trading volume</span>
+          <span class="stat-value" id="lastVolumeValue">—</span>
+          <span class="stat-note" id="lastVolumeNote"></span>
         </p>
         <p class="trend-note" id="trendNote" hidden></p>
         <p class="trend-note" id="outlookNote" hidden></p>
@@ -787,7 +825,9 @@
   <footer>
     Daily closes, last three months, via Yahoo Finance — except Philippine
     listings, which come from TradingView, and dollar-less currency crosses,
-    whose history comes from ECB reference rates. The Philippine government bond
+    whose history comes from ECB reference rates. USD/PHP's Saturdays and
+    Sundays come from Coins.ph's USDC/PHP book, because the peso does not trade
+    at the weekend. The Philippine government bond
     yields in the table above also come from TradingView. Prices are 15 minutes
     delayed and for information only — not investment advice. Data is fetched
     through a local <code>moli</code>-backed proxy (<code>server.py</code>).
@@ -843,6 +883,12 @@ const el = {
   minInvest: document.getElementById("minInvest"),
   minInvestValue: document.getElementById("minInvestValue"),
   minInvestNote: document.getElementById("minInvestNote"),
+  lastVolume: document.getElementById("lastVolume"),
+  lastVolumeValue: document.getElementById("lastVolumeValue"),
+  lastVolumeNote: document.getElementById("lastVolumeNote"),
+  profitOdds: document.getElementById("profitOdds"),
+  profitOddsValue: document.getElementById("profitOddsValue"),
+  profitOddsNote: document.getElementById("profitOddsNote"),
   trendBadge: document.getElementById("trendBadge"),
   trendGlyph: document.getElementById("trendGlyph"),
   trendLabel: document.getElementById("trendLabel"),
@@ -920,6 +966,9 @@ const BASIS_WORDS = {
   live: "live",
   pre: "pre-market",
   after: "after-hours",
+  // The peso pair does not trade at the weekend, so its Saturday and Sunday
+  // points are Coins.ph's USDC/PHP price -- named, never spelled "close".
+  weekend: "USDC/PHP",
 };
 
 function basisWord(basis, data) {
@@ -941,6 +990,21 @@ const axisTickFmt = (tick) =>
 const dayFmt = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
 const fullFmt = new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" });
 const toDate = (ts) => new Date(ts * 1000);
+
+/* A trading day, read in UTC. PSE bars are stamped at the Manila session open,
+   which is 01:30 UTC, so the UTC date *is* the exchange's trading day whatever
+   zone the reader is in -- the same reason `sessionDate` below reads stamps as
+   UTC. Read in local time instead, a reader west of Manila would see the
+   previous day named beside a session that has not happened yet. */
+const utcDayFmt = new Intl.DateTimeFormat(undefined, {
+  month: "short", day: "numeric", timeZone: "UTC",
+});
+
+/* A share count, abbreviated: nobody reads six digits at 21 px, and the exact
+   figures live in the readout's tooltip. */
+const shareFmt = new Intl.NumberFormat(undefined, {
+  notation: "compact", maximumFractionDigits: 1,
+});
 
 /* When a payload was last retrieved live. A fresh answer only needs a clock
  * time ("Checked 3:14pm" — it was just now); a disk fallback can be days old,
@@ -1167,9 +1231,20 @@ function renderAll() {
     live: "last bar is a live price",
     pre: "last bar is a pre-market price",
     after: "last bar is the after-hours price",
+    weekend: "last bar is Coins.ph's USDC/PHP weekend price",
   }[d.lastBarBasis];
   if (basisNote) bits.push(basisNote);
   else if (!d.lastBarBasis && d.extendedLastBar) bits.push("last bar includes after-hours");
+  // The peso pair's Saturdays and Sundays come from Coins.ph's USDC/PHP book,
+  // because the FX week is shut. Say it whenever such bars are on screen, not
+  // only when the newest one is: a weekend point in the middle of a three-month
+  // chart is still the stablecoin's price.
+  if (d.weekendProxy) {
+    const n = (d.weekendProxy.stamps || []).length;
+    bits.push(n === 1
+      ? "1 weekend bar is Coins.ph USDC/PHP"
+      : `${n} weekend bars are Coins.ph USDC/PHP`);
+  }
   // A disk fallback is the same shape as a live answer with a date attached:
   // the chart draws, and the meta line says when the bars were really fetched.
   if (d.cached && d.fetchedAt) bits.push("last retrieved " + retrievedAt(d.fetchedAt));
@@ -1228,10 +1303,66 @@ function renderAll() {
     el.heroDelta.hidden = true;
   }
 
+  drawProfitOdds();
   drawMinInvest();
+  drawLastVolume();
   drawTrend();
   drawChart();
   drawTable();
+}
+
+/* ---- three-month profit odds ----
+   One number, 0-1, from the server (`probability.estimate`): the displayed
+   daily log returns' mean and volatility projected three months, including
+   mean-estimation uncertainty and assumed costs. Independent of the badge.
+   This is an uncalibrated model estimate, not a historical class frequency.
+   A payload without a usable estimate hides the readout. Invariant 3 in spirit: a
+   missing number is missing, never a defaulted 0.5. */
+/* The whole claim behind the odds figure, kept in one place: the chart's
+   stat-line and the watchlist row's own readout both show this in a tooltip,
+   and two copies of a paragraph this specific are two paragraphs that would
+   eventually disagree. The figure alone would read as a forecast for *this*
+   asset, so the tooltip names the measurement, the assumed costs and the bias
+   that runs through it. */
+function profitOddsClaim(r) {
+  const cost = (r.cost * 100).toFixed(2);
+  return `Estimated chance that the price return exceeds ${cost}% assumed round-trip ` +
+    `costs over the next three months (${r.horizonBars} sessions). Uses only the ` +
+    `${r.observations} log returns in the displayed chart: their mean and volatility, ` +
+    `including uncertainty in the estimated mean. Assumes independent normal log ` +
+    `returns with unchanged mean and volatility. Weekday calendars omit exchange ` +
+    `holidays. Not a calibrated success rate or guarantee; regime changes, fat tails, ` +
+    `taxes and currency conversion are not modeled. For futures, this estimates a ` +
+    `contract price gain, not leveraged account profitability; expiry, rolls, margin ` +
+    `and broker-specific costs are not modeled. Estimates are bounded to 0.01–0.99.`;
+}
+
+function drawProfitOdds() {
+  const d = state.data;
+  const r = d && d.profitProbability;
+  const p = r && r.probability;
+  if (!Number.isFinite(p)) {
+    el.profitOdds.hidden = true;
+    el.profitOdds.removeAttribute("title");
+    // Cleared, not just hidden: a yield chart sitting on top of the previous
+    // asset's odds would leave "0.45 PSE stock base rate" in the DOM, one
+    // inspector away from being read as a claim about a bond.
+    el.profitOddsValue.textContent = "—";
+    el.profitOddsValue.className = "stat-value";
+    el.profitOddsNote.textContent = "";
+    return;
+  }
+  const cost = (r.cost * 100).toFixed(2);
+  el.profitOdds.hidden = false;
+  el.profitOddsValue.textContent = p.toFixed(2);
+  el.profitOddsValue.className = "stat-value " + (p >= 0.5 ? "above" : "below");
+  el.profitOddsNote.textContent =
+    `chart-based estimate, net of ${cost}% costs`;
+
+  // The tooltip carries the whole claim, because the figure alone would read as
+  // a forecast for *this* asset: the population, how it was measured, what the
+  // adjustment was, and the bias that runs through it.
+  el.profitOdds.title = profitOddsClaim(r);
 }
 
 /* ---- minimum investment ----
@@ -1254,6 +1385,61 @@ function drawMinInvest() {
   el.minInvestValue.textContent = leaderMoney(d.minInvestment, d.currency);
   el.minInvestNote.textContent =
     `${nf(0).format(d.boardLot)}-share board lot at ${formatPrice(d.marketPrice, d)}`;
+}
+
+/* ---- traded value on the last trading day ----
+   The newest *finished* session's close times its volume, in the stock's own
+   currency. Computed server-side (`server.chart_data` -> `pse.completed_trade`)
+   from this chart's own bars, and decided at read time, so the figure belongs
+   to a completed day rather than to a bar that is still forming.
+
+   "Finished" is the exchange's own bell, not a guess: pse.com.ph closes the
+   market at 3:15pm Manila, so before that the newest bar is today's session so
+   far and the readout is yesterday's; from then on it is today's closing
+   figure. Nothing marks a bar as final in the payload, which is why the note
+   names the day -- and why the fix lived here rather than in a default.
+
+   A PSE readout only: an index carries no volume and no other source ships one
+   in this payload, and both cases hide the line rather than printing a zero
+   (invariant 3 in spirit -- a missing volume is not a session that traded
+   nothing). */
+function drawLastVolume() {
+  const d = state.data;
+  const value = d && d.tradedTurnover;
+  const usable = Number.isFinite(value) && value > 0;
+  el.lastVolume.hidden = !usable;
+  if (!usable) {
+    // Cleared, not just hidden: a peso figure left in the DOM while an index
+    // or a bond is on screen is one inspector away from reading as a claim
+    // about it.
+    el.lastVolumeValue.textContent = "—";
+    el.lastVolumeNote.textContent = "";
+    el.lastVolume.removeAttribute("title");
+    return;
+  }
+
+  const stamp = d.tradedDay;
+  const day = Number.isFinite(stamp) ? utcDayFmt.format(toDate(stamp)) : "";
+  const shares = d.tradedShares;
+  const count = Number.isFinite(shares) && shares > 0 ? shares : null;
+
+  el.lastVolumeValue.textContent = compact(value, d.currency || "PHP");
+  el.lastVolumeNote.textContent = [count ? `${shareFmt.format(count)} shares` : "",
+                                   day ? `${day}, last completed session` : ""]
+    .filter(Boolean).join(" · ");
+
+  // The whole claim, because a bare figure under the price reads as the
+  // window's turnover: it is one finished session's close times its volume,
+  // and today's bar only joins in once the exchange has closed.
+  el.lastVolume.title =
+    `Value traded on the last finished trading day: the bar's close times its ` +
+    `volume` +
+    (count ? ` (${nf(0).format(count)} shares)` : "") +
+    `, ${leaderMoney(value, d.currency || "PHP")} in total. The exchange closes ` +
+    `at 3:15pm Manila, so while it is trading this is the previous session's ` +
+    `figure and from then on it is today's closing figure -- the source does not ` +
+    `mark a bar as finished, so the exchange's own close is what decides. A stock ` +
+    `that did not trade that day has no figure. Delayed like the price.`;
 }
 
 /* ---- trend badge ----
@@ -1494,6 +1680,10 @@ function drawChart() {
   svg.append(endLabel);
 
   /* ---- interaction ---- */
+  // The peso pair's Saturday and Sunday points are Coins.ph's USDC/PHP price
+  // (`weekendProxy.stamps`), not an interbank close. The server names them so
+  // this readout can say whose number each one is.
+  const proxyStamps = new Set((d.weekendProxy && d.weekendProxy.stamps) || []);
   const indexFromEvent = (ev) => {
     const box = svg.getBoundingClientRect();
     const mx = ((ev.clientX - box.left) / box.width) * PLOT_W;
@@ -1529,8 +1719,11 @@ function drawChart() {
     // Every bar but the newest is the session's own close. The newest may not
     // be -- it can be the price trading now or the last extended-hours print --
     // and `lastBarBasis` is the server's call on which, so a post-market print
-    // never reads as the official close.
-    label.textContent = i === n - 1 ? basisWord(d.lastBarBasis, d) : basisWord(null, d);
+    // never reads as the official close. A weekend bar is neither: it is the
+    // stablecoin's price for a day the FX week did not trade.
+    label.textContent = proxyStamps.has(c.point.t)
+      ? basisWord("weekend", d)
+      : i === n - 1 ? basisWord(d.lastBarBasis, d) : basisWord(null, d);
     row.append(key, value, label);
 
     tooltip.append(dateLine, row);
@@ -1575,6 +1768,7 @@ function drawChart() {
 function drawTable() {
   const d = state.data;
   const pts = d.points;
+  const proxyStamps = new Set((d.weekendProxy && d.weekendProxy.stamps) || []);
 
   el.tableWrap.textContent = "";
   const table = document.createElement("table");
@@ -1588,6 +1782,9 @@ function drawTable() {
   caption.textContent = `${d.name} (${d.symbol}) — daily closes, last three months.` +
     (basis
       ? ` The newest row is ${basis === "after-hours" ? "an" : "a"} ${basis} price, not a settled close.`
+      : "") +
+    (d.weekendProxy
+      ? ` Saturday and Sunday rows are Coins.ph's USDC/PHP price: the peso pair does not trade at the weekend.`
       : "");
   table.append(caption);
 
@@ -1612,8 +1809,11 @@ function drawTable() {
     close.textContent = formatPrice(p.c, d);
     // The newest row is the point the chart's tooltip labels: when that figure
     // is live or an extended-hours print, the cell says so on hover instead of
-    // passing under a "Close" heading it does not answer to.
-    if (i === pts.length - 1 && BASIS_WORDS[d.lastBarBasis]) {
+    // passing under a "Close" heading it does not answer to. A weekend row of
+    // the peso pair is the stablecoin's price, and says that instead.
+    if (proxyStamps.has(p.t)) {
+      close.title = basisWord("weekend", d);
+    } else if (i === pts.length - 1 && BASIS_WORDS[d.lastBarBasis]) {
       close.title = basisWord(d.lastBarBasis, d);
     }
 
@@ -1889,6 +2089,29 @@ function shiftWatchRow(list, dragIndex, targetIndex) {
   return targetIndex;
 }
 
+/* Where the row goes for a pointer at `clientY`: insert above or below the
+   nearest row by which half of it the pointer is in. Read by the dragover
+   handler and, while the rail scrolls itself, by the scroll loop -- the row
+   under a pointer that is holding still changes as the list moves, and no
+   `dragover` fires to say so. */
+function dragPlaceAt(clientY) {
+  if (dragSymbol === null) return;
+  const list = el.watchList;
+  const rows = [...list.children];
+  const from = state.watch.findIndex((it) => it.symbol === dragSymbol);
+  if (from < 0) return endDrag();
+
+  let target = rows.length;
+  for (let i = 0; i < rows.length; i++) {
+    if (i === from) continue;
+    const box = rows[i].getBoundingClientRect();
+    const mid = box.top + box.height / 2;
+    if (clientY < mid) { target = i; break; }
+  }
+  if (target > from) target -= 1;            // the dragged row vacates its slot
+  shiftWatchRow(list, from, target);
+}
+
 /* Pointer drag, native HTML5 flavour, with one wrinkle: a drag has no DOM
    event of its own to listen to, so the handlers live on the grips, which every
    repaint throws away. `dragRepaint` fixes that -- a quote arriving mid-drag
@@ -1903,11 +2126,16 @@ function shiftWatchRow(list, dragIndex, targetIndex) {
 let dragSymbol = null;   // symbol being dragged, null when idle
 let dragFrom = -1;       // where it was lifted from, for a cancel
 let dragDropped = false; // did the gesture end in a drop on the rail?
+let dragPointY = null;   // last pointer y seen during a drag, client px
+let dragScrollRaf = 0;   // pending auto-scroll frame, 0 when the loop is idle
+let dragScrollAt = 0;    // when the previous frame ran, ms; 0 restarts the clock
+let dragScrollAcc = 0;   // fractional px carried to the next frame
 
 function endDrag() {
   dragSymbol = null;
   dragFrom = -1;
   dragDropped = false;
+  stopDragScroll();
   el.watchList.classList.remove("is-reordering");
   el.watchList.querySelectorAll(".is-dragging").forEach((li) => li.classList.remove("is-dragging"));
 }
@@ -1948,6 +2176,83 @@ function finishDrag() {
   setStatus(`${symbol} moved to position ${to + 1} of ${state.watch.length}.`);
 }
 
+/* ---- dragging a row past the rail's edge scrolls the rail ----
+
+   A drag reports where the pointer is only while it moves, so a row carried to
+   the bottom of a long rail would sit there scrolling nothing, waiting for the
+   hand to move another pixel -- which is exactly the manual arranging this rail
+   has to make easy. The list therefore scrolls on its own clock: while the
+   pointer sits inside an edge band, an rAF loop keeps pushing the rail, and each
+   push re-places the row through dragPlaceAt, because the row under a pointer
+   that is holding still has moved without a `dragover` to announce it. */
+const DRAG_SCROLL_EDGE = 56;   // px band at either end that starts the scroll
+const DRAG_SCROLL_SLOW = 120;  // px per second on entering the band
+const DRAG_SCROLL_FAST = 900;  // px per second at the very edge
+
+function stopDragScroll() {
+  if (dragScrollRaf) cancelAnimationFrame(dragScrollRaf);
+  dragScrollRaf = 0;
+  dragPointY = null;
+  dragScrollAt = 0;
+  dragScrollAcc = 0;
+}
+
+/* The box that actually moves: the rail keeps its own overflow on a wide page,
+   while a narrow one stacks the rail into the flow and the page scrolls instead. */
+function dragScroller(list) {
+  if (list.scrollHeight > list.clientHeight + 1) return list;
+  return document.scrollingElement || document.documentElement;
+}
+
+function dragScrollStep(now) {
+  dragScrollRaf = 0;
+  if (dragSymbol === null || dragPointY === null) return;
+  const list = el.watchList;
+
+  // The band belongs to the slice of the rail that is on screen: a stacked rail
+  // is taller than the window, so its own top and bottom are not the edges to aim at.
+  const box = list.getBoundingClientRect();
+  const top = Math.max(box.top, 0);
+  const bottom = Math.min(box.bottom, window.innerHeight);
+  const edge = Math.min(DRAG_SCROLL_EDGE, (bottom - top) / 3);
+  if (!(edge > 0)) { dragScrollAt = 0; dragScrollAcc = 0; return; }
+
+  const depth = dragPointY < top + edge
+    ? (top + edge - dragPointY) / edge
+    : dragPointY > bottom - edge
+      ? -(dragPointY - (bottom - edge)) / edge
+      : 0;
+  if (!depth) { dragScrollAt = 0; dragScrollAcc = 0; return; }
+
+  const scroller = dragScroller(list);
+  if (scroller.scrollHeight <= scroller.clientHeight) return;   // nothing hidden
+
+  // Pixels per *second*, not per frame: the same gesture has to travel the same
+  // distance on a screen painting at 60 Hz and on one struggling at 25.
+  const dt = dragScrollAt ? Math.min(50, now - dragScrollAt) : 16;
+  dragScrollAt = now;
+  const t = Math.min(1, Math.abs(depth));
+  dragScrollAcc += (depth > 0 ? -1 : 1) *
+    (DRAG_SCROLL_SLOW + (DRAG_SCROLL_FAST - DRAG_SCROLL_SLOW) * t) * dt / 1000;
+
+  // Scroll whole pixels and carry the remainder, so a slow band cannot round to
+  // nothing and stall the loop just inside the edge.
+  const step = dragScrollAcc < 0 ? Math.ceil(dragScrollAcc) : Math.floor(dragScrollAcc);
+  if (step) {
+    const before = scroller.scrollTop;
+    scroller.scrollTop = before + step;
+    dragScrollAcc -= step;
+    if (scroller.scrollTop === before) return;   // already at that end
+    dragPlaceAt(dragPointY);
+  }
+  dragScrollRaf = requestAnimationFrame(dragScrollStep);
+}
+
+function startDragScroll() {
+  if (dragScrollRaf) return;
+  dragScrollRaf = requestAnimationFrame(dragScrollStep);
+}
+
 /* Focus and the DOM order are rebuilt by every repaint, so a keyboard nudge
    restores both by hand: move the row it acted on, then put focus back. */
 function nudgeWatch(symbol, step) {
@@ -1981,11 +2286,17 @@ function drawWatchList() {
     const q = state.watchQuotes[it.symbol];
     return q && q.data && q.data.trend && TREND_WORD[q.data.trend.label];
   });
+  const anyOdds = state.watch.some((it) => {
+    const q = state.watchQuotes[it.symbol];
+    const r = q && q.data && q.data.profitProbability;
+    return Boolean(r && Number.isFinite(r.probability));
+  });
   el.watchHint.textContent = (
     state.watch.length > 1
       ? "Click a symbol to chart it. Drag the grip — or focus it and press ↑/↓ — to reorder."
       : "Click a symbol to chart its last three months."
-  ) + (anyVerdict ? " Each tag is that row's three-month verdict." : "");
+  ) + (anyVerdict ? " Each tag is that row's three-month verdict." : "")
+    + (anyOdds ? " The odds figure is each chart's own three-month estimate." : "");
 
   state.watch.forEach((item) => {
     const quote = state.watchQuotes[item.symbol];
@@ -2002,6 +2313,13 @@ function drawWatchList() {
       ? ` (score ${trend.score >= 0 ? "+" : "−"}${Math.abs(trend.score).toFixed(2)})`
       : "";
 
+    // The chart's own 0-1 odds for the next three months, from the same payload
+    // the chart prints. A yield, a futures contract whose chart supports no
+    // estimate, or a row still loading has none, and then the line is left out
+    // rather than filled with a default: a missing number is missing.
+    const odds = quote && quote.data ? quote.data.profitProbability : null;
+    const oddsP = odds && Number.isFinite(odds.probability) ? odds.probability : null;
+
     const li = document.createElement("li");
     li.className = "watch-item" + (active ? " is-active" : "");
 
@@ -2009,7 +2327,9 @@ function drawWatchList() {
     pick.type = "button";
     pick.className = "watch-pick";
     pick.setAttribute("aria-label",
-      `Chart ${item.name} (${item.symbol})` + (verdict ? `, trend ${TREND_WORD[verdict]}` : ""));
+      `Chart ${item.name} (${item.symbol})` +
+      (verdict ? `, trend ${TREND_WORD[verdict]}` : "") +
+      (oddsP === null ? "" : `, three-month profit odds ${oddsP.toFixed(2)}`));
     if (active) pick.setAttribute("aria-current", "true");
 
     const top = document.createElement("span");
@@ -2072,6 +2392,23 @@ function drawWatchList() {
     sub.append(name, chg);
 
     pick.append(top, sub);
+
+    // Below the name and the window's move, because it is a different kind of
+    // claim: the move is what the last three months did, this is a model's odds
+    // about the next three. Same figure, same tooltip and same above/below 0.5
+    // colour as the stat-line under the price.
+    if (oddsP !== null) {
+      const oddsLine = document.createElement("span");
+      oddsLine.className = "watch-odds";
+      oddsLine.title = profitOddsClaim(odds);
+      const oddsLabel = document.createElement("span");
+      oddsLabel.textContent = "3-month odds";
+      const oddsVal = document.createElement("span");
+      oddsVal.className = "watch-odds-val " + (oddsP >= 0.5 ? "above" : "below");
+      oddsVal.textContent = oddsP.toFixed(2);
+      oddsLine.append(oddsLabel, oddsVal);
+      pick.append(oddsLine);
+    }
     pick.addEventListener("click", () => loadChart(item.symbol));
 
     // The grip is the only draggable part, so the rest of the row keeps its
@@ -2197,23 +2534,20 @@ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (ev
    drag is live the bubbling target is the grip regardless of the row under it. */
 el.watchList.addEventListener("dragover", (ev) => {
   if (dragSymbol === null) return;
-  const rows = [...el.watchList.children];
-  const from = state.watch.findIndex((it) => it.symbol === dragSymbol);
-  if (from < 0) return endDrag();
-
-  // Insert above or below the nearest row by which half of it the pointer is in.
-  let target = rows.length;
-  for (let i = 0; i < rows.length; i++) {
-    const box = rows[i].getBoundingClientRect();
-    const mid = box.top + box.height / 2;
-    if (i === from) continue;
-    if (ev.clientY < mid) { target = i; break; }
-  }
-  if (target > from) target -= 1;            // the dragged row vacates its slot
-  shiftWatchRow(el.watchList, from, target);
-
+  dragPlaceAt(ev.clientY);
+  if (dragSymbol === null) return;           // the symbol went away mid-drag
+  dragPointY = ev.clientY;
+  startDragScroll();                         // and keep scrolling if it holds still
   ev.preventDefault();                       // required to allow a drop
   ev.dataTransfer.dropEffect = "move";
+});
+
+/* A leave bubbles out of every row the pointer crosses, so only a leave of the
+   list itself ends the scroll; coming back in restarts it on the next dragover. */
+el.watchList.addEventListener("dragleave", (ev) => {
+  if (dragSymbol === null) return;
+  if (ev.relatedTarget && el.watchList.contains(ev.relatedTarget)) return;
+  stopDragScroll();
 });
 
 el.watchList.addEventListener("drop", (ev) => {

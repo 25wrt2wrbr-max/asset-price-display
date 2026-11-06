@@ -104,13 +104,16 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from zoneinfo import ZoneInfo
 
 import bullish
+import coinsph
 import crypto
 import cryptobull
 import diskcache
 import ecb
 import markets
+import ondo
 import onset as onset_module
 import phfunds
+import probability
 import pse
 import rates
 import recent
@@ -489,6 +492,11 @@ crypto.set_http_fallback(moli_fallback)
 # Frankfurter answers plain HTTP clients, so this is a safety net the same way
 # it is for `crypto.py` -- but the ECB route needs no browser in the first place.
 ecb.set_http_fallback(moli_fallback)
+# The coins.ph book answers plain HTTP too; the browser is the net, not the road.
+coinsph.set_http_fallback(moli_fallback)
+# DeFiLlama's coins API answers an ordinary HTTP client as well -- the Ondo
+# tokens' price comes from it, and the browser is a net here, not the road.
+ondo.set_http_fallback(moli_fallback)
 # PSE bars come from a websocket, which no HTTP client can reach, so `pse.py`
 # borrows the same browser path -- but raw, since it has its own protocol.
 pse.set_eval_runner(moli_eval)
@@ -503,7 +511,7 @@ pse.set_batch_runner(moli_sweep)
 # that is the verdict kind.
 TRANSIENT_ERRORS = (
     UpstreamError, pse.PseError, markets.MarketError, crypto.CryptoError,
-    ecb.EcbError, tv.TvError,
+    ecb.EcbError, tv.TvError, ondo.OndoError,
 )
 
 
@@ -2042,6 +2050,36 @@ def _warm_batch_funds(pairs: list[tuple[str, str]]) -> dict[str, str]:
     return out
 
 
+def _warm_batch_tokens(pairs: list[tuple[str, str]]) -> dict[str, str]:
+    """Warm the queue's Ondo tokens from the contract price, one HTTP call each.
+
+    `pairs` is `[(chart_key, symbol), ...]`. The leg exists for the reason the
+    bond and fund legs do: sent down the Yahoo leg an `ONDO:` symbol would earn
+    a guaranteed 404 per pass, because Yahoo has no spelling for the token at
+    all. The outcomes map the way the other legs' do -- a payload is stored and
+    lands, `OndoNotFound` (a token this module does not know) is a verdict about
+    the symbol and lands too, and `OndoError` -- the price could not be read --
+    is transport, an outage for that row.
+    """
+    try:
+        results = ondo.charts_many([symbol for _key, symbol in pairs],
+                                   WARM_SPAN, WARM_INTERVAL)
+    except Exception:
+        return {symbol: WARM_OUTAGE for _key, symbol in pairs}
+
+    out: dict[str, str] = {}
+    for key, symbol in pairs:
+        result = results.get(symbol)
+        if isinstance(result, ondo.OndoNotFound):
+            out[symbol] = WARM_LANDED      # a verdict about the symbol
+        elif isinstance(result, dict):
+            _store_chart(key, result)
+            out[symbol] = WARM_LANDED
+        else:
+            out[symbol] = WARM_OUTAGE
+    return out
+
+
 def warm_rows_loop() -> None:
     """Keep every table-listed chart retrievable offline. Runs on its thread.
 
@@ -2149,19 +2187,26 @@ def warm_rows_loop() -> None:
         fund_queue = [(key, symbol) for key, symbol in queue
                       if not tv.is_bond_symbol(symbol)
                       and phfunds.is_fund_symbol(symbol)]
+        token_queue = [(key, symbol) for key, symbol in queue
+                       if not tv.is_bond_symbol(symbol)
+                       and not phfunds.is_fund_symbol(symbol)
+                       and ondo.is_ondo_symbol(symbol)]
         pse_queue = [(key, symbol) for key, symbol in queue
                      if not tv.is_bond_symbol(symbol)
                      and not phfunds.is_fund_symbol(symbol)
+                     and not ondo.is_ondo_symbol(symbol)
                      and pse.is_pse_symbol(symbol)]
         yahoo_queue = [(key, symbol) for key, symbol in queue
                        if not tv.is_bond_symbol(symbol)
                        and not phfunds.is_fund_symbol(symbol)
+                       and not ondo.is_ondo_symbol(symbol)
                        and not pse.is_pse_symbol(symbol)]
         backoff = False
         for pairs, batch, size in (
                 (pse_queue, _warm_batch_pse, WARM_PSE_CHUNK),
                 (bond_queue, _warm_batch_bonds, BOND_WARM_CHUNK),
                 (fund_queue, _warm_batch_funds, FUND_WARM_CHUNK),
+                (token_queue, _warm_batch_tokens, FUND_WARM_CHUNK),
                 (yahoo_queue, _warm_batch_yahoo, WARM_BATCH)):
             for start in range(0, len(pairs), size):
                 chunk = pairs[start:start + size]
@@ -2266,6 +2311,49 @@ def full_day_close(meta: dict, last_stamp: int) -> float | None:
     if not same_exchange_day(meta, last_stamp, session_start):
         return None
     return float(price)
+
+
+def live_print(meta: dict, last_stamp: int) -> dict | None:
+    """The price of the session trading now, when no *bar* exists for it yet.
+
+    `full_day_close` folds an extended-hours print into the newest bar, and
+    that only works while that bar is the session trading now. Between one
+    session's close and the next one's first daily bar -- 04:00 to 09:30 New
+    York, and again from the 16:00 bell until Yahoo gives up the after-hours
+    print -- the newest bar is an *older* session's, while `fulldayPrice`
+    already carries a print belonging to a newer one. Dating that price to the
+    old bar would be a lie (that is `full_day_close`'s third guard), so the
+    chart used to stop at the old official close and stay there while the
+    market moved. Measured 2026-11-03 at 04:15 New York: AAPL had printed
+    322.13 in pre-market against a Monday close of 338.32, and the page showed
+    only 338.32 labelled "close".
+
+    This is that print, kept out of the bars so the chart can draw it as the
+    *newest* point under the current session's own date instead of rewriting an
+    older bar. The stamp is the session's regular open, which is exactly where
+    Yahoo will put the day's real bar, so the synthetic point is replaced by
+    the real one when it arrives rather than sitting beside it.
+
+    None when there is nothing honest to add: no extended session on the
+    instrument, no usable `fulldayPrice`, no session schedule, the newest bar
+    already belongs to this session (then `full_day_close` is the one that
+    folds), or the newest bar is more than `LIVE_BAR_GAP_DAYS` old -- a halt or
+    a dead listing is not a session that is trading.
+    """
+    if not meta.get("hasPrePostMarketData"):
+        return None
+    price = meta.get("fulldayPrice")
+    if not isinstance(price, (int, float)) or isinstance(price, bool) or price <= 0:
+        return None
+    regular = (meta.get("currentTradingPeriod") or {}).get("regular") or {}
+    session_start = usable_stamp(regular.get("start"))
+    if session_start is None:
+        return None
+    if same_exchange_day(meta, last_stamp, session_start):
+        return None
+    if session_start - last_stamp > LIVE_BAR_GAP_DAYS * 86400:
+        return None
+    return {"t": int(session_start), "c": round(float(price), 6)}
 
 
 def session_close(meta: dict, quote: dict, index: int, stamp: int) -> float | None:
@@ -2435,6 +2523,12 @@ def slim_chart(payload: dict, symbol: str, span: str | None = None,
     what `last_bar_basis` reads to call the figure live, pre-market,
     after-hours or a plain close. The window is Yahoo's; the decision is not
     made here, because it depends on the clock at read time, not at fetch time.
+
+    `livePrint` is the other end of that: when the newest bar belongs to an
+    *older* session than the one trading now, the payload keeps the current
+    session's price beside the bars instead of dating it to an old one (see
+    `live_print`), and `chart_data` draws it as today's point while one of that
+    session's windows is open.
     """
     chart = payload.get("chart") or {}
     result = (chart.get("result") or [None])[0]
@@ -2476,6 +2570,7 @@ def slim_chart(payload: dict, symbol: str, span: str | None = None,
         "previousClose": meta.get("chartPreviousClose"),
         "marketPrice": meta.get("regularMarketPrice"),
         "extendedLastBar": full_day_close(meta, stamps[-1]) is not None,
+        "livePrint": live_print(meta, stamps[-1]) if interval == "1d" else None,
         "session": session_window(meta, stamps[-1]),
         "points": points,
         "trend": trend_call,
@@ -2525,11 +2620,11 @@ def session_window(meta: dict, last_stamp: int) -> dict | None:
 
 
 def last_bar_basis(data: dict, now: float | None = None) -> str:
-    """What the newest drawn bar's number *is*: live, pre-market, after-hours
-    or a closing price.
+    """What the newest drawn bar's number *is*: live, pre-market, after-hours,
+    a weekend price, or a closing price.
 
     Every bar but the newest is the session's settled close. The newest is
-    whichever of four things Yahoo's session clock and the payload say it is:
+    whichever of these things Yahoo's session clock and the payload say it is:
 
     * `live` -- the regular session belongs to that bar, is open now, and a
       trade printed in the last half hour: the bar's close *is* the last trade.
@@ -2540,6 +2635,13 @@ def last_bar_basis(data: dict, now: float | None = None) -> str:
     * `live` also for a Binance coin whose newest bar is the day still
       trading (`liveLastBar`, set by `crypto.chart`), unless the copy is a
       disk fallback.
+    * `weekend` for the peso pair's Saturday and Sunday, whose bars come from
+      Coins.ph's USDC/PHP book (`weekend_proxy`) because the FX week is shut --
+      a real traded price, but not an interbank close.
+    * `pre` / `after` also for the session in progress when no bar exists for
+      it yet (`live_point`): the point is today's date carrying the print of
+      the session now trading, so it can be a pre-market or after-hours figure
+      but never a settled close -- the session it belongs to has not settled.
     * `close` -- everything else, including every payload whose source has no
       session to speak of (a fund's NAVPU, a bond yield, a PSE row).
 
@@ -2562,10 +2664,27 @@ def last_bar_basis(data: dict, now: float | None = None) -> str:
     # fallback is hours old by definition, so it never reads live.
     if points and data.get("liveLastBar") and not data.get("cached"):
         return "live"
+    # The newest bar is a weekend price for the peso pair: the FX week is shut,
+    # and the number is Coins.ph's USDC/PHP close for that Manila day (see
+    # `weekend_proxy`). It is neither an interbank close nor a live FX print, so
+    # it says whose price it is rather than borrowing either word.
+    if points and (data.get("weekendProxy") or {}).get("stamps"):
+        if points[-1]["t"] == data["weekendProxy"]["stamps"][-1]:
+            return "weekend"
     session = data.get("session") or {}
     if not points or not session.get("coversLastBar"):
         return "close"
     now = time.time() if now is None else now
+    # The newest point is the print of a session that has not settled: a
+    # pre-market trade before the regular open, the last extended print after
+    # it. It never reads "close" -- the session it belongs to is the one still
+    # in progress -- and it says which of the two by the clock, not by the
+    # window the payload happened to ship.
+    if data.get("livePointStamp") == points[-1]["t"]:
+        ended = (session.get("regular") or [None, None])[1]
+        if ended is not None and now >= ended:
+            return "after"
+        return "pre"
     regular = session.get("regular") or [None, None]
     if regular[0] is not None and regular[0] <= now < regular[1]:
         printed = session.get("lastPrint")
@@ -2586,6 +2705,47 @@ def _within(window, now: float) -> bool:
     return bool(window) and len(window) == 2 and window[0] <= now < window[1]
 
 
+def live_point(card: dict, now: float | None = None) -> dict:
+    """Append the session now trading as a new newest point, while it trades.
+
+    `slim_chart` ships the price of the session in progress as `livePrint`
+    (`live_print`). It is drawn only while one of *that* session's extended
+    windows is open now, and only when the chart still ends at an older bar:
+    from the 16:00 bell until 04:00 New York Yahoo folds nothing -- it reports
+    the regular close again -- so there is no print to add and the newest bar
+    keeps its own close. That stretch is a gap in the source, and this function
+    does not paper over it by repeating the close as a "live" price.
+
+    Read time, not fetch time, and on a copy: `points` is the memo entry's
+    list. A chart served from the memo or from a disk copy must not still carry
+    a pre-market point late in the session, so the decision is remade on every
+    read and the appended point disappears as soon as the real bar exists.
+
+    A disk fallback is left alone: `cached` means the payload was fetched hours
+    ago, and a copy may not invent a price for a session it never saw. It draws
+    the bars it stored and says how old they are.
+    """
+    live = card.get("livePrint") or {}
+    stamp, price = live.get("t"), live.get("c")
+    if not stamp or not price or card.get("cached"):
+        return card
+    points = card.get("points") or []
+    if not points or points[-1]["t"] >= stamp:
+        return card                     # the real bar is here; nothing to add
+    session = card.get("session") or {}
+    now = time.time() if now is None else now
+    if not (_within(session.get("pre"), now) or _within(session.get("post"), now)):
+        return card                     # nothing is trading: the close stands
+    out = dict(card)
+    out["points"] = points + [{"t": int(stamp), "c": float(price)}]
+    # The appended point sits where the session's own daily bar will sit, so
+    # the payload's window *does* cover the newest point now -- which is what
+    # `last_bar_basis` reads before it allows anything but "close".
+    out["session"] = dict(session, coversLastBar=True)
+    out["livePointStamp"] = int(stamp)
+    return out
+
+
 def usable_stamp(value) -> float | None:
     """A Yahoo epoch second as a number, or None if it is missing/not one."""
     return (float(value) if isinstance(value, (int, float))
@@ -2602,6 +2762,12 @@ def usable_stamp(value) -> float | None:
 # since the bell still reads as live, and short enough that a closed market
 # cannot pass for an open one.
 LIVE_PRINT_MAX_AGE = 1800  # seconds
+
+# How far behind the session that is trading the newest *bar* may be for
+# `live_print` to trust `fulldayPrice` as that session's print. A weekend plus a
+# holiday fits comfortably; a halted name or a dead listing does not, and its
+# last price must not be redrawn as today's pre-market trade.
+LIVE_BAR_GAP_DAYS = 5
 
 
 def yahoo_chart(url: str, symbol: str, span: str | None = None,
@@ -2726,6 +2892,57 @@ def ecb_route(symbol: str, span: str, interval: str,
     return data
 
 
+def weekend_proxy(card: dict) -> dict:
+    """Fill a peso-pair chart's Saturdays and Sundays from Coins.ph's USDC/PHP book.
+
+    The FX week is Monday to Friday, so a USD/PHP chart drawn on a weekend ends
+    on Friday's close and shows nothing of the two days since -- which is
+    exactly when a Philippine reader looks at the peso. `coinsph.py` supplies
+    those two days from the stablecoin's own peso book: the same instrument's
+    question ("what is a dollar worth in pesos?") answered by a venue that
+    trades through the weekend, at its own price rather than Yahoo's.
+
+    Three rules, all of them the reader's to check against the payload:
+
+    * The bars are the stablecoin's closes, and `weekendProxy.stamps` names every
+      one of them, so the page can say whose price a point is instead of letting
+      it pass for an interbank close.
+    * A weekday is never touched, and a *weekend* day Yahoo drew is replaced --
+      that bar carries Friday's close under a Saturday stamp (see `coinsph`),
+      which is the gap being filled.
+    * An outage is a no-op. Nothing here can turn a working chart into an error,
+      and a chart that cannot be filled is still the chart Yahoo drew.
+
+    The badge is re-scored downstream, on the points this returns, so the label
+    and the line stay one series (invariant 1). The window is longer for it --
+    a three-month FX chart gains about 26 bars -- and that is stated here rather
+    than hidden, because a 91-bar window is not a 63-bar one.
+    """
+    points = card.get("points") or []
+    if not points:
+        return card
+    try:
+        filled, stamps, age = coinsph.fill(points)
+    except coinsph.CoinsError:
+        return card               # an outage, not a verdict: draw what Yahoo gave
+    if not stamps:
+        return card
+
+    out = dict(card)
+    out["points"] = filled
+    out["weekendProxy"] = {
+        "source": "Coins.ph",
+        "pair": "USDC/PHP",
+        "stamps": stamps,
+        "price": next(p["c"] for p in reversed(filled) if p["t"] == stamps[-1]),
+        # Seconds since the stablecoin series was read: a weekend reading is a
+        # daily close, so an old copy is reported as old rather than reprinted
+        # as this minute's.
+        "age": int(age),
+    }
+    return out
+
+
 def relevance(row: dict, needle: str) -> int:
     """Sort key: how directly a search result answers the query.
 
@@ -2797,6 +3014,89 @@ def fx_search_extra(needle: str) -> list[dict]:
     return rows
 
 
+# A word that could be a ticker: `VTV`, `BRK.B`, `BTC-USD`, `GC=F`, `^GSPC`,
+# `JPYPHP=X`. Only a word of this shape is ever handed to the chart route as a
+# symbol, so a sentence is never mistaken for one.
+TICKER_RE = re.compile(r"^[A-Za-z^][A-Za-z0-9.\-=^]{0,11}$")
+
+# Words that only name the *kind* of thing a reader wants, never the thing
+# itself. "vtv etf" is still a ticker query, so its first word is probed; any
+# other multi-word query is prose and is left to the search index rather than
+# guessed at. That guard is what stops "the long bond" from resolving to `THE`
+# (Target Hospitality) on a day the index answers nothing.
+INSTRUMENT_WORDS = {
+    "etf", "etfs", "fund", "funds", "stock", "stocks",
+    "share", "shares", "index", "trust", "adr", "adrs",
+}
+
+
+def probe_ticker(text: str) -> dict | None:
+    """The instrument `text` *names*, for a query Yahoo's search could not answer.
+
+    Yahoo's search index refuses some queries for instruments it holds: measured
+    2026-11-02, `/v1/finance/search?q=vtv` answered **HTTP 500** on query1 and
+    query2 alike, with and without parameters, while `VTV` charted normally,
+    `/v1/finance/quoteType/?symbol=VTV` resolved it, and the query `vt` listed it
+    third. So the search box had no way to reach one of the largest US ETFs,
+    and the failure was an index bug, not a missing instrument.
+
+    Resolving the word as a *symbol* is the fallback, and the chart route is
+    what resolves it: a row is offered only for a symbol it draws, carrying the
+    name and venue it reports. `markets.yahoo_symbol` supplies the one spelling
+    difference (`BRK.B` charts as `BRK-B`), so the row a reader clicks is the
+    chart that answers.
+
+    A multi-word query is tried by its first word only when every other word
+    names the *kind* of thing asked for ("vtv etf" -> `VTV`), because the
+    caller reaches this having been told nothing at all by the index. Any other
+    multi-word query is prose and is not guessed at. Returns None when nothing
+    resolves, so a dead end stays a dead end rather than becoming a guess.
+    """
+    words = [word for word in re.split(r"[^A-Za-z0-9.\-=^]+", text) if word]
+    candidates = [text]
+    if len(words) > 1 and all(word.lower() in INSTRUMENT_WORDS
+                              for word in words[1:]):
+        candidates.append(words[0])
+    for candidate in candidates:
+        candidate = candidate.strip()
+        if not candidate or not TICKER_RE.match(candidate):
+            continue
+        row = _chart_meta_row(markets.yahoo_symbol(candidate.upper()))
+        if row:
+            return row
+    return None
+
+
+def _chart_meta_row(symbol: str) -> dict | None:
+    """One search row from the chart payload for `symbol`, or None."""
+    url = (f"https://{CHART_HOST}/v8/finance/chart/"
+           f"{urllib.parse.quote(symbol, safe='')}?range=5d&interval=1d")
+    try:
+        status, body = moli_get(url)
+        if status >= 400:
+            return None
+        result = ((json.loads(body).get("chart") or {}).get("result") or [None])[0]
+    except (UpstreamError, ValueError):
+        return None
+    if not result:
+        return None
+    meta = result.get("meta") or {}
+    kind = str(meta.get("instrumentType") or "").upper()
+    resolved = str(meta.get("symbol") or "").strip()
+    # A type the search route would have offered, a symbol to ask the chart
+    # route for, and at least one bar behind it: a row with no history is a
+    # row that cannot be drawn, which is the thing search exists to avoid.
+    if kind not in KEEP_QUOTE_TYPES or not resolved or not result.get("timestamp"):
+        return None
+    return {
+        "symbol": resolved,
+        "name": meta.get("longName") or meta.get("shortName") or resolved,
+        "exchange": (meta.get("fullExchangeName")
+                     or meta.get("exchangeName") or ""),
+        "type": kind,
+    }
+
+
 def yahoo_is_wrong(symbol: str, data: dict) -> bool:
     """Is Yahoo charting a different instrument than this ticker names?
 
@@ -2840,6 +3140,10 @@ def chart_key(symbol: str, span: str, interval: str) -> str:
         # bars live under their own key (`phfunds.CACHE_PREFIX`) because they
         # are shared with the recent table's row, and the finished chart is not.
         return f"fund:{symbol.strip().upper()}:{span}:{interval}"
+    if ondo.is_ondo_symbol(symbol):
+        # A token Yahoo has no spelling for at all (see `ondo.py`), so its chart
+        # needs a key of its own; nothing else in the project stores a `ondo:`.
+        return f"ondo:{symbol.strip().upper()}:{span}:{interval}"
     quoted = urllib.parse.quote(symbol, safe="")
     return (f"https://{CHART_HOST}/v8/finance/chart/{quoted}"
             f"?range={span}&interval={interval}")
@@ -2917,6 +3221,20 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
         # Philippine fund, so the only thing a round trip could add is a
         # misleading "may be delisted".
         raise LookupError("%r is not one of the funds this page charts." % symbol)
+    elif ondo.is_ondo_symbol(symbol):
+        # A token neither Yahoo nor TradingView quotes: OUSG has no spelling
+        # Yahoo's index or chart route answers at all (measured 2026-11-02 --
+        # see `ondo.py`), so asking it would spend a Moli round trip to earn a
+        # guaranteed 404. DeFiLlama prices the contract on chain.
+        def token_produce():
+            return ondo.chart(symbol, span, interval)
+
+        data = cached(chart_key(symbol, span, interval), token_produce)
+    elif symbol.strip().upper().startswith(ondo.PREFIX):
+        # The same verdict the fund prefix earns: an `ONDO:` spelling this
+        # module does not know is about the symbol, not about the wire.
+        raise LookupError("%r is not one of the Ondo tokens this page charts."
+                          % symbol)
     elif pse.is_pse_symbol(symbol):
 
         def pse_produce():
@@ -2978,7 +3296,23 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
                 return yahoo               # disagreement, but nothing better
             raise yahoo_error
 
-        data = cached(url, produce)
+        try:
+            data = cached(url, produce)
+        except LookupError:
+            # A bare token ticker is not one of Yahoo's symbols and Yahoo has no
+            # spelling for the token at all, so "ousg" typed into the search box
+            # and submitted without picking the suggestion ended in "No usable
+            # price data" for an instrument the page can chart. Asked as the
+            # token, and only after Yahoo refused the typed spelling -- the same
+            # rule the Treasury contracts follow, so a listing that really
+            # trades under the bare ticker keeps its own chart. The chart is
+            # stored under the token's own key, so the second read of "OUSG"
+            # costs nothing upstream.
+            token_symbol = ondo.alias(symbol)
+            if not token_symbol:
+                raise
+            data = cached(chart_key(token_symbol, span, interval),
+                          lambda: ondo.chart(token_symbol, span, interval))
 
         # A currency cross Yahoo quotes but has no history for -- one bar,
         # not a series -- is divided out of its dollar legs instead. Guarded
@@ -3018,6 +3352,20 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
     # The cache holds one shared dict; the range/interval stamps are per
     # response, so callers get a copy, never the entry itself.
     out = dict(data)
+    # The peso pair's weekend, drawn from Coins.ph's USDC/PHP book: the FX week
+    # is Monday to Friday, so a chart read on a Saturday or a Sunday otherwise
+    # stops at Friday's close. Applied to the copy, after the memo, so the
+    # Yahoo-only answer stays what is stored and a weekend bar is never
+    # mistaken for a bar Yahoo published. Before the re-score below, because
+    # the badge must read the series the plot draws.
+    if interval == "1d" and coinsph.is_usd_php(symbol):
+        out = weekend_proxy(out)
+    # The session trading now, when Yahoo has not published a bar for it yet:
+    # the chart draws that print as today's point instead of stopping at
+    # yesterday's official close (see `live_point`). Before the re-score below,
+    # because the badge reads the series the plot draws.
+    if interval == "1d":
+        out = live_point(out)
     if pse.is_pse_symbol(symbol) and out.get("source") == "TradingView" and not out.get("longTermContext"):
         out["longTermContext"] = {"status": "insufficient",
                                   "reason": "Longer history was not saved in this cached chart"}
@@ -3040,6 +3388,25 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
     out["trend"] = call
     out["range"] = span
     out["interval"] = interval
+    # The last *finished* PSE session, in pesos: the newest drawn bar that is
+    # not dated today in Manila, times its volume. Decided here, not in
+    # `pse.chart`, for the same reason `lastBarBasis` is decided here -- a
+    # payload fetched mid-session and served hours later (or tomorrow, from a
+    # disk copy) must not keep reporting the day it was fetched on. Daily only:
+    # a weekly bar's volume is a week's, so its product is not a trading day's
+    # value. Every source but TradingView's PSE leg carries no `volumes`, and
+    # `completed_trade` answers None for them, so the readout simply hides.
+    if interval == "1d" and pse.is_pse_symbol(symbol):
+        traded_day, traded_shares, traded_value = pse.completed_trade(
+            out.get("points") or [],
+            out.get("volumes") or [],
+            now=time.time())
+        out["tradedDay"] = traded_day
+        out["tradedShares"] = traded_shares
+        out["tradedTurnover"] = traded_value
+    # Separate from the descriptive badge: project the drawn daily returns,
+    # including mean-estimation uncertainty and assumed round-trip costs.
+    out["profitProbability"] = probability.estimate(out)
     # What the newest bar's number is -- a live price, an extended-hours print
     # or a settled close -- decided from the payload and the clock *now*, so a
     # chart served from the memory memo or from a disk copy cannot claim to be
@@ -3340,13 +3707,23 @@ class Handler(SimpleHTTPRequestHandler):
                f"&quotesCount=10&newsCount=0&enableFuzzyQuery=false")
 
         def produce():
+            # A refused search is an *empty* answer here, not a failure of the
+            # whole route. Yahoo 500s some queries outright (see
+            # `probe_ticker`), and raising used to abort the supplements below
+            # with it, so a reader typing "vtv" got an error page instead of a
+            # row and a Philippine fund query got nothing when the index
+            # hiccuped. `moli_get` failing at the transport level still raises:
+            # that is the browser, not the index.
+            quotes = []
             status, body = moli_get(url)
-            if status >= 400:
-                raise UpstreamError(f"Upstream HTTP {status}")
-            payload = json.loads(body)
+            if status < 400:
+                try:
+                    quotes = json.loads(body).get("quotes") or []
+                except ValueError:
+                    quotes = []           # a body that is not the JSON it claims
             results = []
             seen = set()
-            for quote in payload.get("quotes") or []:
+            for quote in quotes:
                 symbol = quote.get("symbol")
                 if not symbol or quote.get("quoteType") not in KEEP_QUOTE_TYPES:
                     continue
@@ -3357,6 +3734,17 @@ class Handler(SimpleHTTPRequestHandler):
                     "exchange": quote.get("exchDisp") or "",
                     "type": quote.get("quoteType") or "",
                 })
+
+            # Nothing from Yahoo at all, and the query is itself a ticker: ask
+            # the chart route whether that symbol exists. This is what finds
+            # VTV, whose every search query the index answers with HTTP 500 --
+            # and what keeps a *dead* ticker denied, since only a symbol the
+            # chart route draws becomes a row.
+            if not results:
+                probed = probe_ticker(text)
+                if probed:
+                    results.append(probed)
+                    seen.add(probed["symbol"].upper())
 
             # Yahoo has no listing for some coins at all -- the real Jupiter
             # among them -- so no query can surface them. Add what the coin
@@ -3396,6 +3784,18 @@ class Handler(SimpleHTTPRequestHandler):
             # well as by the code a row prints (`BPI-HLTH`). A `FUND:` symbol
             # cannot collide with a Yahoo one.
             for match in phfunds.search_funds(text):
+                key = match["symbol"].upper()
+                if key not in seen:
+                    results.append(match)
+                    seen.add(key)
+
+            # Nor tokens: OUSG is in no Yahoo answer at all -- `/search?q=ousg`
+            # returns an empty list, `/lookup?query=ousg` reports `total: 0`,
+            # and every chart spelling is a 404 (measured 2026-11-02, see
+            # `ondo.py`) -- even though the page charts it from the contract's
+            # on-chain price. The row carries the `ONDO:` prefix, so it cannot
+            # collide with a Yahoo symbol.
+            for match in ondo.search_tokens(text):
                 key = match["symbol"].upper()
                 if key not in seen:
                     results.append(match)
