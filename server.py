@@ -111,6 +111,7 @@ import diskcache
 import ecb
 import markets
 import ondo
+import ondolist
 import onset as onset_module
 import phfunds
 import probability
@@ -374,8 +375,8 @@ def moli_run(page: str, script: str,
     """
     if not os.path.exists(MOLI):
         raise UpstreamError(
-            f"moli not found at {MOLI!r}. Install Moli from "
-            "https://github.com/lexmount/moli/releases/latest, or set MOLI_BIN."
+            f"moli not found at {MOLI!r}. Install it from the latest release "
+            "(see ~/.claude/skills/moli-webfetch/SKILL.md), or set MOLI_BIN."
         )
     popen = subprocess.Popen(
         [MOLI, "fetch", "--eval", script,
@@ -1425,6 +1426,23 @@ def seed_recent() -> None:
             seeded["stats"] = stats
         # The note is rebuilt from the rows and stats that survive the filter,
         # so a seeded table cannot describe a wider table than it draws.
+        #
+        # The leaning rows get the shelf filter again, against the copy on
+        # disk (`ondolist.saved`, no network): a table swept before this rule
+        # existed, or before a name was delisted, must not show a row the
+        # reader cannot buy. With no stored shelf the rows stand -- an outage
+        # is not a listing fact, and the next sweep re-decides.
+        if seeded.get("leaning"):
+            shelf = ondolist.saved()
+            seeded["leaning"] = recent.actionable(seeded["leaning"], shelf)
+            # The page says which shelf the list was filtered against, and
+            # when -- a seeded copy was swept at some earlier moment, so it
+            # must not claim that moment as the shelf's age.
+            seeded["ondoShelf"] = None if shelf is None else {
+                "count": shelf.get("count"),
+                "fetchedAt": int(shelf.get("fetchedAt") or 0),
+                "cached": bool(shelf.get("cached")),
+            }
         seeded["note"] = recent.summarize(seeded)
         seeded["cached"] = True
         seeded["fetchedAt"] = int(fetched_at)
@@ -1487,7 +1505,8 @@ def recent_loop() -> None:
             ph_state = bullish_state()
             payload = recent.scan(ph_sweep_rows=ph_state.get("rows") or [],
                                   fetch_us_bars=fetch_us_bars,
-                                  ph_sweep_leaning=ph_state.get("leaning") or [])
+                                  ph_sweep_leaning=ph_state.get("leaning") or [],
+                                  ondo_shelf=ondolist.shelf())
             payload["checkedAt"] = int(time.time())
             # The one-line summary of the sweep, drawn by the same module that
             # knows what was judged -- so the note and the rows cannot disagree

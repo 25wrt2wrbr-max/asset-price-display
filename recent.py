@@ -110,6 +110,7 @@ import concurrent.futures
 import crypto
 import cryptobull
 import markets
+import ondolist
 import onset as onset_module
 import phfunds
 import pse
@@ -142,6 +143,17 @@ CRYPTO_LIMIT = 25
 # with no traded volume at all -- the bond yields, and every fund -- are exempt:
 # the floor tests traded volume, and none is not "too little".
 MIN_TURNOVER_PHP = 1_000_000
+
+# What the leaning table is allowed to show, at the reader's request
+# (2026-11-06): only what can be bought at app.ondo.finance. A United States
+# row must have an Ondo token (`ondolist`), and a leg whose instruments that
+# shelf does not carry at all -- the Philippine funds -- keeps no leaning rows.
+#
+# The filter is on the leaning list alone. The bullish table above it is a
+# statement about what turned, not a shopping list, and no market was asked to
+# leave it.
+ONDO_CHECKED_MARKETS = ("US",)
+ONDO_ABSENT_MARKETS = ("Philippine fund",)
 
 # The Philippine government bond yields, and what they are called. Two-year,
 # five-year, ten-year: the short, the middle and the long of the curve, so the
@@ -283,6 +295,35 @@ def _lean_row(market: str, symbol: str, chart_symbol: str, ticker: str,
         "turnover": lean["turnover"],
         "chartable": True,
     }
+
+
+def actionable(leaning: list[dict], shelf: dict | None) -> list[dict]:
+    """The leaning rows a reader can act on at app.ondo.finance.
+
+    Three answers, and the middle one is the point:
+
+    * a United States row stays only when the shelf lists its ticker;
+    * a leg the shelf cannot carry at all (`ONDO_ABSENT_MARKETS`) keeps no row;
+    * every other market is untouched, because the request named the United
+      States listings and the funds, not the peso stocks or the coins.
+
+    `shelf` is None when the shelf could not be read and no copy was kept. That
+    is not "nothing is listed" -- it is an outage, and an outage must not hide
+    rows (invariant 3), so every row is kept and the payload says the filter
+    did not run.
+    """
+    if not shelf:
+        return list(leaning)
+    kept: list[dict] = []
+    for row in leaning:
+        market = row.get("market")
+        if market in ONDO_ABSENT_MARKETS:
+            continue
+        if market in ONDO_CHECKED_MARKETS and not ondolist.carries(
+                row.get("ticker"), shelf):
+            continue
+        kept.append(row)
+    return kept
 
 
 def us_rows(fetch_us_bars) -> tuple[list[dict], dict]:
@@ -809,7 +850,8 @@ def ph_lean_rows(sweep_leaning: list[dict]) -> list[dict]:
 
 
 def scan(ph_sweep_rows: list[dict] | None = None,
-         fetch_us_bars=None, ph_sweep_leaning: list[dict] | None = None) -> dict:
+         fetch_us_bars=None, ph_sweep_leaning: list[dict] | None = None,
+         ondo_shelf: dict | None = None) -> dict:
     """The whole table: every bullish instrument, the falling bond yields, the
     United States Treasury futures, and the funds.
 
@@ -819,6 +861,10 @@ def scan(ph_sweep_rows: list[dict] | None = None,
     curve's seven symbols. Both are arguments because the server owns both.
     The fund leg needs nothing injected: its sources answer plain HTTPS, so
     `phfunds.py` fetches them itself.
+
+    `ondo_shelf` is the list of assets app.ondo.finance carries (see
+    `ondolist.shelf`), or None when it could not be read. It filters the
+    leaning list only, through `actionable`.
 
     Raises `RecentError` when the table could not be assembled at all. One
     leg failing does not lose the others: a leg that failed is reported in
@@ -923,10 +969,21 @@ def scan(ph_sweep_rows: list[dict] | None = None,
                                       row.get("ticker") or ""))
     rows[:] = [row for row in rows if not row.get("lean")]
 
+    # ... and then out of the table entirely, unless the reader can act on it:
+    # a United States listing must be on the Ondo shelf, and the funds are not
+    # (see `actionable`). `ondoShelf` travels with the payload so the page can
+    # say which shelf it read, and when, instead of implying it is current.
+    leaning = actionable(leaning, ondo_shelf)
+
     return {
         "label": "Recently bullish assets",
         "rows": rows,
         "leaning": leaning,
+        "ondoShelf": None if ondo_shelf is None else {
+            "count": ondo_shelf.get("count"),
+            "fetchedAt": int(ondo_shelf.get("fetchedAt") or 0),
+            "cached": bool(ondo_shelf.get("cached")),
+        },
         "stats": stats,
         "fx": fx,
         "fxError": fx_error,
@@ -943,6 +1000,13 @@ def summarize(payload: dict) -> str:
     parts = [f"{rows} rows"]
     if payload.get("leaning") is not None:
         parts.append(f"{len(payload['leaning'])} leaning bullish")
+        # The leaning list is filtered onto app.ondo.finance (see
+        # `actionable`), so the note says so -- and says when it could not be,
+        # rather than letting an outage read like a shelf that carries none.
+        if payload.get("ondoShelf"):
+            parts.append("leaning rows are Ondo-listed only")
+        elif payload["leaning"]:
+            parts.append("Ondo list unavailable — leaning rows unfiltered")
     for market, detail in stats.items():
         count = detail.get("count")
         universe = detail.get("universe")

@@ -109,10 +109,7 @@ class ResearchJudgmentTests(unittest.TestCase):
         import bearish_forecast_research as prior
         import market_forecast_backtest as backtest
         import relative_forecast_research as relative
-        history_path = Path("research/pse-history.json")
-        if not history_path.is_file():
-            self.skipTest("research/pse-history.json is a local collection")
-        raw = json.loads(history_path.read_text())
+        raw = json.loads(Path("research/pse-history.json").read_text())
         sample_set, _ = backtest.observations({"bars": {"PSE:TEL": raw["bars"]["PSE:TEL"]}})
         current = next(s for s in sample_set if s["date"] == dt.date(2026, 7, 1))
         estimate = judgment.local.estimate(sample_set, current, "bearish")

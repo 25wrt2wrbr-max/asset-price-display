@@ -27,6 +27,12 @@
                                      against that tint at 13.5px. This clears
                                      AA on the tint (4.7:1) and on the bare
                                      surface (5.6:1). */
+    /* A lean is a lighter claim than a verdict, so it gets a lighter green and
+       a lighter red: #006300 / #c02f2f at 10px on their own 13% tint would read
+       as the confirmed pill twice. These measured 4.74:1 and 4.73:1 on that tint
+       through the page, and the lit row needs the extra step below. */
+    --lean-up:         #2a7134;
+    --lean-down:       #a8413c;
     --focus-ring:      #2a78d6;
   }
   @media (prefers-color-scheme: dark) {
@@ -43,6 +49,8 @@
       --series-1:       #3987e5;
       --delta-up:       #0ca30c;
       --delta-down:     #e66767;
+      --lean-up:        #57c463;
+      --lean-down:      #ef8f88;
       --focus-ring:     #3987e5;
     }
   }
@@ -59,6 +67,8 @@
     --series-1:       #3987e5;
     --delta-up:       #0ca30c;
     --delta-down:     #e66767;
+    --lean-up:        #57c463;
+    --lean-down:      #ef8f88;
     --focus-ring:     #3987e5;
   }
 
@@ -181,7 +191,17 @@
     border-radius: 9px; padding: 2px 2px 2px 0;
   }
   .watch-item:hover { background: color-mix(in srgb, var(--text-primary) 5%, transparent); }
-  .watch-item.is-active { background: color-mix(in srgb, var(--series-1) 12%, transparent); }
+  /* The row whose asset is the chart on screen. A 12% tint alone was too quiet
+     to find in a rail of fourteen rows -- it read as a hover that had stuck --
+     so the state is carried by a shape as well as a colour: an inset accent bar
+     on the leading edge, through `box-shadow` (not `border-left`) so the row
+     keeps its padding and nothing shifts sideways when the chart moves. The
+     tint is up to 18%, and it is *only* used for this, so it cannot be confused
+     with hover. */
+  .watch-item.is-active {
+    background: color-mix(in srgb, var(--series-1) 18%, transparent);
+    box-shadow: inset 4px 0 0 var(--series-1);
+  }
 
   /* ---- reordering ----
      Only the grip is draggable, so clicking anywhere else on the row still
@@ -219,6 +239,13 @@
      flush right even when the pill appears. In the rail the pill is the fixed
      part and the symbol is what gives way when a ticker is long. */
   .watch-id { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  /* A "leaning ..." tag is longer than a verdict pill, and the app's longest
+     symbol (`FUND:ALFM-GMAI-USD`, 18 characters) plus one does not fit even the
+     396px rail: measured 154px needed in 137px of room, and 81px given at the
+     340px rail's width. Rather than ellipsize the symbol or the tag, that row's
+     tag drops to a second line -- only rows that need it, only when they need
+     it, so every other row keeps its single-line shape. */
+  .watch-id:has(.watch-trend.leaning) { flex-wrap: wrap; row-gap: 2px; }
   .watch-sym {
     font-weight: 600; font-size: 13.5px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -245,6 +272,28 @@
   .watch-trend.bearish {
     color: var(--delta-down); border-color: color-mix(in srgb, var(--delta-down) 40%, transparent);
     background: color-mix(in srgb, var(--delta-down) 10%, transparent);
+  }
+  /* A neutral window can still sit inside one side's hold band. Such a row
+     carries this tag instead of a plain "Neutral": the label itself stays
+     Neutral (trend.py's `lean`, never a second verdict), and the tag is a paler
+     green / red than a confirmed one, with the words "leaning" rather than
+     "bullish", so it is never read as a verdict. One tag, not two: a second
+     pill beside "Neutral" left a 340px rail only 22px for `USDPHP=X`. */
+  .watch-trend.leaning {
+    border-style: dashed;
+    border-color: color-mix(in srgb, var(--lean-line) 55%, transparent);
+    background: color-mix(in srgb, var(--lean-line) 13%, transparent);
+    color: var(--lean-line);
+  }
+  .watch-trend.leaning.bullish { --lean-line: var(--lean-up); }
+  .watch-trend.leaning.bearish { --lean-line: var(--lean-down); }
+  /* The charted row sits on the rail's palest tint (18% of the series colour),
+     and a light green or red on it measured 3.85:1 -- under AA for 10px text.
+     Mixing 70% of the shade with the theme's own text colour fixes it in both
+     themes at once: light text-primary darkens the tag on the light tint, and
+     the dark theme's near-white lightens it on the dark one. */
+  .watch-item.is-active .watch-trend.leaning {
+    color: color-mix(in srgb, var(--lean-line) 70%, var(--text-primary));
   }
   .watch-sub { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
   .watch-name { color: var(--text-muted); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -864,7 +913,6 @@ const state = {
   sugIndex: -1,
   watch: [],           // [{symbol, name}] — the saved list, in display order
   watchQuotes: {},     // symbol -> {data} | {error} | {loading:true}
-  watchActive: null,   // symbol currently shown in the chart
   chartSymbol: null,   // the symbol the plot is showing, for the refresh timer
   chartSeq: 0,         // guards a late answer from overwriting a newer one
   chartLoadedAt: 0,    // when the chart on screen was last answered
@@ -1073,16 +1121,12 @@ async function loadChart(symbol, { quiet = false } = {}) {
     state.chartSymbol = data.symbol;   // what the refresh clock re-asks for
     state.chartLoadedAt = Date.now();  // and when it last got an answer
     state.activeIndex = null;
-    // Highlight the matching watchlist row. Compare on the *returned* symbol, so
-    // a lowercase "aapl" still lights up the saved "AAPL" row.
-    const key = String(data.symbol).toUpperCase();
-    state.watchActive = state.watch.some((it) => it.symbol.toUpperCase() === key)
-      ? data.symbol : null;
     // Keyed on the symbol as *asked for*, so an entry still filed under a raw
     // ticker is found; the payload then canonicalises it.
     setWatchQuote(wanted, quoteSummary(data), data);  // selecting an asset refreshes its quote
     renderAll();
     drawWatchList();                            // repaint the active-row highlight
+    if (!quiet) scheduleReveal();               // and bring it into view if it is below the fold
     // A disk fallback arrives over a successful HTTP response — the server
     // answered, it just could not reach the source. Name the outage in the
     // status line (not styled as an error: the chart *did* load) so the reader
@@ -1914,8 +1958,9 @@ function setWatchQuote(symbol, entry, payload) {
   const item = watchEntry(symbol) || watchEntry(payload && payload.symbol);
   if (!item) return;
 
-  // Capture the old spelling *before* overwriting it — drag state and the
-  // active-row highlight are keyed on the symbol as it was.
+  // Capture the old spelling *before* overwriting it — drag state is keyed on
+  // the symbol as it was. (The active-row highlight needs no fix-up: it is
+  // derived from the chart on screen, not stored against a spelling.)
   const was = item.symbol;
   const canonical = payload && payload.symbol ? String(payload.symbol).trim() : was;
   const realName = payload && payload.name ? String(payload.name).trim() : "";
@@ -1924,7 +1969,6 @@ function setWatchQuote(symbol, entry, payload) {
   if (canonical && canonical.toUpperCase() !== was.toUpperCase()) {
     item.symbol = canonical;
     if (dragSymbol === was) dragSymbol = canonical;
-    if (state.watchActive === was) state.watchActive = canonical;
     delete state.watchQuotes[was];
     changed = true;
   } else if (canonical && canonical !== was) {
@@ -1947,6 +1991,94 @@ function isWatched(symbol) {
   return watchEntry(symbol) !== null;
 }
 
+/* ---- which row is the chart on screen ----
+
+   The rail lights the row whose asset is being drawn, and *which* row that is
+   is derived from the chart on screen every time the list is painted. It used
+   to be a snapshot taken in `loadChart`, which was wrong the moment the reader
+   did anything else: chart MSFT, press Add, and the row now holding the asset
+   in front of them stayed dark — as it did for a row restored from disk, one
+   renamed to the server's spelling, or one that arrived after the chart. Two
+   functions, no state to keep in sync: one decides, `drawWatchList` paints. */
+function activeWatchKey() {
+  return state.chartSymbol ? String(state.chartSymbol).trim().toUpperCase() : null;
+}
+
+function isWatchActive(item) {
+  const key = activeWatchKey();
+  if (!key) return false;
+  if (item.symbol.toUpperCase() === key) return true;
+  // A row can be saved under a spelling the server answers separately from the
+  // one on screen: `USDPHP=X` and `PHP=X` are one price line (`coinsph.SYMBOLS`
+  // names both), the page opens on the first and the search box offers the
+  // second. Comparing the saved letters alone would leave the row dark with its
+  // own series drawn beside it, so the instrument itself is compared too.
+  const quote = state.watchQuotes[item.symbol];
+  const drawn = quote && quote.data;
+  if (!drawn) return false;
+  if (String(drawn.symbol || "").trim().toUpperCase() === key) return true;
+  return sameInstrument(drawn, state.data);
+}
+
+/* Name, venue, instrument type and currency together name a listing; two
+   different instruments do not share all four, and two spellings of one pair
+   share them exactly (measured 2026-11-04: `USDPHP=X` and `PHP=X` both read
+   "USD/PHP" / CCY / CURRENCY / PHP while their last closes differed in the
+   sixth decimal, which is a fetch a minute apart, not a different asset). A
+   payload missing any of the four proves nothing and matches nothing. */
+function sameInstrument(a, b) {
+  if (!a || !b) return false;
+  const bits = (d) =>
+    [d.name, d.exchange, d.type, d.currency].map((v) => String(v || "").trim().toUpperCase());
+  const x = bits(a);
+  const y = bits(b);
+  if (x.some((v) => !v)) return false;
+  return x.every((v, i) => v === y[i]);
+}
+
+/* The saved entry for the chart on screen, or null. */
+function activeWatchItem() {
+  return state.watch.find((item) => isWatchActive(item)) || null;
+}
+
+/* The rail scrolls its own box (`max-height: 60vh`), so a lit row below the
+   fold is brought into view by moving the *list's* scrollTop — never the
+   page's. A page-level reveal would push the chart off screen in the stacked
+   layout, which is the opposite of helping. A live drag owns the scroll
+   position, so the reveal stands down while one is running.
+
+   It runs in a frame, never in the fetch callback: a chart answer lands before
+   the rows have been laid out, and `scrollHeight`/`getBoundingClientRect` read
+   0/0 there (measured 2026-11-04 — with twenty rows in the DOM and a 540 px
+   rail, every cold load read 0/0). So it asks again frame by frame, for a few
+   seconds at most, and gives up quietly: a rail that never gets a layout (a
+   hidden tab, a collapsed box) has nothing to scroll. */
+const REVEAL_PATIENCE = 4000;   // ms of frame-by-frame asking
+
+function scheduleReveal() {
+  requestAnimationFrame(() => revealActiveRow(Date.now() + REVEAL_PATIENCE));
+}
+
+function revealActiveRow(deadline = 0) {
+  if (dragSymbol !== null) return;      // a live drag owns the scroll position
+  const list = el.watchList;
+  // Nothing measured yet: the rows are in the DOM but the frame has not been
+  // laid out. Ask again next frame rather than compare zeroes and decide the row
+  // is on screen; a rail that never gets a layout runs the asking out quietly.
+  const again = () => {
+    if (Date.now() < deadline) requestAnimationFrame(() => revealActiveRow(deadline));
+  };
+  if (!list.clientHeight) return again();
+  if (list.scrollHeight <= list.clientHeight + 1) return;   // nothing hidden
+  const row = [...list.children].find((r) => r.classList.contains("is-active"));
+  if (!row) return;
+  const box = list.getBoundingClientRect();
+  const r = row.getBoundingClientRect();
+  if (!box.height || !r.height) return again();
+  if (r.top < box.top) list.scrollTop -= box.top - r.top;
+  else if (r.bottom > box.bottom) list.scrollTop += r.bottom - box.bottom;
+}
+
 /* The saved entry for a symbol, under any casing, or null. */
 function watchEntry(symbol) {
   const key = String(symbol || "").trim().toUpperCase();
@@ -1967,6 +2099,10 @@ function addToWatch(symbol, name) {
   saveWatch();
   drawWatchList();
   fetchWatchQuote(sym);
+  // The asset the reader is looking at is now on the list, so its row lights up
+  // at once (the highlight is derived, not remembered) and is scrolled into view
+  // when the rail hides it behind its own overflow.
+  scheduleReveal();
   setStatus(`Added ${sym} to the watchlist.`);
 }
 
@@ -1978,7 +2114,6 @@ function removeFromWatch(symbol) {
   Object.keys(state.watchQuotes).forEach((stored) => {
     if (stored.toUpperCase() === key) delete state.watchQuotes[stored];
   });
-  if (state.watchActive && state.watchActive.toUpperCase() === key) state.watchActive = null;
   saveWatch();
   drawWatchList();
 }
@@ -1987,6 +2122,9 @@ function removeFromWatch(symbol) {
    never blocks the list — each row resolves on its own. */
 async function fetchWatchQuote(symbol) {
   if (!isWatched(symbol)) return;
+  // The saved entry, held across the await: `setWatchQuote` may rename it to the
+  // server's spelling, and the live object answers the question below either way.
+  const item = watchEntry(symbol);
   setWatchQuote(symbol, { loading: true });
   drawWatchList();
   try {
@@ -2000,6 +2138,11 @@ async function fetchWatchQuote(symbol) {
     setWatchQuote(symbol, { error: err.message });
   }
   drawWatchList();
+  // A row that has just gained its price line and its odds line is taller than
+  // the row the chart revealed a second earlier, so the lit row can slide under
+  // the rail's edge. Re-reveal for *that row only*: another row's quote landing
+  // must never move the rail under the reader.
+  if (item && isWatchActive(item)) scheduleReveal();
 }
 
 function refreshWatchQuotes() {
@@ -2040,7 +2183,8 @@ async function pollHealth() {
   if (edges === healthEdges) return;
   healthEdges = edges;
   refreshWatchQuotes();
-  if (state.watchActive) loadChart(state.watchActive);
+  // Re-read the chart on screen only if it is one of the rows just refreshed.
+  if (state.chartSymbol && activeWatchItem()) loadChart(state.chartSymbol);
 }
 
 /* Kept current like the tables above: visible-only, so a background tab costs
@@ -2267,6 +2411,12 @@ function nudgeWatch(symbol, step) {
 
 function drawWatchList() {
   const list = el.watchList;
+  // A repaint is not a scroll. Emptying the list to rebuild it drops the
+  // container's scrollTop to 0 for the length of that frame, so every quote
+  // arriving yanked a long rail back to its first row — and with it undid the
+  // reveal of the lit row, which is the whole point of the highlight. The rail's
+  // own position is therefore captured here and put back before returning.
+  const keepTop = list.scrollTop;
   list.textContent = "";                    // untrusted labels -> no innerHTML
   el.watchCount.textContent = state.watch.length ? `${state.watch.length}` : "";
 
@@ -2291,17 +2441,25 @@ function drawWatchList() {
     const r = q && q.data && q.data.profitProbability;
     return Boolean(r && Number.isFinite(r.probability));
   });
+  // A lighter tag is a lean, not a verdict: the key sentence gains a clause
+  // about it only once one is on screen.
+  const anyLean = state.watch.some((it) => {
+    const q = state.watchQuotes[it.symbol];
+    const t = q && q.data && q.data.trend;
+    return Boolean(t && t.label === "neutral" && TREND_WORD[t.lean]);
+  });
   el.watchHint.textContent = (
     state.watch.length > 1
       ? "Click a symbol to chart it. Drag the grip — or focus it and press ↑/↓ — to reorder."
       : "Click a symbol to chart its last three months."
-  ) + (anyVerdict ? " Each tag is that row's three-month verdict." : "")
+  ) + (activeWatchItem() ? " The highlighted row is the chart on screen." : "")
+    + (anyVerdict ? " Each tag is that row's three-month verdict" +
+        (anyLean ? ", and a lighter tag is a lean it has not confirmed." : ".") : "")
     + (anyOdds ? " The odds figure is each chart's own three-month estimate." : "");
 
   state.watch.forEach((item) => {
     const quote = state.watchQuotes[item.symbol];
-    const active = state.watchActive
-      && state.watchActive.toUpperCase() === item.symbol.toUpperCase();
+    const active = isWatchActive(item);
 
     // The row's verdict. `quote.data` is the very payload the chart draws, so
     // this label is the chart's own badge, not a second opinion about the
@@ -2312,6 +2470,13 @@ function drawWatchList() {
     const verdictScore = verdict && Number.isFinite(trend.score)
       ? ` (score ${trend.score >= 0 ? "+" : "−"}${Math.abs(trend.score).toFixed(2)})`
       : "";
+    // A neutral window inside one side's hold band says so, in the chart's own
+    // terms: `trend.lean` is the classifier's own field, not a second reading.
+    // Its label stays Neutral — a lean is not a verdict, so the tag it draws
+    // says "leaning", never "Bullish".
+    const lean = verdict === "neutral" && TREND_WORD[trend.lean] ? trend.lean : null;
+    const leanPct = lean && Number.isFinite(trend.progress)
+      ? Math.round(trend.progress * 100) : null;
 
     // The chart's own 0-1 odds for the next three months, from the same payload
     // the chart prints. A yield, a futures contract whose chart supports no
@@ -2329,6 +2494,7 @@ function drawWatchList() {
     pick.setAttribute("aria-label",
       `Chart ${item.name} (${item.symbol})` +
       (verdict ? `, trend ${TREND_WORD[verdict]}` : "") +
+      (lean ? `, leaning ${lean}` : "") +
       (oddsP === null ? "" : `, three-month profit odds ${oddsP.toFixed(2)}`));
     if (active) pick.setAttribute("aria-current", "true");
 
@@ -2340,7 +2506,22 @@ function drawWatchList() {
     sym.className = "watch-sym";
     sym.textContent = item.symbol;
     id.append(sym);
-    if (verdict) {
+    if (lean) {
+      // The lean replaces the plain Neutral tag rather than sitting beside it.
+      // "leaning bullish" already implies the verdict is Neutral, and the second
+      // pill cost the symbol 55px -- at a 340px rail that read "US…" for
+      // `USDPHP=X`. The tooltip and the accessible name still say Neutral out
+      // loud, so nothing is hidden, only shortened.
+      const leanTag = document.createElement("span");
+      leanTag.className = "watch-trend leaning " + lean;
+      leanTag.textContent = `leaning ${lean}`;
+      leanTag.title =
+        `Neutral on the chart, leaning ${lean}: inside the band that keeps a ` +
+        `${lean} label` +
+        (leanPct === null ? "" : `, ${leanPct}% of the way to earning one`) +
+        ` — not confirmed. The label stays Neutral.`;
+      id.append(leanTag);
+    } else if (verdict) {
       const tag = document.createElement("span");
       tag.className = "watch-trend " + verdict;
       tag.textContent = TREND_WORD[verdict];
@@ -2459,6 +2640,7 @@ function drawWatchList() {
 
   syncWatchToggle();
   dragRepaint();   // a drag outlives the rows it started on
+  list.scrollTop = keepTop;   // the rail keeps the place the reader left it in
 }
 
 /* The charted asset is the only thing the toggle can add, so it mirrors
@@ -3388,7 +3570,7 @@ function drawLeaning(payload) {
   title.textContent = "Neutral on the chart, leaning bullish";
   const sub = document.createElement("span");
   sub.className = "card-sub";
-  sub.textContent = `${rows.length} rows`;
+  sub.textContent = `${rows.length} rows · Ondo-listed`;
   head.append(title, sub);
   card.append(head);
 
@@ -3475,11 +3657,17 @@ function drawLeaningNote(payload) {
     return;
   }
   const n = (payload.leaning || []).length;
+  const shelf = payload.ondoShelf;
+  const shown = shelf
+    ? " Only assets listed at app.ondo.finance are shown — a United States row needs an Ondo token, " +
+      "and the funds are not on that shelf. Shelf read " +
+      new Date(shelf.fetchedAt * 1000).toLocaleString() + "."
+    : " The app.ondo.finance list could not be read, so nothing was filtered out of this list.";
   el.leaningNote.textContent =
     `${n} assets whose own chart reads Neutral but sit in the band that keeps a bullish label ` +
     "(score ≥ 0.15, drift t ≥ 1.0) without meeting the bar that earns one (score ≥ 0.25, t ≥ 1.96). " +
     "Closest to Bullish first. Measured on saved history: about 1 in 4 of these became Bullish within " +
-    "the next ~20 bars. Not a buy signal.";
+    "the next ~20 bars. Not a buy signal." + shown;
 }
 
 async function loadRecent() {
@@ -3511,8 +3699,8 @@ refreshWatchQuotes();
 // the *load-time* declaration: `saveWatch` only fires on a change, so without
 // this a page that merely opens and reads never tells the server anything.
 pollHealth();
-el.input.value = "BTC-USD";
-loadChart("BTC-USD");
+el.input.value = "USDPHP=X";
+loadChart("USDPHP=X");
 loadLeaders();
 loadCryptobull();
 loadBullish();

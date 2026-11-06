@@ -1,5 +1,184 @@
 # asset-price-display — agent notes
 
+## The leaning table sells only what Ondo sells (2026-11-06)
+
+Asked for by name: "regarding 'Leaning bullish — not confirmed', remove US
+stocks/funds not available @ app.ondo.finance". The table is a shortlist of
+near-misses; a row for something the reader cannot buy is not a shortlist entry.
+
+`ondolist.py` is the shelf: `app.ondo.finance/sitemap.xml` publishes one URL per
+listed asset (`/assets/nvdaon`, and the two yield funds bare, `/assets/ousg`),
+so membership is exact and no hand-kept list can drift. Measured 2026-11-06:
+**476 assets** listed.
+
+Five rules:
+
+1. **The shelf is a fetch, cached, and its absence is an outage.** A copy under
+   `CACHE_TTL` (6 h) skips the request; a failed request falls back to a copy
+   under `CACHE_KEEP` (14 days) and marks it `cached`; with neither, `shelf()`
+   answers None and **every row stays** — invariant 3, a missing fetch is not a
+   listing fact. Plain HTTPS, no browser, no key.
+2. **Spelling is compared with separators removed on both sides.** `BRK.B` is
+   tried as `brk-b` and `brkb`, and the shelf's own `brk.bon` as `brkbon`, so a
+   scanner's dot and Yahoo's dash and the site's spelling meet on one answer.
+3. **Two markets are filtered, and only those.** A `US` row needs an Ondo
+   token; `Philippine fund` keeps no row, because no Philippine fund is on that
+   shelf. Philippines stocks, crypto and the bond yields are untouched — the
+   request named the United States listings and the funds, not those.
+4. **The filter is on the leaning list alone.** The bullish table above it is a
+   statement about what turned, not a shopping list, and no market was asked to
+   leave it.
+5. **A seeded copy is re-filtered on read, from disk only.** `seed_recent` runs
+   `recent.actionable` against `ondolist.saved()` (no socket at startup), so a
+   table swept before this rule cannot put `GILD` back on screen. The payload
+   carries `ondoShelf` (`count`, `fetchedAt`, `cached`) and the page prints the
+   read time; with no shelf it says the list could not be read rather than
+   implying nothing is listed.
+
+Measured through the page 2026-11-06: the shelf read **476 assets**; the table
+went 18 leaning rows → **15** — `US BRK.B` and `US GILD` are not on the shelf,
+and the one fund row (`ALFM-PESO`) went with its leg — while every other row
+stayed: `US ACN, PG, V, MA, ABBV, COST, ISRG`, `Philippines PHR, PNB, MWIDE,
+FCG, PHA`, `Crypto NEARUSDT, ZECUSDT, UNIUSDT`. Card subtitle reads "15 rows ·
+Ondo-listed", the note adds the shelf's read time, and the server note adds
+"leaning rows are Ondo-listed only".
+
+`test_ondolist.py` covers the parse, the membership spelling, both cache ages,
+the no-shelf fallback and the filter's three answers (13 tests). Suite: 353
+tests OK.
+
+## The rail tag says which way a neutral row leans (2026-11-06)
+
+Asked for by name: "also add \"leaning bullish\" or \"leaning bearish\" in the
+watchlist section, color each light green and light red respectively." A row
+could only ever say Bullish, Bearish or Neutral, so the rail was the one place
+the chart's own "Neutral · leaning bullish" badge had no counterpart — even
+though `trend.classify` has returned `lean` since the leaning table shipped, and
+the payload therefore already carried it.
+
+Five rules:
+
+1. **The tag replaces `Neutral`; it is not a second pill beside it.** The first
+   build drew both, and a 340 px rail (310 px of list) had 22 px left for the
+   symbol: `USDPHP=X` rendered as `US…`, `PSE:PHR` as `P…`. "leaning bullish"
+   already implies the verdict is neutral, so one tag carries both facts:
+   measured 82 px for `leaning bullish` and 86 px for `leaning bearish`, against
+   48.6 px for `Neutral`, and every real ticker then fitted with room to spare
+   (at 310 px: `PSE:PHR` 53, `NVDA` 36, `USDPHP=X` 69, `SHIB-USD` 62 — none
+   clipped, the row never overflows sideways).
+2. **The lean is the classifier's field, not a second reading.** It is derived
+   at paint time from the row's own quote — `trend.label === "neutral" &&
+   trend.lean` — and that quote *is* the `/api/chart` payload. A row charting
+   `TVC:PH10Y` still reads `Bearish`; a neutral row in no hold band still reads
+   `Neutral`; a row whose fetch failed still reads nothing at all. The bond
+   reversal comes along for free, because `tv.bond_price_call` already flips
+   `lean` with the label.
+3. **Light is a shade, and it is measured.** New tokens `--lean-up` /
+   `--lean-down` per theme — light `#2a7134` / `#a8413c`, dark `#57c463` /
+   `#ef8f88` — on the verdict pill's own construction (dashed border, 13% tint)
+   so a lean is visibly softer than a confirmed Bullish/Bearish chip. Measured
+   through the page: **4.74:1** and **4.73:1** on a light row, **7.23:1** and
+   **6.88:1** on a dark one.
+4. **The lit row needs one correction, and only one.** The charted row's tint
+   is the palest base in the rail (18% of `--series-1`); a light green on it read
+   **3.85:1**, under AA for 10 px text. `.watch-item.is-active .watch-trend
+   .leaning` therefore mixes 70% of the shade with `--text-primary` — which
+   darkens it in the light theme and lightens it in the dark one, so one rule
+   fixes both: **5.84:1** light, **7.12:1** dark.
+5. **The tag wraps instead of ellipsizing.** `FUND:ALFM-GMAI-USD` is 18
+   characters and one of the nine funds that lean right now; with a leaning tag
+   it needed 154 px in the 137 px the 396 px rail leaves it. Rather than cut
+   either the symbol or the tag, `.watch-id:has(.watch-trend.leaning)` wraps, so
+   only that row's tag drops to a second line (76 px → 97 px tall). Everything
+   that fits stays on one line: at 310 px only the two long fund codes wrapped,
+   and no row clipped a symbol at any width tested (1440, 1240, 1100, 520).
+
+The words are in the row's accessible name (`Chart NVIDIA Corporation (NVDA),
+trend Neutral, leaning bearish, three-month profit odds 0.25`), the tooltip
+spells out *"Neutral on the chart, leaning bearish: inside the band that keeps a
+bearish label, 51% of the way to earning one — not confirmed"*, and the rail
+hint gained one clause: "Each tag is that row's three-month verdict, and a
+lighter tag is a lean it has not confirmed."
+
+Page-only change: `index.html` (two token pairs, the leaning pill rules, the lit
+row correction, the wrap rule, the tag builder, the hint clause). No Python
+module touched; suite: 334 tests OK. Verified on a real browser through Moli's
+CDP endpoint (`moli serve --layout`, 1440×900 light and dark, 1240×900,
+1100×900 and 520×1400) — note that Moli reports compatibility geometry until a
+paint: `Page.captureScreenshot` is what turns `getBoundingClientRect` into real
+boxes, and every number above is from a run that painted first.
+
+## The rail lights the chart you are looking at (2026-11-04)
+
+Asked for by name: "if shown price graph asset is in watchlist, there should be a
+highlight on that asset in the watchlist section." A row was already tinted when
+its asset was charted, but the tint was 12% of `--series-1` — the weakest mark in
+the rail — and the state behind it was a **snapshot taken in `loadChart`**, so it
+was only right for the instant the chart answered. Measured through the page
+before the change: chart MSFT, press Add to watchlist, and the row now holding
+the asset on screen stayed dark; a row saved as `USDPHP=X` never lit for the
+`PHP=X` chart the search box offers for the same series.
+
+Seven rules:
+
+1. **The highlight is derived, never remembered.** `state.watchActive` is gone;
+   `isWatchActive(item)` compares the row against `state.chartSymbol` at paint
+   time, and `drawWatchList` is the only painter. That one change is what makes
+   the highlight survive an add, a reload from disk, a reorder, a rename to the
+   server's spelling, and a quote arriving after the chart.
+2. **The instrument is compared, not the letters.** `sameInstrument` matches a
+   row's own `/api/chart` payload to the chart on screen on `name`, `exchange`,
+   `type` and `currency` — the four fields that name a listing. `USDPHP=X` and
+   `PHP=X` are one price line (`coinsph.SYMBOLS` says so server-side) and both
+   read `USD/PHP` / `CCY` / `CURRENCY` / `PHP`, while their last closes differed
+   in the sixth decimal — a fetch a minute apart, not a different asset. Two
+   different instruments sharing all four is not a case: same venue, same name,
+   same type, same currency and two prices does not exist. A payload missing any
+   of the four matches nothing.
+3. **No data, no highlight** — invariant 3's shape. A chart that failed leaves
+   nothing lit, and a chart of an asset that is not on the list lights nothing
+   (checked: `TSLA` against a list without it, `KO` against a one-row list).
+4. **The tint was not enough to be a highlight.** It is now 18% plus a 4 px
+   inset accent bar in `--series-1`, through `box-shadow` so no row shifts
+   sideways. Colour and shape, and the name in the row's `aria-current`, since a
+   tint is not available to a screen reader.
+5. **The lit row is brought into view — inside the rail only.** `revealActiveRow`
+   moves the *list's* `scrollTop`; it never scrolls the page, because in the
+   stacked layout the rail sits under the chart and a page-level reveal would
+   push the chart off screen to show a row. When the rail has no overflow of its
+   own (the stacked layout sets `max-height: none`) it does nothing at all:
+   verified at 520 px, `pageY` stayed 0 and `overflowX` 0. A row already on
+   screen is left exactly where it is, so clicking a visible row never moves the
+   rail. It stands down during a drag, whose own loop owns the scroll position.
+6. **It waits for layout instead of trusting the first frame.** A cold load reads
+   `clientHeight`/`scrollHeight`/`getBoundingClientRect` as **0/0/0** — the rows
+   are in the DOM, the frame is not laid out — and the first version therefore
+   bailed on every cold load with twenty rows in the rail. It now re-asks frame
+   by frame for `REVEAL_PATIENCE` = 4 s and gives up quietly. Measured: 6–10
+   frames of `norect` before the geometry appeared, then `scrollTop` 908 of a
+   908 max with the row flush inside the box and `pageY` 0.
+7. **A repaint is not a scroll.** `drawWatchList` empties the list to rebuild it,
+   which drops the container's `scrollTop` to 0 for the length of that frame — so
+   a quote arriving yanked a long rail back to its first row, undoing the reveal.
+   It now captures `scrollTop` before clearing and restores it before returning
+   (measured: 300 set by hand survived a repaint). The active row's own quote
+   re-reveals it afterwards, because that row grows by its price and odds lines —
+   the only quote arrival allowed to touch the rail's position.
+
+Also added: the rail hint says "The highlighted row is the chart on screen."
+while a row is lit, so the mark explains itself.
+
+Page-only change: `index.html` (one CSS rule, the derived matcher, the reveal,
+the scroll memory in the repaint). No Python module touched. Verified on a real
+browser through Moli's CDP endpoint (`moli serve --layout`, 1440×900 and 520×900)
+because Moli's `fetch --eval` path reports compatibility geometry — every number
+above is from that run: chart of a saved row at position 20 of 20 revealed it to
+908/908; chart of `AAPL` at position 1 left the rail at 0; `TSLA`, `KO` lit
+nothing; the alias pair lit the `PHP=X` row for the `USDPHP=X` chart and vice
+versa; a click, a keyboard reorder and the Add button all lit the right row;
+removing the charted symbol cleared it; dark theme read
+`rgba(57,135,229,.18)` with the `#3987e5` bar.
+
 ## The rail row carries the odds too (2026-11-04)
 
 Asked for by name: "add 3-month profit odds figure in watchlist section." The
@@ -637,7 +816,8 @@ historical outcome study and its raw data live in `pse_backtest.py` and
 present the reported frequencies as individual-stock probabilities.
 
 ```sh
-python3 server.py        # from the project directory; http://127.0.0.1:8000/
+cd ~/Documents/asset-price-display
+python3 server.py        # http://127.0.0.1:8000/
 ```
 
 `README.md` is the full reference. This file is the working notes: invariants that

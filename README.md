@@ -38,9 +38,10 @@ build step.
 
 ## Run it
 
-From the project directory:
+The project lives in `~/Documents/asset-price-display`:
 
 ```sh
+cd ~/Documents/asset-price-display
 python3 server.py
 ```
 
@@ -65,7 +66,7 @@ Stop with `Ctrl-C`.
 | | |
 |---|---|
 | **Python** | 3.8 or newer. Nothing to install. |
-| **Moli** | Required for Yahoo price data, the PSE histories and the bond yields. Not needed for crypto (Binance, Kraken), currency fixes (ECB) or the Philippine funds — their registries answer plain HTTPS. Put the `moli` binary on `PATH`, or set `MOLI_BIN` to its path. |
+| **Moli** | Required for Yahoo price data, the PSE histories and the bond yields. Not needed for crypto (Binance, Kraken), currency fixes (ECB) or the Philippine funds — their registries answer plain HTTPS. Already at `~/.local/bin/moli` (v1.1.10) on this machine. |
 
 Moli is the only real dependency, and it is not optional for Yahoo-sourced or
 PSE symbols — see below. (The CoinGecko/Binance/Kraken crypto path does *not* use
@@ -96,7 +97,7 @@ curl http://127.0.0.1:8000/api/health
 
 `"moliFound": false` means the path is wrong — set `MOLI_BIN`.
 
-Install Moli from its latest release: <https://github.com/lexmount/moli/releases/latest>. The macOS installer is `moli-installer.sh` on that page.
+To install Moli, see `~/.claude/skills/moli-webfetch/SKILL.md`.
 
 ## Files
 
@@ -2460,6 +2461,15 @@ the `trend.py` docstring.
   chart agree about the next three months exactly as they do about the last
   three. A yield, a series `probability.estimate` refuses, or a row still
   loading draws no line at all. See "The chart states the odds of profit".
+- **A neutral row can lean** (added 2026-11-06) — a row whose window is Neutral
+  but sits inside one side's hold band shows `leaning bullish` or
+  `leaning bearish` in place of the plain `Neutral` tag, in a lighter green or
+  red with a dashed border. The number behind it is the same payload's
+  `trend.lean`, which `trend.classify` has returned since the leaning table
+  shipped, so the tag and the chart's "Neutral · leaning bullish" badge are one
+  call on one set of bars; the label itself stays Neutral, and the tooltip says
+  how far along the band the window sits. Only rows that need the extra width
+  wrap it onto a second line — see the working notes.
 - **Yahoo "no data" arrives as HTTP 404** with a `chart.error` object, so the
   server treats only 5xx as a transport failure. The message is surfaced on the
   page instead of a traceback.
