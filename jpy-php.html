@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JPY → PHP — price graph</title>
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1: #fcfcfb;
+    --plane:     #f9f9f7;
+    --ink:       #0b0b0b;
+    --ink-2:     #52514e;
+    --muted:     #898781;
+    --grid:      #e1e0d9;
+    --axis:      #c3c2b7;
+    --series:    #2a78d6;
+    --area:      rgba(42,120,214,0.10);
+    --ring:      rgba(11,11,11,0.10);
+    --tt-bg:     #fcfcfb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1: #1a1a19;
+      --plane:     #0d0d0d;
+      --ink:       #ffffff;
+      --ink-2:     #c3c2b7;
+      --muted:     #898781;
+      --grid:      #2c2c2a;
+      --axis:      #383835;
+      --series:    #3987e5;
+      --area:      rgba(57,135,229,0.12);
+      --ring:      rgba(255,255,255,0.10);
+      --tt-bg:     #232322;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --plane:     #0d0d0d;
+    --ink:       #ffffff;
+    --ink-2:     #c3c2b7;
+    --muted:     #898781;
+    --grid:      #2c2c2a;
+    --axis:      #383835;
+    --series:    #3987e5;
+    --area:      rgba(57,135,229,0.12);
+    --ring:      rgba(255,255,255,0.10);
+    --tt-bg:     #232322;
+  }
+
+  * { box-sizing: border-box; margin: 0; }
+  html, body { background: var(--plane); }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    padding: 40px 20px 56px;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+
+  /* ---- header ---- */
+  .kicker { font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
+            text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  h1 { font-size: 21px; font-weight: 600; margin-bottom: 26px; }
+  h1 .pair { color: var(--ink); } h1 .exp { color: var(--ink-2); font-weight: 400; }
+
+  .hero-row { display: flex; align-items: flex-end; gap: 22px; flex-wrap: wrap;
+              margin-bottom: 6px; }
+  .hero-figure { font-size: 56px; font-weight: 650; line-height: 1.05;
+                 letter-spacing: -0.01em; }
+  .hero-unit { font-size: 14px; color: var(--ink-2); padding-bottom: 10px; }
+  .delta { display: inline-flex; align-items: center; gap: 6px;
+           font-size: 14px; font-weight: 600; color: var(--ink-2);
+           padding: 4px 10px; border: 1px solid var(--ring); border-radius: 999px;
+           margin-bottom: 10px; background: var(--surface-1); }
+  .delta .arrow { font-size: 11px; }
+  .live-note { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+  .live-note b { color: var(--ink-2); font-weight: 600; }
+
+  /* ---- filters ---- */
+  .filters { display: flex; gap: 4px; align-items: center; margin-bottom: 16px; }
+  .filters .flabel { font-size: 13px; color: var(--muted); margin-right: 8px; }
+  .filters button {
+    font: inherit; font-size: 13.5px; font-weight: 500; color: var(--ink-2);
+    background: transparent; border: none; cursor: pointer;
+    padding: 7px 13px 6px; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0;
+  }
+  .filters button:hover { background: var(--grid); }
+  .filters button[aria-pressed="true"] {
+    color: var(--ink); font-weight: 650; border-bottom-color: var(--series);
+  }
+  .filters button:focus-visible { outline: 2px solid var(--series); outline-offset: 1px; }
+
+  /* ---- chart card ---- */
+  .card { background: var(--surface-1); border: 1px solid var(--ring);
+          border-radius: 14px; padding: 20px 18px 10px; margin-bottom: 18px; }
+  .chart-wrap { position: relative; }
+  svg { display: block; width: 100%; height: auto; }
+  svg:focus { outline: none; }
+  svg:focus-visible { outline: 2px solid var(--series); outline-offset: 2px; border-radius: 8px; }
+
+  .gridline { stroke: var(--grid); stroke-width: 1; shape-rendering: crispEdges; }
+  .axisline { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
+  .tick     { fill: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .tick-x   { text-anchor: middle; }
+  .tick-y   { text-anchor: end; }
+  .rline    { stroke: var(--series); stroke-width: 2; fill: none;
+              stroke-linejoin: round; stroke-linecap: round; }
+  .rarea    { fill: var(--area); stroke: none; }
+  .dlabel   { fill: var(--ink-2); font-size: 12.5px; font-weight: 600;
+              font-variant-numeric: tabular-nums; }
+  .dlabel-sub { fill: var(--muted); font-size: 11px; font-weight: 400; }
+  .crosshair { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
+  .hdot { fill: var(--series); stroke: var(--surface-1); stroke-width: 2.5; }
+
+  .tt { position: absolute; pointer-events: none; z-index: 5;
+        background: var(--tt-bg); border: 1px solid var(--ring); border-radius: 9px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.10); padding: 8px 11px;
+        font-size: 12.5px; white-space: nowrap; display: none; }
+  .tt .v { font-weight: 650; font-size: 14px; color: var(--ink);
+           font-variant-numeric: tabular-nums; }
+  .tt .d { color: var(--muted); margin-top: 2px; }
+
+  /* ---- stat tiles ---- */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+  .tile { background: var(--surface-1); border: 1px solid var(--ring);
+          border-radius: 12px; padding: 14px 16px; }
+  .tile .lab { font-size: 12.5px; color: var(--muted); margin-bottom: 5px; }
+  .tile .val { font-size: 21px; font-weight: 650; letter-spacing: -0.005em; }
+  .tile .sub { font-size: 12px; color: var(--muted); margin-top: 3px;
+               font-variant-numeric: tabular-nums; }
+
+  /* ---- table view ---- */
+  details { border: 1px solid var(--ring); border-radius: 12px;
+            background: var(--surface-1); margin-bottom: 22px; }
+  summary { font-size: 14px; font-weight: 600; color: var(--ink-2);
+            padding: 13px 16px; cursor: pointer; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "▸ "; color: var(--muted); }
+  details[open] summary::before { content: "▾ "; }
+  .scroll { max-height: 340px; overflow-y: auto; border-top: 1px solid var(--ring); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: right; padding: 6px 16px; font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 500; position: sticky; top: 0;
+       background: var(--surface-1); border-bottom: 1px solid var(--grid); }
+  td { color: var(--ink-2); border-bottom: 1px solid var(--grid); }
+  td:first-child { color: var(--ink); }
+
+  footer { font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+  footer a { color: var(--ink-2); }
+
+  @media (max-width: 640px) {
+    .stats { grid-template-columns: 1fr; }
+    .hero-figure { font-size: 44px; }
+  }
+</style>
+</head>
+<body class="viz-root">
+<main>
+  <header>
+    <p class="kicker">Exchange rate</p>
+    <h1><span class="pair">JPY → PHP</span> <span class="exp">· Japanese yen to Philippine peso</span></h1>
+    <div class="hero-row">
+      <span class="hero-figure" id="heroVal">–</span>
+      <span class="hero-unit">PHP per 1&nbsp;JPY<br><span id="heroDate" style="color:var(--muted);font-size:12px"></span></span>
+      <span class="delta" id="deltaChip"><span class="arrow"></span><span id="deltaTxt"></span></span>
+    </div>
+    <p class="live-note" id="liveNote"></p>
+  </header>
+
+  <nav class="filters" aria-label="Date range">
+    <span class="flabel">Range</span>
+    <button data-days="30"  aria-pressed="false">1M</button>
+    <button data-days="90"  aria-pressed="false">3M</button>
+    <button data-days="180" aria-pressed="false">6M</button>
+    <button data-days="365" aria-pressed="true">1Y</button>
+  </nav>
+
+  <section class="card">
+    <div class="chart-wrap">
+      <svg id="chart" viewBox="0 0 960 420" role="img" tabindex="0"
+           aria-label="Daily JPY to PHP exchange rate over the selected period. Use left and right arrow keys to read individual values; a full data table is provided below the chart."></svg>
+      <div class="tt" id="tt" role="status" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="stats" id="stats"></section>
+
+  <details>
+    <summary>Data table — daily reference rates</summary>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Date</th><th>PHP per 1 JPY</th><th>vs previous day</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </details>
+
+  <footer>
+    Daily closes: European Central Bank reference rates via Frankfurter (255 business days, 3&nbsp;Oct&nbsp;2025&nbsp;–&nbsp;2&nbsp;Oct&nbsp;2026).
+    Current market quote <b>JPYPHP=X</b> via Yahoo Finance. Generated 3&nbsp;Oct&nbsp;2026.
+  </footer>
+</main>
+
+<script>
+"use strict";
+const RAW = [["2025-10-03",0.39303],["2025-10-06",0.38874],["2025-10-07",0.38521],["2025-10-08",0.37998],["2025-10-09",0.38079],["2025-10-10",0.38206],["2025-10-13",0.3832],["2025-10-14",0.38293],["2025-10-15",0.38369],["2025-10-16",0.38383],["2025-10-17",0.38663],["2025-10-20",0.38585],["2025-10-21",0.38402],["2025-10-22",0.38357],["2025-10-23",0.38409],["2025-10-24",0.38346],["2025-10-27",0.38522],["2025-10-28",0.38865],["2025-10-29",0.38581],["2025-10-30",0.38168],["2025-10-31",0.3808],["2025-11-03",0.38158],["2025-11-04",0.38184],["2025-11-05",0.38248],["2025-11-06",0.38294],["2025-11-07",0.38634],["2025-11-10",0.3825],["2025-11-11",0.38247],["2025-11-12",0.38214],["2025-11-13",0.38101],["2025-11-14",0.3833],["2025-11-17",0.38066],["2025-11-18",0.37892],["2025-11-19",0.37714],["2025-11-20",0.37465],["2025-11-21",0.37559],["2025-11-24",0.37415],["2025-11-25",0.37675],["2025-11-26",0.37607],["2025-11-27",0.37595],["2025-11-28",0.37577],["2025-12-01",0.3778],["2025-12-02",0.37592],["2025-12-03",0.37952],["2025-12-04",0.38143],["2025-12-05",0.38017],["2025-12-08",0.38016],["2025-12-09",0.37944],["2025-12-10",0.3783],["2025-12-11",0.37923],["2025-12-12",0.37861],["2025-12-15",0.3801],["2025-12-16",0.37924],["2025-12-17",0.37708],["2025-12-18",0.37623],["2025-12-19",0.37332],["2025-12-22",0.37324],["2025-12-23",0.37702],["2025-12-24",0.37681],["2025-12-29",0.37647],["2025-12-30",0.37697],["2025-12-31",0.37626],["2026-01-02",0.37499],["2026-01-05",0.3767],["2026-01-06",0.37849],["2026-01-07",0.3789],["2026-01-08",0.37751],["2026-01-09",0.37563],["2026-01-12",0.37621],["2026-01-13",0.3743],["2026-01-14",0.37486],["2026-01-15",0.37536],["2026-01-16",0.37565],["2026-01-19",0.37639],["2026-01-20",0.37546],["2026-01-21",0.37541],["2026-01-22",0.37243],["2026-01-23",0.37353],["2026-01-26",0.38361],["2026-01-27",0.38505],["2026-01-28",0.38495],["2026-01-29",0.38482],["2026-01-30",0.38243],["2026-02-02",0.37994],["2026-02-03",0.37914],["2026-02-04",0.37656],["2026-02-05",0.37437],["2026-02-06",0.37268],["2026-02-09",0.37445],["2026-02-10",0.37724],["2026-02-11",0.37938],["2026-02-12",0.37746],["2026-02-13",0.37744],["2026-02-16",0.37803],["2026-02-17",0.37775],["2026-02-18",0.37667],["2026-02-19",0.37476],["2026-02-20",0.37468],["2026-02-23",0.37225],["2026-02-24",0.37066],["2026-02-25",0.36724],["2026-02-26",0.36922],["2026-02-27",0.36982],["2026-03-02",0.36992],["2026-03-03",0.37082],["2026-03-04",0.37215],["2026-03-05",0.37212],["2026-03-06",0.37534],["2026-03-09",0.37553],["2026-03-10",0.37406],["2026-03-11",0.3737],["2026-03-12",0.3741],["2026-03-13",0.37354],["2026-03-16",0.37545],["2026-03-17",0.37469],["2026-03-18",0.37605],["2026-03-19",0.37878],["2026-03-20",0.37708],["2026-03-23",0.37617],["2026-03-24",0.37733],["2026-03-25",0.37785],["2026-03-26",0.37723],["2026-03-27",0.37876],["2026-03-30",0.38072],["2026-03-31",0.3805],["2026-04-01",0.38015],["2026-04-02",0.3798],["2026-04-07",0.37692],["2026-04-08",0.37558],["2026-04-09",0.37632],["2026-04-10",0.37595],["2026-04-13",0.37674],["2026-04-14",0.37676],["2026-04-15",0.37775],["2026-04-16",0.37727],["2026-04-17",0.3775],["2026-04-20",0.37677],["2026-04-21",0.37623],["2026-04-22",0.37781],["2026-04-23",0.37883],["2026-04-24",0.38048],["2026-04-27",0.38162],["2026-04-28",0.38364],["2026-04-29",0.38552],["2026-04-30",0.39254],["2026-05-04",0.39234],["2026-05-05",0.39039],["2026-05-06",0.38894],["2026-05-07",0.38605],["2026-05-08",0.38583],["2026-05-11",0.38775],["2026-05-12",0.39005],["2026-05-13",0.38914],["2026-05-14",0.38954],["2026-05-15",0.38912],["2026-05-18",0.38853],["2026-05-19",0.38791],["2026-05-20",0.38794],["2026-05-21",0.38706],["2026-05-22",0.3872],["2026-05-25",0.38562],["2026-05-26",0.38661],["2026-05-27",0.38548],["2026-05-28",0.38604],["2026-05-29",0.38659],["2026-06-01",0.38719],["2026-06-02",0.38601],["2026-06-03",0.38639],["2026-06-04",0.38539],["2026-06-05",0.38442],["2026-06-08",0.38566],["2026-06-09",0.38391],["2026-06-10",0.38248],["2026-06-11",0.38205],["2026-06-12",0.37947],["2026-06-15",0.37664],["2026-06-16",0.37606],["2026-06-17",0.377],["2026-06-18",0.37677],["2026-06-19",0.3767],["2026-06-22",0.37729],["2026-06-23",0.37795],["2026-06-24",0.37963],["2026-06-25",0.37803],["2026-06-26",0.37925],["2026-06-29",0.378],["2026-06-30",0.37773],["2026-07-01",0.37887],["2026-07-02",0.38108],["2026-07-03",0.38128],["2026-07-06",0.37897],["2026-07-07",0.37947],["2026-07-08",0.37884],["2026-07-09",0.37927],["2026-07-10",0.38038],["2026-07-13",0.37979],["2026-07-14",0.38031],["2026-07-15",0.37988],["2026-07-16",0.37995],["2026-07-17",0.37943],["2026-07-20",0.37986],["2026-07-21",0.37938],["2026-07-22",0.37875],["2026-07-23",0.37786],["2026-07-24",0.37745],["2026-07-27",0.37709],["2026-07-28",0.37601],["2026-07-29",0.37514],["2026-07-30",0.37768],["2026-07-31",0.38237],["2026-08-03",0.38886],["2026-08-04",0.38753],["2026-08-05",0.3855],["2026-08-06",0.38516],["2026-08-07",0.38442],["2026-08-10",0.38294],["2026-08-11",0.38427],["2026-08-12",0.38483],["2026-08-13",0.38489],["2026-08-14",0.38606],["2026-08-17",0.3863],["2026-08-18",0.38685],["2026-08-19",0.3886],["2026-08-20",0.38881],["2026-08-21",0.38854],["2026-08-24",0.38787],["2026-08-25",0.38758],["2026-08-26",0.38763],["2026-08-27",0.38837],["2026-08-28",0.38986],["2026-08-31",0.39064],["2026-09-01",0.38978],["2026-09-02",0.3919],["2026-09-03",0.40067],["2026-09-04",0.40097],["2026-09-07",0.40479],["2026-09-08",0.40512],["2026-09-09",0.40772],["2026-09-10",0.40587],["2026-09-11",0.40659],["2026-09-14",0.40678],["2026-09-15",0.40516],["2026-09-16",0.40457],["2026-09-17",0.40283],["2026-09-18",0.39777],["2026-09-21",0.39929],["2026-09-22",0.39741],["2026-09-23",0.39607],["2026-09-24",0.39502],["2026-09-25",0.39646],["2026-09-28",0.39831],["2026-09-29",0.39808],["2026-09-30",0.39942],["2026-10-01",0.3975],["2026-10-02",0.397]];
+const DAY = 86400000;
+const DATA = RAW.map(([d, v]) => ({ t: Date.parse(d + "T00:00:00Z"), v, d }));
+
+const VW = 960, VH = 420, M = { t: 30, r: 88, b: 42, l: 62 };
+const svg = document.getElementById("chart");
+const tt  = document.getElementById("tt");
+
+let windowDays = 365;
+let slice = [];
+let hoverIdx = -1;
+
+const fmt4 = n => n.toFixed(4);
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fmtDate = t => { const d = new Date(t);
+  return d.getUTCDate() + " " + MON[d.getUTCMonth()] + " " + d.getUTCFullYear(); };
+
+function niceStep(raw) {
+  const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+  for (const m of [1, 2, 2.5, 5, 10]) if (raw <= m * pow) return m * pow;
+  return 10 * pow;
+}
+
+function setWindow(days) {
+  windowDays = days;
+  const t1 = DATA[DATA.length - 1].t;
+  slice = DATA.filter(p => p.t >= t1 - days * DAY);
+  hoverIdx = -1;
+  document.querySelectorAll(".filters button").forEach(b =>
+    b.setAttribute("aria-pressed", String(+b.dataset.days === days)));
+  renderAll();
+}
+
+function renderAll() {
+  const vs = slice.map(p => p.v);
+  const last = slice[slice.length - 1], first = slice[0];
+  const hi = slice[vs.indexOf(Math.max(...vs))];
+  const lo = slice[vs.indexOf(Math.min(...vs))];
+
+  /* hero + delta */
+  document.getElementById("heroVal").textContent = fmt4(last.v);
+  document.getElementById("heroDate").textContent = fmtDate(last.t) + " · ECB close";
+  const chg = (last.v / first.v - 1) * 100;
+  const chip = document.getElementById("deltaChip");
+  chip.querySelector(".arrow").textContent = chg >= 0 ? "▲" : "▼";
+  chip.querySelector("#deltaTxt").textContent =
+    (chg >= 0 ? "+" : "") + chg.toFixed(2) + "% since " + fmtDate(first.t);
+
+  const live = 0.3936;
+  document.getElementById("liveNote").innerHTML =
+    "Inverse: <b>1 PHP ≈ " + (1 / last.v).toFixed(2) + " JPY</b> &nbsp;·&nbsp; " +
+    "live market quote (Yahoo, 3 Oct): <b>" + live.toFixed(4) + "</b>";
+
+  /* scale */
+  const t0 = slice[0].t, t1 = last.t;
+  let ymin = Math.min(...vs), ymax = Math.max(...vs);
+  const pad = (ymax - ymin) * 0.09 || 0.001;
+  ymin -= pad; ymax += pad;
+  const X = t => M.l + (t - t0) / ((t1 - t0) || 1) * (VW - M.l - M.r);
+  const Y = v => M.t + (ymax - v) / (ymax - ymin) * (VH - M.t - M.b);
+
+  /* y ticks */
+  const step = niceStep((ymax - ymin) / 5);
+  let yt = "";
+  for (let v = Math.ceil(ymin / step) * step; v <= ymax + 1e-9; v += step) {
+    const yy = Y(v);
+    yt += `<line class="gridline" x1="${M.l}" x2="${VW - M.r}" y1="${yy}" y2="${yy}"/>` +
+          `<text class="tick tick-y" x="${M.l - 9}" y="${yy + 4}">${v.toFixed(2)}</text>`;
+  }
+
+  /* x ticks: month starts (>= ~100d), else weeks/5d/2d to ~8 labels */
+  let xt = "";
+  const span = (t1 - t0) / DAY;
+  const emitX = (t, label) => {
+    if (t < t0 || t > t1) return;
+    xt += `<line class="axisline" x1="${X(t)}" x2="${X(t)}" y1="${VH - M.b}" y2="${VH - M.b + 5}"/>` +
+          `<text class="tick tick-x" x="${X(t)}" y="${VH - M.b + 22}">${label}</text>`;
+  };
+  if (span >= 100) {
+    let d = new Date(t0); d = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1));
+    while (d.getTime() <= t1) {
+      const m = d.getUTCMonth(), y = d.getUTCFullYear();
+      emitX(+d, MON[m] + (m === 0 ? " ’" + String(y).slice(2) : ""));
+      d = new Date(Date.UTC(y, m + 1, 1));
+    }
+  } else {
+    const per = Math.max(1, Math.round(span / 8)) * DAY;
+    for (let t = t0; t <= t1; t += per) {
+      const u = new Date(t);
+      emitX(t, u.getUTCDate() + " " + MON[u.getUTCMonth()]);
+    }
+  }
+
+  /* marks: area wash + 2px line, end dot >= 8px with surface ring */
+  const pts = slice.map(p => X(p.t).toFixed(2) + "," + Y(p.v).toFixed(2));
+  const area = `M${X(t0).toFixed(2)},${Y(ymin).toFixed(2)} L${pts.join(" L")} L${X(t1).toFixed(2)},${Y(ymin).toFixed(2)} Z`;
+  const line = `M${pts.join(" L")}`;
+  const ex = X(last.t), ey = Y(last.v);
+
+  /* selective direct labels: endpoint, high, low */
+  const lbl = (p, above) => {
+    const dx = Math.min(Math.max(X(p.t), M.l + 30), VW - M.r - 30);
+    const dy = Y(p.v) + (above ? -10 : 20);
+    return `<text class="dlabel" x="${dx}" y="${dy}" text-anchor="middle">${fmt4(p.v)}</text>` +
+           `<text class="dlabel-sub" x="${dx}" y="${dy + (above ? -13 : 13)}" text-anchor="middle">` +
+           (above ? "period high" : "period low") + " · " +
+           new Date(p.t).getUTCDate() + " " + MON[new Date(p.t).getUTCMonth()] + "</text>";
+  };
+  let direct =
+    `<text class="dlabel" x="${ex + 10}" y="${ey + 4}">${fmt4(last.v)}</text>` +
+    `<text class="dlabel-sub" x="${ex + 10}" y="${ey + 19}">2 Oct close</text>`;
+  if (hi !== last) direct += lbl(hi, true);
+  if (lo !== last) direct += lbl(lo, false);
+
+  svg.innerHTML =
+    `<path class="rarea" d="${area}"/><path class="rline" d="${line}"/>` +
+    yt + xt +
+    `<line class="axisline" x1="${M.l}" x2="${VW - M.r}" y1="${VH - M.b}" y2="${VH - M.b}"/>` +
+    direct +
+    `<circle cx="${ex}" cy="${ey}" r="4.5" fill="var(--series)" stroke="var(--surface-1)" stroke-width="2.5"/>` +
+    `<g id="hover" style="display:none">` +
+      `<line class="crosshair" id="chx" y1="${M.t}" y2="${VH - M.b}"/>` +
+      `<circle class="hdot" id="chd" r="4.5"/>` +
+    `</g>` +
+    `<rect id="hit" x="${M.l}" y="${M.t}" width="${VW - M.l - M.r}" height="${VH - M.t - M.b}" fill="transparent"/>`;
+
+  bindHover();
+
+  /* stat tiles */
+  document.getElementById("stats").innerHTML =
+    tile("Period change", (chg >= 0 ? "+" : "") + chg.toFixed(2) + "%",
+         fmtDate(first.t) + " → " + fmtDate(last.t)) +
+    tile("Period high", fmt4(hi.v), fmtDate(hi.t)) +
+    tile("Period low",  fmt4(lo.v), fmtDate(lo.t));
+  function tile(lab, val, sub) {
+    return `<div class="tile"><div class="lab">${lab}</div><div class="val">${val}</div><div class="sub">${sub}</div></div>`;
+  }
+
+  /* table view (newest first) */
+  document.getElementById("tbody").innerHTML = slice.slice().reverse().map((p, i, a) => {
+    const prev = a[i + 1];
+    const dc = prev ? (p.v / prev.v - 1) * 100 : null;
+    return `<tr><td>${p.d}</td><td>${fmt4(p.v)}</td><td>${dc === null ? "—" : (dc >= 0 ? "+" : "") + dc.toFixed(2) + "%"}</td></tr>`;
+  }).join("");
+}
+
+/* ---- hover layer: crosshair finds the X, keyboard mirrors it ---- */
+function bindHover() {
+  const hit = document.getElementById("hit");
+  const show = i => {
+    hoverIdx = i;
+    drawHover();
+  };
+  hit.addEventListener("pointermove", e => {
+    const r = svg.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width * VW;
+    const t0 = slice[0].t, t1 = slice[slice.length - 1].t;
+    const t = t0 + (x - M.l) / (VW - M.l - M.r) * (t1 - t0);
+    let bi = 0, bd = Infinity;
+    for (let i = 0; i < slice.length; i++) {
+      const d = Math.abs(slice[i].t - t);
+      if (d < bd) { bd = d; bi = i; }
+    }
+    show(bi);
+  });
+  hit.addEventListener("pointerleave", () => { hoverIdx = -1; drawHover(); });
+  svg.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") { hoverIdx = Math.min(slice.length - 1, hoverIdx + 1); }
+    else if (e.key === "ArrowLeft") { hoverIdx = Math.max(0, hoverIdx < 0 ? slice.length - 1 : hoverIdx - 1); }
+    else if (e.key === "Home") { hoverIdx = 0; }
+    else if (e.key === "End") { hoverIdx = slice.length - 1; }
+    else if (e.key === "Escape") { hoverIdx = -1; }
+    else return;
+    e.preventDefault();
+    drawHover();
+  });
+  svg.addEventListener("blur", () => { hoverIdx = -1; drawHover(); });
+}
+
+function drawHover() {
+  const g = document.getElementById("hover");
+  if (!g) return;
+  if (hoverIdx < 0) {
+    g.style.display = "none"; tt.style.display = "none";
+    return;
+  }
+  const p = slice[hoverIdx];
+  const t0 = slice[0].t, t1 = slice[slice.length - 1].t;
+  let ymin = Math.min(...slice.map(q => q.v)), ymax = Math.max(...slice.map(q => q.v));
+  const pad = (ymax - ymin) * 0.09 || 0.001; ymin -= pad; ymax += pad;
+  const X = t => M.l + (t - t0) / ((t1 - t0) || 1) * (VW - M.l - M.r);
+  const Y = v => M.t + (ymax - v) / (ymax - ymin) * (VH - M.t - M.b);
+  const x = X(p.t), y = Y(p.v);
+  g.style.display = "";
+  const chx = document.getElementById("chx");
+  chx.setAttribute("x1", x); chx.setAttribute("x2", x);
+  const chd = document.getElementById("chd");
+  chd.setAttribute("cx", x); chd.setAttribute("cy", y);
+
+  /* value leads, label follows */
+  tt.textContent = "";
+  const v = document.createElement("div"); v.className = "v";
+  v.textContent = "1 JPY = " + fmt4(p.v) + " PHP";
+  const d = document.createElement("div"); d.className = "d";
+  d.textContent = fmtDate(p.t);
+  tt.append(v, d);
+  tt.style.display = "block";
+  const r = svg.getBoundingClientRect();
+  const px = x / VW * r.width, py = y / VH * r.height;
+  const tw = tt.offsetWidth, th = tt.offsetHeight;
+  let left = px + 14; if (left + tw > r.width - 4) left = px - tw - 14;
+  let top = py - th - 12; if (top < 2) top = py + 14;
+  tt.style.left = left + "px"; tt.style.top = top + "px";
+}
+
+document.querySelectorAll(".filters button").forEach(b =>
+  b.addEventListener("click", () => setWindow(+b.dataset.days)));
+
+setWindow(365);
+</script>
+</body>
+</html>

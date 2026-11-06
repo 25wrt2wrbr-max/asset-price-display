@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trend classifier — standalone</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    margin: 0; padding: 2rem 1.25rem; display: grid; gap: 1.25rem;
+    max-width: 60rem; margin-inline: auto;
+  }
+  h1 { font-size: 1.35rem; margin: 0; }
+  p.lede { margin: .25rem 0 0; opacity: .75; }
+  textarea {
+    width: 100%; min-height: 9rem; font: 13px/1.4 ui-monospace, monospace;
+    padding: .6rem; border-radius: 8px; border: 1px solid rgba(128,128,128,.45);
+    background: transparent; color: inherit; resize: vertical;
+  }
+  .row { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+  button {
+    font: inherit; padding: .45rem .9rem; border-radius: 8px; cursor: pointer;
+    border: 1px solid rgba(128,128,128,.5); background: transparent; color: inherit;
+  }
+  .verdict {
+    display: flex; align-items: baseline; gap: .75rem; flex-wrap: wrap;
+    padding: .9rem 1rem; border-radius: 10px; border: 1px solid rgba(128,128,128,.35);
+  }
+  .label { font-size: 1.5rem; font-weight: 650; }
+  .bullish { color: #1a9c56; } .bearish { color: #d64545; } .neutral { color: #888; }
+  .muted { opacity: .7; font-size: .9rem; }
+  table { border-collapse: collapse; font-size: .9rem; }
+  td, th { text-align: left; padding: .25rem .8rem .25rem 0; }
+  th { font-weight: 600; opacity: .75; }
+  code { font: 13px ui-monospace, monospace; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Trend classifier — standalone</h1>
+    <p class="lede">The same algorithm as the local project, ported to plain JavaScript
+      (no dependencies, no build). Paste daily closes (oldest first) to get the verdict.</p>
+  </header>
+
+  <div class="row">
+    <label for="closes" class="muted">Closes (comma or space separated, oldest first)</label>
+  </div>
+  <textarea id="closes" spellcheck="false"></textarea>
+
+  <div class="row">
+    <label for="volumes" class="muted">Volumes (optional, same length)</label>
+  </div>
+  <textarea id="volumes" style="min-height:4.5rem" spellcheck="false"></textarea>
+
+  <div class="row">
+    <button id="run">Classify</button>
+    <button id="sample">Load a sample</button>
+  </div>
+
+  <div class="verdict" id="out">
+    <span class="label neutral" id="label">—</span>
+    <span class="muted" id="score"></span>
+  </div>
+
+  <table id="components"></table>
+
+  <p class="muted">Files: <code>trend.js</code> (the algorithm). Use it directly:</p>
+  <pre class="muted"><code>const { classify, onset } = Trend;
+const v = classify(closes, volumes);
+// { label: "bullish", score: 0.61, confidence: "strong", bars: 63, components: {...} }</code></pre>
+
+<script src="trend.js"></script>
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  function parse(text) {
+    const trimmed = text.trim();
+    if (!trimmed) return null;
+    let arr;
+    try { arr = JSON.parse(trimmed); }
+    catch { arr = trimmed.split(/[\s,;]+/).filter(Boolean).map(Number); }
+    if (!Array.isArray(arr)) return null;
+    const out = arr.map(Number);
+    return out.every((n) => isFinite(n)) ? out : null;
+  }
+
+  function render(result) {
+    $("label").textContent = result.label;
+    $("label").className = "label " + result.label;
+    $("score").textContent = `score ${result.score} · ${result.confidence} · ${result.bars} bars`;
+    const rows = Object.entries(result.components).map(([k, v]) =>
+      `<tr><th>${k}</th><td>${v === null ? "n/a" : v}</td></tr>`).join("");
+    $("components").innerHTML = rows;
+  }
+
+  $("run").addEventListener("click", () => {
+    const closes = parse($("closes").value);
+    if (!closes || !closes.length) { alert("Paste some numbers first."); return; }
+    const volumes = parse($("volumes").value);
+    try { render(Trend.classify(closes, volumes)); }
+    catch (e) { alert(e.message); }
+  });
+
+  $("sample").addEventListener("click", () => {
+    // 90 days of a grind higher with a couple of pullbacks.
+    let p = 100, closes = [], volumes = [];
+    for (let i = 0; i < 90; i++) {
+      p *= 1 + (i % 11 === 0 ? -0.012 : 0.004);
+      closes.push(+p.toFixed(4));
+      volumes.push(Math.round(500000 + Math.random() * 400000));
+    }
+    $("closes").value = closes.join(", ");
+    $("volumes").value = volumes.join(", ");
+    $("run").click();
+  });
+</script>
+</body>
+</html>

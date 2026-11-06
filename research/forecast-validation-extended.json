@@ -1,0 +1,6813 @@
+{
+  "source": "Yahoo Finance daily chart via Moli; close, not dividend-adjusted",
+  "collected_at": "2026-10-30T08:53:48.383731+00:00",
+  "method": "Fixed score-bin candidate from forecast_validation.py; yearly expanding training on outcomes strictly completed before the test year. Signal on the first available close monthly, compare to close on or after three calendar months within 10 days. A tie is not correct for either direction. All folds are pooled by observation; months and symbols are correlated. 90% intervals are approximate four-month block bootstraps across all selected symbols, not individual confidence or a multiple-testing correction.",
+  "limitations": [
+    "Exploratory historical analysis: earlier research has inspected parts of these years; these are not an untouched or prospective holdout.",
+    "Current illustrative universe, generally excluding delisted securities; survivorship and selection biases remain.",
+    "Price close may be revised for corporate actions and is not dividend-adjusted. Same-close signal and entry may not be executable; no costs, taxes or dividends.",
+    "Daily outcomes overlap and share market shocks; raw observation counts are not independent.",
+    "Yahoo crypto data is not the Binance feed used by the application. This research does not establish accuracy for Philippine bonds or untested assets.",
+    "An observed score above 51% is not evidence that every year, individual asset, or future forecast will exceed 51%."
+  ],
+  "markets": {
+    "crypto": {
+      "requested": 43,
+      "received": 37,
+      "missing": {
+        "MATIC-USD": "HTTP 404",
+        "UNI-USD": "HTTP 404",
+        "COMP-USD": "HTTP 404",
+        "APT-USD": "HTTP 404",
+        "SUI-USD": "HTTP 404",
+        "PEPE-USD": "HTTP 404"
+      },
+      "skipped": {
+        "short_window": 89,
+        "missing_outcome": 111
+      },
+      "first_signal": "2014-12-01",
+      "last_signal": "2026-07-01",
+      "baseline": {
+        "n": 3436,
+        "up_pct": 43.92,
+        "down_pct": 55.76,
+        "unchanged_pct": 0.32
+      },
+      "bullish": {
+        "n": 0,
+        "correct": 0,
+        "hit_pct": null,
+        "coverage_pct": 0.0,
+        "months": 0,
+        "symbols": 0,
+        "bootstrap_90_pct_interval": null,
+        "meets_51_pct_observed": null
+      },
+      "bearish": {
+        "n": 0,
+        "correct": 0,
+        "hit_pct": null,
+        "coverage_pct": 0.0,
+        "months": 0,
+        "symbols": 0,
+        "bootstrap_90_pct_interval": null,
+        "meets_51_pct_observed": null
+      },
+      "combined": {
+        "n": 0,
+        "correct": 0,
+        "hit_pct": null,
+        "always_up_same_calls_pct": null,
+        "always_down_same_calls_pct": null,
+        "coverage_pct": 0.0
+      },
+      "abstained": 3436,
+      "folds": [
+        {
+          "year": 2011,
+          "training_n": 0,
+          "latest_training_exit": null,
+          "test": {
+            "n": 0
+          },
+          "bins": {
+            "0": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2012,
+          "training_n": 0,
+          "latest_training_exit": null,
+          "test": {
+            "n": 0
+          },
+          "bins": {
+            "0": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2013,
+          "training_n": 0,
+          "latest_training_exit": null,
+          "test": {
+            "n": 0
+          },
+          "bins": {
+            "0": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2014,
+          "training_n": 0,
+          "latest_training_exit": null,
+          "test": {
+            "n": 2,
+            "stocks": 2,
+            "months": 1,
+            "up_pct": 0.0,
+            "down_pct": 100.0,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 2
+          },
+          "bins": {
+            "0": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2015,
+          "training_n": 0,
+          "latest_training_exit": null,
+          "test": {
+            "n": 24,
+            "stocks": 2,
+            "months": 12,
+            "up_pct": 58.33,
+            "down_pct": 41.67,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 24
+          },
+          "bins": {
+            "0": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2016,
+          "training_n": 20,
+          "latest_training_exit": "2015-12-01",
+          "test": {
+            "n": 24,
+            "stocks": 2,
+            "months": 12,
+            "up_pct": 70.83,
+            "down_pct": 29.17,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 24
+          },
+          "bins": {
+            "0": {
+              "n": 4,
+              "months": 3,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 4,
+              "months": 3,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 4,
+              "months": 4,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 4,
+              "months": 4,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 2,
+              "months": 2,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 2,
+              "months": 2,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2017,
+          "training_n": 44,
+          "latest_training_exit": "2016-12-01",
+          "test": {
+            "n": 24,
+            "stocks": 2,
+            "months": 12,
+            "up_pct": 95.83,
+            "down_pct": 4.17,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 24
+          },
+          "bins": {
+            "0": {
+              "n": 5,
+              "months": 4,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 8,
+              "months": 6,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 5,
+              "months": 5,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 12,
+              "months": 11,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 3,
+              "months": 2,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 3,
+              "months": 3,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 8,
+              "months": 6,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2018,
+          "training_n": 68,
+          "latest_training_exit": "2017-12-01",
+          "test": {
+            "n": 273,
+            "stocks": 24,
+            "months": 12,
+            "up_pct": 17.58,
+            "down_pct": 82.42,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 273
+          },
+          "bins": {
+            "0": {
+              "n": 5,
+              "months": 4,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 9,
+              "months": 7,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 5,
+              "months": 5,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 17,
+              "months": 15,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 5,
+              "months": 4,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 8,
+              "months": 8,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 19,
+              "months": 14,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2019,
+          "training_n": 275,
+          "latest_training_exit": "2018-12-01",
+          "test": {
+            "n": 300,
+            "stocks": 27,
+            "months": 12,
+            "up_pct": 54.67,
+            "down_pct": 45.33,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 300
+          },
+          "bins": {
+            "0": {
+              "n": 43,
+              "months": 8,
+              "symbols": 21,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 47,
+              "months": 14,
+              "symbols": 20,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 36,
+              "months": 13,
+              "symbols": 18,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 60,
+              "months": 24,
+              "symbols": 20,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 16,
+              "months": 8,
+              "symbols": 10,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 21,
+              "months": 14,
+              "symbols": 12,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 52,
+              "months": 21,
+              "symbols": 21,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2020,
+          "training_n": 568,
+          "latest_training_exit": "2019-12-01",
+          "test": {
+            "n": 339,
+            "stocks": 33,
+            "months": 12,
+            "up_pct": 73.16,
+            "down_pct": 26.84,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 339
+          },
+          "bins": {
+            "0": {
+              "n": 88,
+              "months": 15,
+              "symbols": 26,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 103,
+              "months": 24,
+              "symbols": 24,
+              "direction": null,
+              "lower_bound": 0.375,
+              "observed_hit_rate": 0.6505
+            },
+            "2": {
+              "n": 84,
+              "months": 24,
+              "symbols": 22,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 101,
+              "months": 36,
+              "symbols": 23,
+              "direction": null,
+              "lower_bound": 0.3094,
+              "observed_hit_rate": 0.5842
+            },
+            "4": {
+              "n": 37,
+              "months": 15,
+              "symbols": 17,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 61,
+              "months": 23,
+              "symbols": 24,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 94,
+              "months": 29,
+              "symbols": 24,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2021,
+          "training_n": 894,
+          "latest_training_exit": "2020-12-01",
+          "test": {
+            "n": 420,
+            "stocks": 36,
+            "months": 12,
+            "up_pct": 53.1,
+            "down_pct": 46.67,
+            "unchanged_pct": 0.24,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 420
+          },
+          "bins": {
+            "0": {
+              "n": 119,
+              "months": 19,
+              "symbols": 27,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 154,
+              "months": 32,
+              "symbols": 27,
+              "direction": null,
+              "lower_bound": 0.3382,
+              "observed_hit_rate": 0.5455
+            },
+            "2": {
+              "n": 115,
+              "months": 32,
+              "symbols": 26,
+              "direction": null,
+              "lower_bound": 0.3094,
+              "observed_hit_rate": 0.5043
+            },
+            "3": {
+              "n": 153,
+              "months": 44,
+              "symbols": 27,
+              "direction": null,
+              "lower_bound": 0.3333,
+              "observed_hit_rate": 0.549
+            },
+            "4": {
+              "n": 84,
+              "months": 25,
+              "symbols": 27,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 108,
+              "months": 33,
+              "symbols": 27,
+              "direction": null,
+              "lower_bound": 0.3468,
+              "observed_hit_rate": 0.5
+            },
+            "6": {
+              "n": 161,
+              "months": 37,
+              "symbols": 27,
+              "direction": null,
+              "lower_bound": 0.3491,
+              "observed_hit_rate": 0.5217
+            }
+          }
+        },
+        {
+          "year": 2022,
+          "training_n": 1298,
+          "latest_training_exit": "2021-12-01",
+          "test": {
+            "n": 439,
+            "stocks": 37,
+            "months": 12,
+            "up_pct": 26.65,
+            "down_pct": 73.12,
+            "unchanged_pct": 0.23,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 439
+          },
+          "bins": {
+            "0": {
+              "n": 142,
+              "months": 23,
+              "symbols": 32,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 221,
+              "months": 39,
+              "symbols": 36,
+              "direction": null,
+              "lower_bound": 0.3696,
+              "observed_hit_rate": 0.5837
+            },
+            "2": {
+              "n": 157,
+              "months": 41,
+              "symbols": 29,
+              "direction": null,
+              "lower_bound": 0.4152,
+              "observed_hit_rate": 0.6051
+            },
+            "3": {
+              "n": 202,
+              "months": 55,
+              "symbols": 34,
+              "direction": null,
+              "lower_bound": 0.4375,
+              "observed_hit_rate": 0.6188
+            },
+            "4": {
+              "n": 131,
+              "months": 36,
+              "symbols": 32,
+              "direction": null,
+              "lower_bound": 0.35,
+              "observed_hit_rate": 0.5496
+            },
+            "5": {
+              "n": 157,
+              "months": 43,
+              "symbols": 31,
+              "direction": null,
+              "lower_bound": 0.4188,
+              "observed_hit_rate": 0.5414
+            },
+            "6": {
+              "n": 288,
+              "months": 47,
+              "symbols": 34,
+              "direction": null,
+              "lower_bound": 0.3562,
+              "observed_hit_rate": 0.5104
+            }
+          }
+        },
+        {
+          "year": 2023,
+          "training_n": 1734,
+          "latest_training_exit": "2022-12-01",
+          "test": {
+            "n": 444,
+            "stocks": 37,
+            "months": 12,
+            "up_pct": 52.7,
+            "down_pct": 46.4,
+            "unchanged_pct": 0.9,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 444
+          },
+          "bins": {
+            "0": {
+              "n": 241,
+              "months": 31,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.438,
+              "observed_hit_rate": 0.5809
+            },
+            "1": {
+              "n": 296,
+              "months": 50,
+              "symbols": 36,
+              "direction": null,
+              "lower_bound": 0.3399,
+              "observed_hit_rate": 0.5338
+            },
+            "2": {
+              "n": 226,
+              "months": 52,
+              "symbols": 36,
+              "direction": null,
+              "lower_bound": 0.3545,
+              "observed_hit_rate": 0.5442
+            },
+            "3": {
+              "n": 294,
+              "months": 66,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.3357,
+              "observed_hit_rate": 0.5272
+            },
+            "4": {
+              "n": 168,
+              "months": 44,
+              "symbols": 34,
+              "direction": null,
+              "lower_bound": 0.379,
+              "observed_hit_rate": 0.5357
+            },
+            "5": {
+              "n": 195,
+              "months": 52,
+              "symbols": 35,
+              "direction": null,
+              "lower_bound": 0.4096,
+              "observed_hit_rate": 0.5385
+            },
+            "6": {
+              "n": 314,
+              "months": 53,
+              "symbols": 35,
+              "direction": null,
+              "lower_bound": 0.3831,
+              "observed_hit_rate": 0.5191
+            }
+          }
+        },
+        {
+          "year": 2024,
+          "training_n": 2178,
+          "latest_training_exit": "2023-12-01",
+          "test": {
+            "n": 444,
+            "stocks": 37,
+            "months": 12,
+            "up_pct": 48.2,
+            "down_pct": 51.58,
+            "unchanged_pct": 0.23,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 444
+          },
+          "bins": {
+            "0": {
+              "n": 310,
+              "months": 38,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4198,
+              "observed_hit_rate": 0.529
+            },
+            "1": {
+              "n": 396,
+              "months": 60,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.3876,
+              "observed_hit_rate": 0.5379
+            },
+            "2": {
+              "n": 294,
+              "months": 62,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4128,
+              "observed_hit_rate": 0.5578
+            },
+            "3": {
+              "n": 376,
+              "months": 78,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.385,
+              "observed_hit_rate": 0.5239
+            },
+            "4": {
+              "n": 204,
+              "months": 55,
+              "symbols": 34,
+              "direction": null,
+              "lower_bound": 0.4162,
+              "observed_hit_rate": 0.549
+            },
+            "5": {
+              "n": 234,
+              "months": 61,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4435,
+              "observed_hit_rate": 0.5598
+            },
+            "6": {
+              "n": 364,
+              "months": 60,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4205,
+              "observed_hit_rate": 0.5467
+            }
+          }
+        },
+        {
+          "year": 2025,
+          "training_n": 2622,
+          "latest_training_exit": "2024-12-01",
+          "test": {
+            "n": 444,
+            "stocks": 37,
+            "months": 12,
+            "up_pct": 27.7,
+            "down_pct": 71.62,
+            "unchanged_pct": 0.68,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 444
+          },
+          "bins": {
+            "0": {
+              "n": 338,
+              "months": 44,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.407,
+              "observed_hit_rate": 0.5355
+            },
+            "1": {
+              "n": 497,
+              "months": 68,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4,
+              "observed_hit_rate": 0.5392
+            },
+            "2": {
+              "n": 349,
+              "months": 73,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4127,
+              "observed_hit_rate": 0.5358
+            },
+            "3": {
+              "n": 432,
+              "months": 89,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4265,
+              "observed_hit_rate": 0.544
+            },
+            "4": {
+              "n": 254,
+              "months": 67,
+              "symbols": 36,
+              "direction": null,
+              "lower_bound": 0.4103,
+              "observed_hit_rate": 0.5236
+            },
+            "5": {
+              "n": 316,
+              "months": 73,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4169,
+              "observed_hit_rate": 0.5222
+            },
+            "6": {
+              "n": 436,
+              "months": 68,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.381,
+              "observed_hit_rate": 0.5069
+            }
+          }
+        },
+        {
+          "year": 2026,
+          "training_n": 3066,
+          "latest_training_exit": "2025-12-01",
+          "test": {
+            "n": 259,
+            "stocks": 37,
+            "months": 7,
+            "up_pct": 32.43,
+            "down_pct": 67.18,
+            "unchanged_pct": 0.39,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 259
+          },
+          "bins": {
+            "0": {
+              "n": 389,
+              "months": 49,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4281,
+              "observed_hit_rate": 0.5733
+            },
+            "1": {
+              "n": 560,
+              "months": 77,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4146,
+              "observed_hit_rate": 0.5304
+            },
+            "2": {
+              "n": 415,
+              "months": 83,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.3955,
+              "observed_hit_rate": 0.506
+            },
+            "3": {
+              "n": 541,
+              "months": 101,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4268,
+              "observed_hit_rate": 0.5397
+            },
+            "4": {
+              "n": 308,
+              "months": 79,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4091,
+              "observed_hit_rate": 0.5325
+            },
+            "5": {
+              "n": 363,
+              "months": 83,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4279,
+              "observed_hit_rate": 0.5344
+            },
+            "6": {
+              "n": 490,
+              "months": 75,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4148,
+              "observed_hit_rate": 0.5347
+            }
+          }
+        }
+      ]
+    },
+    "currency": {
+      "requested": 42,
+      "received": 42,
+      "missing": {},
+      "skipped": {
+        "short_window": 198,
+        "missing_outcome": 168
+      },
+      "first_signal": "1997-02-03",
+      "last_signal": "2026-07-01",
+      "baseline": {
+        "n": 7854,
+        "up_pct": 52.22,
+        "down_pct": 47.7,
+        "unchanged_pct": 0.09
+      },
+      "bullish": {
+        "n": 0,
+        "correct": 0,
+        "hit_pct": null,
+        "coverage_pct": 0.0,
+        "months": 0,
+        "symbols": 0,
+        "bootstrap_90_pct_interval": null,
+        "meets_51_pct_observed": null
+      },
+      "bearish": {
+        "n": 885,
+        "correct": 395,
+        "hit_pct": 44.63,
+        "coverage_pct": 11.27,
+        "months": 68,
+        "symbols": 42,
+        "bootstrap_90_pct_interval": [
+          39.53,
+          50.0
+        ],
+        "meets_51_pct_observed": false,
+        "lower_bound_above_51_pct": false
+      },
+      "combined": {
+        "n": 885,
+        "correct": 395,
+        "hit_pct": 44.63,
+        "always_up_same_calls_pct": 55.25,
+        "always_down_same_calls_pct": 44.63,
+        "coverage_pct": 11.27
+      },
+      "abstained": 6969,
+      "folds": [
+        {
+          "year": 2011,
+          "training_n": 3410,
+          "latest_training_exit": "2010-12-01",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 45.83,
+            "down_pct": 53.97,
+            "unchanged_pct": 0.2,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 259,
+              "months": 12,
+              "stocks": 42,
+              "hit_pct": 52.9
+            },
+            "abstained": 245
+          },
+          "bins": {
+            "0": {
+              "n": 187,
+              "months": 67,
+              "symbols": 40,
+              "direction": "bearish",
+              "lower_bound": 0.5411,
+              "observed_hit_rate": 0.6524
+            },
+            "1": {
+              "n": 561,
+              "months": 108,
+              "symbols": 42,
+              "direction": "bearish",
+              "lower_bound": 0.5041,
+              "observed_hit_rate": 0.5561
+            },
+            "2": {
+              "n": 632,
+              "months": 110,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4927,
+              "observed_hit_rate": 0.5506
+            },
+            "3": {
+              "n": 827,
+              "months": 115,
+              "symbols": 42,
+              "direction": "bearish",
+              "lower_bound": 0.523,
+              "observed_hit_rate": 0.5647
+            },
+            "4": {
+              "n": 607,
+              "months": 112,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4548,
+              "observed_hit_rate": 0.5041
+            },
+            "5": {
+              "n": 451,
+              "months": 107,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.465,
+              "observed_hit_rate": 0.5322
+            },
+            "6": {
+              "n": 145,
+              "months": 53,
+              "symbols": 34,
+              "direction": null,
+              "lower_bound": 0.3884,
+              "observed_hit_rate": 0.5241
+            }
+          }
+        },
+        {
+          "year": 2012,
+          "training_n": 3914,
+          "latest_training_exit": "2011-12-01",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 52.78,
+            "down_pct": 47.22,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 311,
+              "months": 12,
+              "stocks": 42,
+              "hit_pct": 40.19
+            },
+            "abstained": 193
+          },
+          "bins": {
+            "0": {
+              "n": 203,
+              "months": 74,
+              "symbols": 40,
+              "direction": "bearish",
+              "lower_bound": 0.55,
+              "observed_hit_rate": 0.6453
+            },
+            "1": {
+              "n": 660,
+              "months": 120,
+              "symbols": 42,
+              "direction": "bearish",
+              "lower_bound": 0.5162,
+              "observed_hit_rate": 0.5621
+            },
+            "2": {
+              "n": 727,
+              "months": 122,
+              "symbols": 42,
+              "direction": "bearish",
+              "lower_bound": 0.5092,
+              "observed_hit_rate": 0.5557
+            },
+            "3": {
+              "n": 999,
+              "months": 127,
+              "symbols": 42,
+              "direction": "bearish",
+              "lower_bound": 0.5253,
+              "observed_hit_rate": 0.5566
+            },
+            "4": {
+              "n": 677,
+              "months": 124,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4656,
+              "observed_hit_rate": 0.5111
+            },
+            "5": {
+              "n": 491,
+              "months": 118,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4642,
+              "observed_hit_rate": 0.5234
+            },
+            "6": {
+              "n": 157,
+              "months": 60,
+              "symbols": 36,
+              "direction": null,
+              "lower_bound": 0.4121,
+              "observed_hit_rate": 0.5287
+            }
+          }
+        },
+        {
+          "year": 2013,
+          "training_n": 4418,
+          "latest_training_exit": "2012-12-03",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 62.3,
+            "down_pct": 37.5,
+            "unchanged_pct": 0.2,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 138,
+              "months": 12,
+              "stocks": 41,
+              "hit_pct": 39.86
+            },
+            "abstained": 366
+          },
+          "bins": {
+            "0": {
+              "n": 214,
+              "months": 79,
+              "symbols": 40,
+              "direction": "bearish",
+              "lower_bound": 0.5288,
+              "observed_hit_rate": 0.6215
+            },
+            "1": {
+              "n": 732,
+              "months": 132,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4907,
+              "observed_hit_rate": 0.5369
+            },
+            "2": {
+              "n": 828,
+              "months": 134,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4851,
+              "observed_hit_rate": 0.5338
+            },
+            "3": {
+              "n": 1112,
+              "months": 139,
+              "symbols": 42,
+              "direction": "bearish",
+              "lower_bound": 0.5175,
+              "observed_hit_rate": 0.5522
+            },
+            "4": {
+              "n": 784,
+              "months": 136,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4798,
+              "observed_hit_rate": 0.5217
+            },
+            "5": {
+              "n": 566,
+              "months": 130,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4401,
+              "observed_hit_rate": 0.5071
+            },
+            "6": {
+              "n": 182,
+              "months": 69,
+              "symbols": 37,
+              "direction": null,
+              "lower_bound": 0.4,
+              "observed_hit_rate": 0.511
+            }
+          }
+        },
+        {
+          "year": 2014,
+          "training_n": 4922,
+          "latest_training_exit": "2013-12-02",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 53.17,
+            "down_pct": 46.83,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 121,
+              "months": 12,
+              "stocks": 42,
+              "hit_pct": 47.11
+            },
+            "abstained": 383
+          },
+          "bins": {
+            "0": {
+              "n": 225,
+              "months": 85,
+              "symbols": 40,
+              "direction": "bearish",
+              "lower_bound": 0.5165,
+              "observed_hit_rate": 0.6044
+            },
+            "1": {
+              "n": 795,
+              "months": 144,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4766,
+              "observed_hit_rate": 0.5208
+            },
+            "2": {
+              "n": 910,
+              "months": 146,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4787,
+              "observed_hit_rate": 0.5286
+            },
+            "3": {
+              "n": 1241,
+              "months": 151,
+              "symbols": 42,
+              "direction": "bearish",
+              "lower_bound": 0.5118,
+              "observed_hit_rate": 0.5415
+            },
+            "4": {
+              "n": 889,
+              "months": 148,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4524,
+              "observed_hit_rate": 0.5006
+            },
+            "5": {
+              "n": 647,
+              "months": 142,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4462,
+              "observed_hit_rate": 0.5023
+            },
+            "6": {
+              "n": 215,
+              "months": 77,
+              "symbols": 39,
+              "direction": null,
+              "lower_bound": 0.4158,
+              "observed_hit_rate": 0.5256
+            }
+          }
+        },
+        {
+          "year": 2015,
+          "training_n": 5426,
+          "latest_training_exit": "2014-12-01",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 57.54,
+            "down_pct": 42.26,
+            "unchanged_pct": 0.2,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 504
+          },
+          "bins": {
+            "0": {
+              "n": 232,
+              "months": 89,
+              "symbols": 40,
+              "direction": null,
+              "lower_bound": 0.5,
+              "observed_hit_rate": 0.6034
+            },
+            "1": {
+              "n": 867,
+              "months": 156,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4692,
+              "observed_hit_rate": 0.5133
+            },
+            "2": {
+              "n": 1004,
+              "months": 158,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4802,
+              "observed_hit_rate": 0.5259
+            },
+            "3": {
+              "n": 1357,
+              "months": 163,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4972,
+              "observed_hit_rate": 0.5291
+            },
+            "4": {
+              "n": 989,
+              "months": 160,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4647,
+              "observed_hit_rate": 0.5086
+            },
+            "5": {
+              "n": 736,
+              "months": 154,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4534,
+              "observed_hit_rate": 0.5095
+            },
+            "6": {
+              "n": 241,
+              "months": 85,
+              "symbols": 41,
+              "direction": null,
+              "lower_bound": 0.4045,
+              "observed_hit_rate": 0.5187
+            }
+          }
+        },
+        {
+          "year": 2016,
+          "training_n": 5930,
+          "latest_training_exit": "2015-12-01",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 47.62,
+            "down_pct": 52.18,
+            "unchanged_pct": 0.2,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 11,
+              "months": 4,
+              "stocks": 9,
+              "hit_pct": 45.45
+            },
+            "abstained": 493
+          },
+          "bins": {
+            "0": {
+              "n": 254,
+              "months": 97,
+              "symbols": 40,
+              "direction": "bearish",
+              "lower_bound": 0.5265,
+              "observed_hit_rate": 0.6102
+            },
+            "1": {
+              "n": 932,
+              "months": 167,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4636,
+              "observed_hit_rate": 0.5064
+            },
+            "2": {
+              "n": 1077,
+              "months": 170,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4821,
+              "observed_hit_rate": 0.5246
+            },
+            "3": {
+              "n": 1458,
+              "months": 175,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4833,
+              "observed_hit_rate": 0.5185
+            },
+            "4": {
+              "n": 1071,
+              "months": 172,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4742,
+              "observed_hit_rate": 0.5173
+            },
+            "5": {
+              "n": 851,
+              "months": 166,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4699,
+              "observed_hit_rate": 0.5206
+            },
+            "6": {
+              "n": 287,
+              "months": 95,
+              "symbols": 41,
+              "direction": null,
+              "lower_bound": 0.4347,
+              "observed_hit_rate": 0.547
+            }
+          }
+        },
+        {
+          "year": 2017,
+          "training_n": 6434,
+          "latest_training_exit": "2016-12-01",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 48.02,
+            "down_pct": 51.98,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 20,
+              "months": 8,
+              "stocks": 12,
+              "hit_pct": 50.0
+            },
+            "abstained": 484
+          },
+          "bins": {
+            "0": {
+              "n": 265,
+              "months": 101,
+              "symbols": 41,
+              "direction": "bearish",
+              "lower_bound": 0.5202,
+              "observed_hit_rate": 0.6038
+            },
+            "1": {
+              "n": 1026,
+              "months": 179,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4685,
+              "observed_hit_rate": 0.5127
+            },
+            "2": {
+              "n": 1163,
+              "months": 182,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4777,
+              "observed_hit_rate": 0.5159
+            },
+            "3": {
+              "n": 1594,
+              "months": 187,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4852,
+              "observed_hit_rate": 0.5163
+            },
+            "4": {
+              "n": 1166,
+              "months": 184,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4678,
+              "observed_hit_rate": 0.5094
+            },
+            "5": {
+              "n": 914,
+              "months": 178,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4711,
+              "observed_hit_rate": 0.5186
+            },
+            "6": {
+              "n": 306,
+              "months": 102,
+              "symbols": 41,
+              "direction": null,
+              "lower_bound": 0.4264,
+              "observed_hit_rate": 0.5261
+            }
+          }
+        },
+        {
+          "year": 2018,
+          "training_n": 6938,
+          "latest_training_exit": "2017-12-01",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 50.6,
+            "down_pct": 49.21,
+            "unchanged_pct": 0.2,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 25,
+              "months": 8,
+              "stocks": 20,
+              "hit_pct": 24.0
+            },
+            "abstained": 479
+          },
+          "bins": {
+            "0": {
+              "n": 284,
+              "months": 108,
+              "symbols": 41,
+              "direction": "bearish",
+              "lower_bound": 0.522,
+              "observed_hit_rate": 0.5951
+            },
+            "1": {
+              "n": 1089,
+              "months": 191,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4661,
+              "observed_hit_rate": 0.5069
+            },
+            "2": {
+              "n": 1254,
+              "months": 194,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4686,
+              "observed_hit_rate": 0.508
+            },
+            "3": {
+              "n": 1729,
+              "months": 199,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4832,
+              "observed_hit_rate": 0.5119
+            },
+            "4": {
+              "n": 1241,
+              "months": 195,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4697,
+              "observed_hit_rate": 0.5093
+            },
+            "5": {
+              "n": 1001,
+              "months": 190,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4624,
+              "observed_hit_rate": 0.5025
+            },
+            "6": {
+              "n": 340,
+              "months": 109,
+              "symbols": 41,
+              "direction": null,
+              "lower_bound": 0.4055,
+              "observed_hit_rate": 0.5029
+            }
+          }
+        },
+        {
+          "year": 2019,
+          "training_n": 7442,
+          "latest_training_exit": "2018-12-03",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 45.83,
+            "down_pct": 53.97,
+            "unchanged_pct": 0.2,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 504
+          },
+          "bins": {
+            "0": {
+              "n": 310,
+              "months": 117,
+              "symbols": 41,
+              "direction": null,
+              "lower_bound": 0.49,
+              "observed_hit_rate": 0.5677
+            },
+            "1": {
+              "n": 1166,
+              "months": 203,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4632,
+              "observed_hit_rate": 0.5026
+            },
+            "2": {
+              "n": 1339,
+              "months": 206,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4711,
+              "observed_hit_rate": 0.5086
+            },
+            "3": {
+              "n": 1827,
+              "months": 211,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.481,
+              "observed_hit_rate": 0.5101
+            },
+            "4": {
+              "n": 1342,
+              "months": 207,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4748,
+              "observed_hit_rate": 0.5112
+            },
+            "5": {
+              "n": 1096,
+              "months": 202,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4601,
+              "observed_hit_rate": 0.5
+            },
+            "6": {
+              "n": 362,
+              "months": 117,
+              "symbols": 41,
+              "direction": null,
+              "lower_bound": 0.4141,
+              "observed_hit_rate": 0.5028
+            }
+          }
+        },
+        {
+          "year": 2020,
+          "training_n": 7946,
+          "latest_training_exit": "2019-12-02",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 47.82,
+            "down_pct": 52.18,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 504
+          },
+          "bins": {
+            "0": {
+              "n": 324,
+              "months": 123,
+              "symbols": 41,
+              "direction": null,
+              "lower_bound": 0.4834,
+              "observed_hit_rate": 0.5556
+            },
+            "1": {
+              "n": 1256,
+              "months": 215,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4617,
+              "observed_hit_rate": 0.5016
+            },
+            "2": {
+              "n": 1447,
+              "months": 218,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4739,
+              "observed_hit_rate": 0.5052
+            },
+            "3": {
+              "n": 1965,
+              "months": 223,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4853,
+              "observed_hit_rate": 0.5135
+            },
+            "4": {
+              "n": 1433,
+              "months": 219,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4659,
+              "observed_hit_rate": 0.5024
+            },
+            "5": {
+              "n": 1152,
+              "months": 213,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4697,
+              "observed_hit_rate": 0.5122
+            },
+            "6": {
+              "n": 369,
+              "months": 124,
+              "symbols": 41,
+              "direction": null,
+              "lower_bound": 0.4116,
+              "observed_hit_rate": 0.5014
+            }
+          }
+        },
+        {
+          "year": 2021,
+          "training_n": 8450,
+          "latest_training_exit": "2020-12-01",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 52.58,
+            "down_pct": 47.42,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 504
+          },
+          "bins": {
+            "0": {
+              "n": 345,
+              "months": 133,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4452,
+              "observed_hit_rate": 0.5333
+            },
+            "1": {
+              "n": 1342,
+              "months": 227,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.467,
+              "observed_hit_rate": 0.5022
+            },
+            "2": {
+              "n": 1530,
+              "months": 230,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.471,
+              "observed_hit_rate": 0.5039
+            },
+            "3": {
+              "n": 2085,
+              "months": 235,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4867,
+              "observed_hit_rate": 0.5122
+            },
+            "4": {
+              "n": 1525,
+              "months": 231,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4728,
+              "observed_hit_rate": 0.5075
+            },
+            "5": {
+              "n": 1230,
+              "months": 225,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4777,
+              "observed_hit_rate": 0.5203
+            },
+            "6": {
+              "n": 393,
+              "months": 132,
+              "symbols": 41,
+              "direction": null,
+              "lower_bound": 0.4358,
+              "observed_hit_rate": 0.5216
+            }
+          }
+        },
+        {
+          "year": 2022,
+          "training_n": 8954,
+          "latest_training_exit": "2021-12-01",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 56.35,
+            "down_pct": 43.65,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 504
+          },
+          "bins": {
+            "0": {
+              "n": 363,
+              "months": 141,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4303,
+              "observed_hit_rate": 0.5124
+            },
+            "1": {
+              "n": 1412,
+              "months": 239,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4659,
+              "observed_hit_rate": 0.5035
+            },
+            "2": {
+              "n": 1624,
+              "months": 242,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4749,
+              "observed_hit_rate": 0.5043
+            },
+            "3": {
+              "n": 2218,
+              "months": 247,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4825,
+              "observed_hit_rate": 0.5086
+            },
+            "4": {
+              "n": 1618,
+              "months": 243,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4746,
+              "observed_hit_rate": 0.5068
+            },
+            "5": {
+              "n": 1310,
+              "months": 236,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4792,
+              "observed_hit_rate": 0.5145
+            },
+            "6": {
+              "n": 409,
+              "months": 138,
+              "symbols": 41,
+              "direction": null,
+              "lower_bound": 0.4416,
+              "observed_hit_rate": 0.5232
+            }
+          }
+        },
+        {
+          "year": 2023,
+          "training_n": 9458,
+          "latest_training_exit": "2022-12-01",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 52.38,
+            "down_pct": 47.62,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 504
+          },
+          "bins": {
+            "0": {
+              "n": 377,
+              "months": 149,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4349,
+              "observed_hit_rate": 0.5199
+            },
+            "1": {
+              "n": 1479,
+              "months": 251,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4653,
+              "observed_hit_rate": 0.5024
+            },
+            "2": {
+              "n": 1710,
+              "months": 254,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4759,
+              "observed_hit_rate": 0.5047
+            },
+            "3": {
+              "n": 2342,
+              "months": 259,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4784,
+              "observed_hit_rate": 0.5034
+            },
+            "4": {
+              "n": 1715,
+              "months": 255,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4686,
+              "observed_hit_rate": 0.5009
+            },
+            "5": {
+              "n": 1405,
+              "months": 248,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4696,
+              "observed_hit_rate": 0.5032
+            },
+            "6": {
+              "n": 430,
+              "months": 142,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4218,
+              "observed_hit_rate": 0.5023
+            }
+          }
+        },
+        {
+          "year": 2024,
+          "training_n": 9962,
+          "latest_training_exit": "2023-12-01",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 57.14,
+            "down_pct": 42.86,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 504
+          },
+          "bins": {
+            "0": {
+              "n": 392,
+              "months": 153,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4335,
+              "observed_hit_rate": 0.5153
+            },
+            "1": {
+              "n": 1543,
+              "months": 263,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4672,
+              "observed_hit_rate": 0.5023
+            },
+            "2": {
+              "n": 1800,
+              "months": 266,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4769,
+              "observed_hit_rate": 0.5039
+            },
+            "3": {
+              "n": 2465,
+              "months": 271,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4777,
+              "observed_hit_rate": 0.501
+            },
+            "4": {
+              "n": 1817,
+              "months": 267,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.47,
+              "observed_hit_rate": 0.5014
+            },
+            "5": {
+              "n": 1485,
+              "months": 260,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4673,
+              "observed_hit_rate": 0.503
+            },
+            "6": {
+              "n": 460,
+              "months": 151,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.435,
+              "observed_hit_rate": 0.5065
+            }
+          }
+        },
+        {
+          "year": 2025,
+          "training_n": 10466,
+          "latest_training_exit": "2024-12-02",
+          "test": {
+            "n": 504,
+            "stocks": 42,
+            "months": 12,
+            "up_pct": 47.82,
+            "down_pct": 52.18,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 504
+          },
+          "bins": {
+            "0": {
+              "n": 399,
+              "months": 156,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4306,
+              "observed_hit_rate": 0.5088
+            },
+            "1": {
+              "n": 1599,
+              "months": 273,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4766,
+              "observed_hit_rate": 0.5116
+            },
+            "2": {
+              "n": 1888,
+              "months": 278,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4717,
+              "observed_hit_rate": 0.5026
+            },
+            "3": {
+              "n": 2585,
+              "months": 283,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4758,
+              "observed_hit_rate": 0.4998
+            },
+            "4": {
+              "n": 1944,
+              "months": 279,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4729,
+              "observed_hit_rate": 0.5057
+            },
+            "5": {
+              "n": 1570,
+              "months": 271,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4792,
+              "observed_hit_rate": 0.5153
+            },
+            "6": {
+              "n": 481,
+              "months": 157,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4464,
+              "observed_hit_rate": 0.5239
+            }
+          }
+        },
+        {
+          "year": 2026,
+          "training_n": 10970,
+          "latest_training_exit": "2025-12-01",
+          "test": {
+            "n": 294,
+            "stocks": 42,
+            "months": 7,
+            "up_pct": 61.56,
+            "down_pct": 38.1,
+            "unchanged_pct": 0.34,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 294
+          },
+          "bins": {
+            "0": {
+              "n": 412,
+              "months": 162,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4286,
+              "observed_hit_rate": 0.5024
+            },
+            "1": {
+              "n": 1688,
+              "months": 284,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4755,
+              "observed_hit_rate": 0.5071
+            },
+            "2": {
+              "n": 1985,
+              "months": 290,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4705,
+              "observed_hit_rate": 0.4997
+            },
+            "3": {
+              "n": 2696,
+              "months": 295,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4776,
+              "observed_hit_rate": 0.5026
+            },
+            "4": {
+              "n": 2040,
+              "months": 291,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4806,
+              "observed_hit_rate": 0.5113
+            },
+            "5": {
+              "n": 1647,
+              "months": 283,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.4759,
+              "observed_hit_rate": 0.5112
+            },
+            "6": {
+              "n": 502,
+              "months": 164,
+              "symbols": 42,
+              "direction": null,
+              "lower_bound": 0.46,
+              "observed_hit_rate": 0.5359
+            }
+          }
+        }
+      ]
+    },
+    "fund": {
+      "requested": 92,
+      "received": 92,
+      "missing": {},
+      "skipped": {
+        "short_window": 315,
+        "missing_outcome": 276
+      },
+      "first_signal": "1993-05-03",
+      "last_signal": "2026-07-01",
+      "baseline": {
+        "n": 16738,
+        "up_pct": 59.46,
+        "down_pct": 39.61,
+        "unchanged_pct": 0.93
+      },
+      "bullish": {
+        "n": 13166,
+        "correct": 7663,
+        "hit_pct": 58.2,
+        "coverage_pct": 78.66,
+        "months": 187,
+        "symbols": 92,
+        "bootstrap_90_pct_interval": [
+          53.08,
+          63.08
+        ],
+        "meets_51_pct_observed": true,
+        "lower_bound_above_51_pct": true
+      },
+      "bearish": {
+        "n": 0,
+        "correct": 0,
+        "hit_pct": null,
+        "coverage_pct": 0.0,
+        "months": 0,
+        "symbols": 0,
+        "bootstrap_90_pct_interval": null,
+        "meets_51_pct_observed": null
+      },
+      "combined": {
+        "n": 13166,
+        "correct": 7663,
+        "hit_pct": 58.2,
+        "always_up_same_calls_pct": 58.2,
+        "always_down_same_calls_pct": 41.16,
+        "coverage_pct": 78.66
+      },
+      "abstained": 3572,
+      "folds": [
+        {
+          "year": 2011,
+          "training_n": 6543,
+          "latest_training_exit": "2010-12-01",
+          "test": {
+            "n": 959,
+            "stocks": 81,
+            "months": 12,
+            "up_pct": 56.83,
+            "down_pct": 41.5,
+            "unchanged_pct": 1.67,
+            "bullish": {
+              "n": 261,
+              "months": 12,
+              "stocks": 73,
+              "hit_pct": 58.62
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 698
+          },
+          "bins": {
+            "0": {
+              "n": 261,
+              "months": 76,
+              "symbols": 61,
+              "direction": null,
+              "lower_bound": 0.359,
+              "observed_hit_rate": 0.5939
+            },
+            "1": {
+              "n": 772,
+              "months": 139,
+              "symbols": 73,
+              "direction": null,
+              "lower_bound": 0.4567,
+              "observed_hit_rate": 0.5894
+            },
+            "2": {
+              "n": 973,
+              "months": 144,
+              "symbols": 77,
+              "direction": null,
+              "lower_bound": 0.4993,
+              "observed_hit_rate": 0.5817
+            },
+            "3": {
+              "n": 1408,
+              "months": 161,
+              "symbols": 77,
+              "direction": null,
+              "lower_bound": 0.4746,
+              "observed_hit_rate": 0.5547
+            },
+            "4": {
+              "n": 1197,
+              "months": 154,
+              "symbols": 76,
+              "direction": null,
+              "lower_bound": 0.4752,
+              "observed_hit_rate": 0.5698
+            },
+            "5": {
+              "n": 1318,
+              "months": 151,
+              "symbols": 75,
+              "direction": "bullish",
+              "lower_bound": 0.5482,
+              "observed_hit_rate": 0.6366
+            },
+            "6": {
+              "n": 614,
+              "months": 117,
+              "symbols": 73,
+              "direction": "bullish",
+              "lower_bound": 0.5152,
+              "observed_hit_rate": 0.6254
+            }
+          }
+        },
+        {
+          "year": 2012,
+          "training_n": 7494,
+          "latest_training_exit": "2011-12-01",
+          "test": {
+            "n": 1020,
+            "stocks": 86,
+            "months": 12,
+            "up_pct": 60.69,
+            "down_pct": 37.16,
+            "unchanged_pct": 2.16,
+            "bullish": {
+              "n": 368,
+              "months": 12,
+              "stocks": 81,
+              "hit_pct": 49.46
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 652
+          },
+          "bins": {
+            "0": {
+              "n": 265,
+              "months": 79,
+              "symbols": 61,
+              "direction": null,
+              "lower_bound": 0.3383,
+              "observed_hit_rate": 0.5849
+            },
+            "1": {
+              "n": 841,
+              "months": 150,
+              "symbols": 77,
+              "direction": null,
+              "lower_bound": 0.4485,
+              "observed_hit_rate": 0.566
+            },
+            "2": {
+              "n": 1101,
+              "months": 155,
+              "symbols": 81,
+              "direction": null,
+              "lower_bound": 0.4976,
+              "observed_hit_rate": 0.5658
+            },
+            "3": {
+              "n": 1597,
+              "months": 173,
+              "symbols": 80,
+              "direction": null,
+              "lower_bound": 0.4643,
+              "observed_hit_rate": 0.5335
+            },
+            "4": {
+              "n": 1345,
+              "months": 166,
+              "symbols": 79,
+              "direction": null,
+              "lower_bound": 0.4896,
+              "observed_hit_rate": 0.5725
+            },
+            "5": {
+              "n": 1607,
+              "months": 163,
+              "symbols": 77,
+              "direction": "bullish",
+              "lower_bound": 0.5689,
+              "observed_hit_rate": 0.6453
+            },
+            "6": {
+              "n": 738,
+              "months": 128,
+              "symbols": 75,
+              "direction": "bullish",
+              "lower_bound": 0.5441,
+              "observed_hit_rate": 0.6396
+            }
+          }
+        },
+        {
+          "year": 2013,
+          "training_n": 8499,
+          "latest_training_exit": "2012-12-04",
+          "test": {
+            "n": 1041,
+            "stocks": 88,
+            "months": 12,
+            "up_pct": 62.44,
+            "down_pct": 35.83,
+            "unchanged_pct": 1.73,
+            "bullish": {
+              "n": 589,
+              "months": 12,
+              "stocks": 87,
+              "hit_pct": 65.37
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 452
+          },
+          "bins": {
+            "0": {
+              "n": 321,
+              "months": 88,
+              "symbols": 68,
+              "direction": null,
+              "lower_bound": 0.2794,
+              "observed_hit_rate": 0.5047
+            },
+            "1": {
+              "n": 935,
+              "months": 159,
+              "symbols": 82,
+              "direction": null,
+              "lower_bound": 0.4718,
+              "observed_hit_rate": 0.5957
+            },
+            "2": {
+              "n": 1208,
+              "months": 167,
+              "symbols": 83,
+              "direction": "bullish",
+              "lower_bound": 0.5047,
+              "observed_hit_rate": 0.577
+            },
+            "3": {
+              "n": 1853,
+              "months": 185,
+              "symbols": 84,
+              "direction": null,
+              "lower_bound": 0.4735,
+              "observed_hit_rate": 0.5505
+            },
+            "4": {
+              "n": 1526,
+              "months": 178,
+              "symbols": 85,
+              "direction": "bullish",
+              "lower_bound": 0.5134,
+              "observed_hit_rate": 0.5898
+            },
+            "5": {
+              "n": 1835,
+              "months": 175,
+              "symbols": 83,
+              "direction": "bullish",
+              "lower_bound": 0.5695,
+              "observed_hit_rate": 0.6365
+            },
+            "6": {
+              "n": 821,
+              "months": 138,
+              "symbols": 79,
+              "direction": null,
+              "lower_bound": 0.4748,
+              "observed_hit_rate": 0.5895
+            }
+          }
+        },
+        {
+          "year": 2014,
+          "training_n": 9534,
+          "latest_training_exit": "2013-12-03",
+          "test": {
+            "n": 1059,
+            "stocks": 89,
+            "months": 12,
+            "up_pct": 70.54,
+            "down_pct": 27.67,
+            "unchanged_pct": 1.79,
+            "bullish": {
+              "n": 715,
+              "months": 12,
+              "stocks": 89,
+              "hit_pct": 74.13
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 344
+          },
+          "bins": {
+            "0": {
+              "n": 355,
+              "months": 96,
+              "symbols": 71,
+              "direction": null,
+              "lower_bound": 0.3105,
+              "observed_hit_rate": 0.5099
+            },
+            "1": {
+              "n": 1055,
+              "months": 171,
+              "symbols": 83,
+              "direction": null,
+              "lower_bound": 0.4559,
+              "observed_hit_rate": 0.5706
+            },
+            "2": {
+              "n": 1327,
+              "months": 179,
+              "symbols": 84,
+              "direction": "bullish",
+              "lower_bound": 0.5018,
+              "observed_hit_rate": 0.569
+            },
+            "3": {
+              "n": 2073,
+              "months": 197,
+              "symbols": 87,
+              "direction": null,
+              "lower_bound": 0.4905,
+              "observed_hit_rate": 0.5586
+            },
+            "4": {
+              "n": 1735,
+              "months": 190,
+              "symbols": 87,
+              "direction": "bullish",
+              "lower_bound": 0.5363,
+              "observed_hit_rate": 0.6098
+            },
+            "5": {
+              "n": 2093,
+              "months": 187,
+              "symbols": 86,
+              "direction": "bullish",
+              "lower_bound": 0.5875,
+              "observed_hit_rate": 0.6474
+            },
+            "6": {
+              "n": 896,
+              "months": 148,
+              "symbols": 80,
+              "direction": "bullish",
+              "lower_bound": 0.5007,
+              "observed_hit_rate": 0.6027
+            }
+          }
+        },
+        {
+          "year": 2015,
+          "training_n": 10590,
+          "latest_training_exit": "2014-12-02",
+          "test": {
+            "n": 1079,
+            "stocks": 90,
+            "months": 12,
+            "up_pct": 41.15,
+            "down_pct": 57.74,
+            "unchanged_pct": 1.11,
+            "bullish": {
+              "n": 872,
+              "months": 12,
+              "stocks": 90,
+              "hit_pct": 37.04
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 207
+          },
+          "bins": {
+            "0": {
+              "n": 370,
+              "months": 103,
+              "symbols": 71,
+              "direction": null,
+              "lower_bound": 0.2975,
+              "observed_hit_rate": 0.5027
+            },
+            "1": {
+              "n": 1118,
+              "months": 181,
+              "symbols": 85,
+              "direction": null,
+              "lower_bound": 0.4842,
+              "observed_hit_rate": 0.5841
+            },
+            "2": {
+              "n": 1426,
+              "months": 191,
+              "symbols": 86,
+              "direction": "bullish",
+              "lower_bound": 0.5137,
+              "observed_hit_rate": 0.5757
+            },
+            "3": {
+              "n": 2273,
+              "months": 209,
+              "symbols": 88,
+              "direction": "bullish",
+              "lower_bound": 0.5019,
+              "observed_hit_rate": 0.5631
+            },
+            "4": {
+              "n": 2008,
+              "months": 202,
+              "symbols": 88,
+              "direction": "bullish",
+              "lower_bound": 0.5595,
+              "observed_hit_rate": 0.622
+            },
+            "5": {
+              "n": 2415,
+              "months": 199,
+              "symbols": 87,
+              "direction": "bullish",
+              "lower_bound": 0.5971,
+              "observed_hit_rate": 0.6493
+            },
+            "6": {
+              "n": 980,
+              "months": 160,
+              "symbols": 83,
+              "direction": "bullish",
+              "lower_bound": 0.5171,
+              "observed_hit_rate": 0.6143
+            }
+          }
+        },
+        {
+          "year": 2016,
+          "training_n": 11666,
+          "latest_training_exit": "2015-12-01",
+          "test": {
+            "n": 1080,
+            "stocks": 90,
+            "months": 12,
+            "up_pct": 71.2,
+            "down_pct": 27.87,
+            "unchanged_pct": 0.93,
+            "bullish": {
+              "n": 720,
+              "months": 12,
+              "stocks": 90,
+              "hit_pct": 68.33
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 360
+          },
+          "bins": {
+            "0": {
+              "n": 453,
+              "months": 114,
+              "symbols": 74,
+              "direction": null,
+              "lower_bound": 0.3497,
+              "observed_hit_rate": 0.5077
+            },
+            "1": {
+              "n": 1252,
+              "months": 193,
+              "symbols": 87,
+              "direction": null,
+              "lower_bound": 0.4753,
+              "observed_hit_rate": 0.5767
+            },
+            "2": {
+              "n": 1600,
+              "months": 203,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5045,
+              "observed_hit_rate": 0.5631
+            },
+            "3": {
+              "n": 2553,
+              "months": 221,
+              "symbols": 90,
+              "direction": null,
+              "lower_bound": 0.4987,
+              "observed_hit_rate": 0.5542
+            },
+            "4": {
+              "n": 2232,
+              "months": 214,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5461,
+              "observed_hit_rate": 0.608
+            },
+            "5": {
+              "n": 2578,
+              "months": 210,
+              "symbols": 88,
+              "direction": "bullish",
+              "lower_bound": 0.5951,
+              "observed_hit_rate": 0.6455
+            },
+            "6": {
+              "n": 998,
+              "months": 169,
+              "symbols": 84,
+              "direction": "bullish",
+              "lower_bound": 0.5213,
+              "observed_hit_rate": 0.6132
+            }
+          }
+        },
+        {
+          "year": 2017,
+          "training_n": 12746,
+          "latest_training_exit": "2016-12-01",
+          "test": {
+            "n": 1080,
+            "stocks": 90,
+            "months": 12,
+            "up_pct": 75.28,
+            "down_pct": 24.07,
+            "unchanged_pct": 0.65,
+            "bullish": {
+              "n": 1066,
+              "months": 12,
+              "stocks": 90,
+              "hit_pct": 75.33
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 14
+          },
+          "bins": {
+            "0": {
+              "n": 486,
+              "months": 123,
+              "symbols": 74,
+              "direction": null,
+              "lower_bound": 0.3552,
+              "observed_hit_rate": 0.5041
+            },
+            "1": {
+              "n": 1387,
+              "months": 202,
+              "symbols": 87,
+              "direction": "bullish",
+              "lower_bound": 0.5052,
+              "observed_hit_rate": 0.6042
+            },
+            "2": {
+              "n": 1734,
+              "months": 215,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.52,
+              "observed_hit_rate": 0.5807
+            },
+            "3": {
+              "n": 2750,
+              "months": 233,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5043,
+              "observed_hit_rate": 0.5604
+            },
+            "4": {
+              "n": 2488,
+              "months": 226,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5468,
+              "observed_hit_rate": 0.6029
+            },
+            "5": {
+              "n": 2834,
+              "months": 222,
+              "symbols": 88,
+              "direction": "bullish",
+              "lower_bound": 0.5857,
+              "observed_hit_rate": 0.6344
+            },
+            "6": {
+              "n": 1067,
+              "months": 179,
+              "symbols": 85,
+              "direction": "bullish",
+              "lower_bound": 0.5308,
+              "observed_hit_rate": 0.6139
+            }
+          }
+        },
+        {
+          "year": 2018,
+          "training_n": 13826,
+          "latest_training_exit": "2017-12-01",
+          "test": {
+            "n": 1084,
+            "stocks": 91,
+            "months": 12,
+            "up_pct": 43.17,
+            "down_pct": 55.9,
+            "unchanged_pct": 0.92,
+            "bullish": {
+              "n": 1052,
+              "months": 12,
+              "stocks": 91,
+              "hit_pct": 42.68
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 32
+          },
+          "bins": {
+            "0": {
+              "n": 519,
+              "months": 128,
+              "symbols": 80,
+              "direction": null,
+              "lower_bound": 0.3778,
+              "observed_hit_rate": 0.501
+            },
+            "1": {
+              "n": 1494,
+              "months": 213,
+              "symbols": 89,
+              "direction": "bullish",
+              "lower_bound": 0.5225,
+              "observed_hit_rate": 0.6078
+            },
+            "2": {
+              "n": 1866,
+              "months": 227,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5239,
+              "observed_hit_rate": 0.5836
+            },
+            "3": {
+              "n": 2942,
+              "months": 245,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5157,
+              "observed_hit_rate": 0.57
+            },
+            "4": {
+              "n": 2749,
+              "months": 238,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5624,
+              "observed_hit_rate": 0.621
+            },
+            "5": {
+              "n": 3060,
+              "months": 233,
+              "symbols": 89,
+              "direction": "bullish",
+              "lower_bound": 0.5889,
+              "observed_hit_rate": 0.6461
+            },
+            "6": {
+              "n": 1196,
+              "months": 190,
+              "symbols": 85,
+              "direction": "bullish",
+              "lower_bound": 0.5598,
+              "observed_hit_rate": 0.6455
+            }
+          }
+        },
+        {
+          "year": 2019,
+          "training_n": 14907,
+          "latest_training_exit": "2018-12-04",
+          "test": {
+            "n": 1092,
+            "stocks": 91,
+            "months": 12,
+            "up_pct": 66.76,
+            "down_pct": 31.87,
+            "unchanged_pct": 1.37,
+            "bullish": {
+              "n": 1081,
+              "months": 12,
+              "stocks": 91,
+              "hit_pct": 66.6
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 11
+          },
+          "bins": {
+            "0": {
+              "n": 552,
+              "months": 137,
+              "symbols": 81,
+              "direction": null,
+              "lower_bound": 0.3968,
+              "observed_hit_rate": 0.5018
+            },
+            "1": {
+              "n": 1617,
+              "months": 225,
+              "symbols": 89,
+              "direction": "bullish",
+              "lower_bound": 0.5022,
+              "observed_hit_rate": 0.5863
+            },
+            "2": {
+              "n": 2078,
+              "months": 239,
+              "symbols": 91,
+              "direction": "bullish",
+              "lower_bound": 0.5272,
+              "observed_hit_rate": 0.5775
+            },
+            "3": {
+              "n": 3180,
+              "months": 257,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.518,
+              "observed_hit_rate": 0.5664
+            },
+            "4": {
+              "n": 2887,
+              "months": 250,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5622,
+              "observed_hit_rate": 0.6138
+            },
+            "5": {
+              "n": 3282,
+              "months": 245,
+              "symbols": 89,
+              "direction": "bullish",
+              "lower_bound": 0.5835,
+              "observed_hit_rate": 0.6353
+            },
+            "6": {
+              "n": 1311,
+              "months": 199,
+              "symbols": 85,
+              "direction": "bullish",
+              "lower_bound": 0.5403,
+              "observed_hit_rate": 0.6224
+            }
+          }
+        },
+        {
+          "year": 2020,
+          "training_n": 15999,
+          "latest_training_exit": "2019-12-03",
+          "test": {
+            "n": 1092,
+            "stocks": 91,
+            "months": 12,
+            "up_pct": 67.22,
+            "down_pct": 32.14,
+            "unchanged_pct": 0.64,
+            "bullish": {
+              "n": 1047,
+              "months": 12,
+              "stocks": 91,
+              "hit_pct": 66.48
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 45
+          },
+          "bins": {
+            "0": {
+              "n": 566,
+              "months": 144,
+              "symbols": 81,
+              "direction": null,
+              "lower_bound": 0.407,
+              "observed_hit_rate": 0.5106
+            },
+            "1": {
+              "n": 1754,
+              "months": 236,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.522,
+              "observed_hit_rate": 0.6021
+            },
+            "2": {
+              "n": 2292,
+              "months": 251,
+              "symbols": 91,
+              "direction": "bullish",
+              "lower_bound": 0.5342,
+              "observed_hit_rate": 0.5886
+            },
+            "3": {
+              "n": 3395,
+              "months": 269,
+              "symbols": 91,
+              "direction": "bullish",
+              "lower_bound": 0.522,
+              "observed_hit_rate": 0.5732
+            },
+            "4": {
+              "n": 3098,
+              "months": 262,
+              "symbols": 91,
+              "direction": "bullish",
+              "lower_bound": 0.55,
+              "observed_hit_rate": 0.6039
+            },
+            "5": {
+              "n": 3442,
+              "months": 257,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5752,
+              "observed_hit_rate": 0.6302
+            },
+            "6": {
+              "n": 1452,
+              "months": 210,
+              "symbols": 88,
+              "direction": "bullish",
+              "lower_bound": 0.5508,
+              "observed_hit_rate": 0.624
+            }
+          }
+        },
+        {
+          "year": 2021,
+          "training_n": 17091,
+          "latest_training_exit": "2020-12-01",
+          "test": {
+            "n": 1092,
+            "stocks": 91,
+            "months": 12,
+            "up_pct": 56.23,
+            "down_pct": 43.5,
+            "unchanged_pct": 0.27,
+            "bullish": {
+              "n": 1073,
+              "months": 12,
+              "stocks": 91,
+              "hit_pct": 56.38
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 19
+          },
+          "bins": {
+            "0": {
+              "n": 607,
+              "months": 150,
+              "symbols": 81,
+              "direction": null,
+              "lower_bound": 0.4259,
+              "observed_hit_rate": 0.5321
+            },
+            "1": {
+              "n": 1859,
+              "months": 247,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5273,
+              "observed_hit_rate": 0.6122
+            },
+            "2": {
+              "n": 2432,
+              "months": 263,
+              "symbols": 91,
+              "direction": "bullish",
+              "lower_bound": 0.5417,
+              "observed_hit_rate": 0.5896
+            },
+            "3": {
+              "n": 3617,
+              "months": 281,
+              "symbols": 91,
+              "direction": "bullish",
+              "lower_bound": 0.5297,
+              "observed_hit_rate": 0.5795
+            },
+            "4": {
+              "n": 3274,
+              "months": 274,
+              "symbols": 91,
+              "direction": "bullish",
+              "lower_bound": 0.5565,
+              "observed_hit_rate": 0.6066
+            },
+            "5": {
+              "n": 3678,
+              "months": 269,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5738,
+              "observed_hit_rate": 0.6291
+            },
+            "6": {
+              "n": 1624,
+              "months": 219,
+              "symbols": 89,
+              "direction": "bullish",
+              "lower_bound": 0.5267,
+              "observed_hit_rate": 0.6108
+            }
+          }
+        },
+        {
+          "year": 2022,
+          "training_n": 18183,
+          "latest_training_exit": "2021-12-01",
+          "test": {
+            "n": 1104,
+            "stocks": 92,
+            "months": 12,
+            "up_pct": 32.43,
+            "down_pct": 67.3,
+            "unchanged_pct": 0.27,
+            "bullish": {
+              "n": 1013,
+              "months": 12,
+              "stocks": 92,
+              "hit_pct": 30.6
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 91
+          },
+          "bins": {
+            "0": {
+              "n": 622,
+              "months": 155,
+              "symbols": 81,
+              "direction": null,
+              "lower_bound": 0.4304,
+              "observed_hit_rate": 0.537
+            },
+            "1": {
+              "n": 1953,
+              "months": 259,
+              "symbols": 91,
+              "direction": "bullish",
+              "lower_bound": 0.5297,
+              "observed_hit_rate": 0.6022
+            },
+            "2": {
+              "n": 2539,
+              "months": 275,
+              "symbols": 91,
+              "direction": "bullish",
+              "lower_bound": 0.5434,
+              "observed_hit_rate": 0.5865
+            },
+            "3": {
+              "n": 3819,
+              "months": 293,
+              "symbols": 91,
+              "direction": "bullish",
+              "lower_bound": 0.5299,
+              "observed_hit_rate": 0.5803
+            },
+            "4": {
+              "n": 3497,
+              "months": 286,
+              "symbols": 91,
+              "direction": "bullish",
+              "lower_bound": 0.564,
+              "observed_hit_rate": 0.6082
+            },
+            "5": {
+              "n": 3953,
+              "months": 281,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5853,
+              "observed_hit_rate": 0.6385
+            },
+            "6": {
+              "n": 1800,
+              "months": 230,
+              "symbols": 89,
+              "direction": "bullish",
+              "lower_bound": 0.5573,
+              "observed_hit_rate": 0.6339
+            }
+          }
+        },
+        {
+          "year": 2023,
+          "training_n": 19284,
+          "latest_training_exit": "2022-12-01",
+          "test": {
+            "n": 1104,
+            "stocks": 92,
+            "months": 12,
+            "up_pct": 58.88,
+            "down_pct": 40.76,
+            "unchanged_pct": 0.36,
+            "bullish": {
+              "n": 715,
+              "months": 12,
+              "stocks": 92,
+              "hit_pct": 52.17
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 389
+          },
+          "bins": {
+            "0": {
+              "n": 694,
+              "months": 166,
+              "symbols": 83,
+              "direction": null,
+              "lower_bound": 0.4213,
+              "observed_hit_rate": 0.5159
+            },
+            "1": {
+              "n": 2190,
+              "months": 271,
+              "symbols": 92,
+              "direction": null,
+              "lower_bound": 0.4679,
+              "observed_hit_rate": 0.5507
+            },
+            "2": {
+              "n": 2839,
+              "months": 287,
+              "symbols": 91,
+              "direction": null,
+              "lower_bound": 0.4995,
+              "observed_hit_rate": 0.5491
+            },
+            "3": {
+              "n": 4093,
+              "months": 305,
+              "symbols": 92,
+              "direction": "bullish",
+              "lower_bound": 0.5164,
+              "observed_hit_rate": 0.5634
+            },
+            "4": {
+              "n": 3587,
+              "months": 298,
+              "symbols": 92,
+              "direction": "bullish",
+              "lower_bound": 0.5571,
+              "observed_hit_rate": 0.6022
+            },
+            "5": {
+              "n": 4043,
+              "months": 293,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5782,
+              "observed_hit_rate": 0.6295
+            },
+            "6": {
+              "n": 1838,
+              "months": 239,
+              "symbols": 89,
+              "direction": "bullish",
+              "lower_bound": 0.5616,
+              "observed_hit_rate": 0.63
+            }
+          }
+        },
+        {
+          "year": 2024,
+          "training_n": 20388,
+          "latest_training_exit": "2023-12-01",
+          "test": {
+            "n": 1104,
+            "stocks": 92,
+            "months": 12,
+            "up_pct": 60.96,
+            "down_pct": 38.68,
+            "unchanged_pct": 0.36,
+            "bullish": {
+              "n": 1013,
+              "months": 12,
+              "stocks": 92,
+              "hit_pct": 61.2
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 91
+          },
+          "bins": {
+            "0": {
+              "n": 730,
+              "months": 174,
+              "symbols": 83,
+              "direction": null,
+              "lower_bound": 0.4391,
+              "observed_hit_rate": 0.5315
+            },
+            "1": {
+              "n": 2322,
+              "months": 283,
+              "symbols": 92,
+              "direction": null,
+              "lower_bound": 0.4791,
+              "observed_hit_rate": 0.5551
+            },
+            "2": {
+              "n": 3038,
+              "months": 299,
+              "symbols": 92,
+              "direction": "bullish",
+              "lower_bound": 0.5133,
+              "observed_hit_rate": 0.5592
+            },
+            "3": {
+              "n": 4374,
+              "months": 317,
+              "symbols": 92,
+              "direction": "bullish",
+              "lower_bound": 0.5184,
+              "observed_hit_rate": 0.5624
+            },
+            "4": {
+              "n": 3780,
+              "months": 310,
+              "symbols": 92,
+              "direction": "bullish",
+              "lower_bound": 0.5484,
+              "observed_hit_rate": 0.5929
+            },
+            "5": {
+              "n": 4234,
+              "months": 304,
+              "symbols": 91,
+              "direction": "bullish",
+              "lower_bound": 0.5721,
+              "observed_hit_rate": 0.6205
+            },
+            "6": {
+              "n": 1910,
+              "months": 248,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5533,
+              "observed_hit_rate": 0.6173
+            }
+          }
+        },
+        {
+          "year": 2025,
+          "training_n": 21492,
+          "latest_training_exit": "2024-12-03",
+          "test": {
+            "n": 1104,
+            "stocks": 92,
+            "months": 12,
+            "up_pct": 72.46,
+            "down_pct": 27.36,
+            "unchanged_pct": 0.18,
+            "bullish": {
+              "n": 999,
+              "months": 12,
+              "stocks": 92,
+              "hit_pct": 71.77
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 105
+          },
+          "bins": {
+            "0": {
+              "n": 755,
+              "months": 183,
+              "symbols": 84,
+              "direction": null,
+              "lower_bound": 0.4479,
+              "observed_hit_rate": 0.5417
+            },
+            "1": {
+              "n": 2477,
+              "months": 295,
+              "symbols": 92,
+              "direction": null,
+              "lower_bound": 0.4946,
+              "observed_hit_rate": 0.5737
+            },
+            "2": {
+              "n": 3166,
+              "months": 311,
+              "symbols": 92,
+              "direction": "bullish",
+              "lower_bound": 0.519,
+              "observed_hit_rate": 0.5679
+            },
+            "3": {
+              "n": 4593,
+              "months": 329,
+              "symbols": 92,
+              "direction": "bullish",
+              "lower_bound": 0.5235,
+              "observed_hit_rate": 0.572
+            },
+            "4": {
+              "n": 3973,
+              "months": 321,
+              "symbols": 92,
+              "direction": "bullish",
+              "lower_bound": 0.5566,
+              "observed_hit_rate": 0.6041
+            },
+            "5": {
+              "n": 4428,
+              "months": 316,
+              "symbols": 91,
+              "direction": "bullish",
+              "lower_bound": 0.5661,
+              "observed_hit_rate": 0.6161
+            },
+            "6": {
+              "n": 2100,
+              "months": 260,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5534,
+              "observed_hit_rate": 0.6205
+            }
+          }
+        },
+        {
+          "year": 2026,
+          "training_n": 22596,
+          "latest_training_exit": "2025-12-02",
+          "test": {
+            "n": 644,
+            "stocks": 92,
+            "months": 7,
+            "up_pct": 52.64,
+            "down_pct": 46.74,
+            "unchanged_pct": 0.62,
+            "bullish": {
+              "n": 582,
+              "months": 7,
+              "stocks": 92,
+              "hit_pct": 52.41
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 62
+          },
+          "bins": {
+            "0": {
+              "n": 765,
+              "months": 189,
+              "symbols": 84,
+              "direction": null,
+              "lower_bound": 0.4516,
+              "observed_hit_rate": 0.5464
+            },
+            "1": {
+              "n": 2587,
+              "months": 307,
+              "symbols": 92,
+              "direction": null,
+              "lower_bound": 0.4992,
+              "observed_hit_rate": 0.5798
+            },
+            "2": {
+              "n": 3343,
+              "months": 323,
+              "symbols": 92,
+              "direction": "bullish",
+              "lower_bound": 0.5286,
+              "observed_hit_rate": 0.5734
+            },
+            "3": {
+              "n": 4838,
+              "months": 341,
+              "symbols": 92,
+              "direction": "bullish",
+              "lower_bound": 0.5263,
+              "observed_hit_rate": 0.5723
+            },
+            "4": {
+              "n": 4219,
+              "months": 333,
+              "symbols": 92,
+              "direction": "bullish",
+              "lower_bound": 0.563,
+              "observed_hit_rate": 0.6073
+            },
+            "5": {
+              "n": 4669,
+              "months": 328,
+              "symbols": 91,
+              "direction": "bullish",
+              "lower_bound": 0.5694,
+              "observed_hit_rate": 0.6188
+            },
+            "6": {
+              "n": 2175,
+              "months": 270,
+              "symbols": 90,
+              "direction": "bullish",
+              "lower_bound": 0.5522,
+              "observed_hit_rate": 0.6184
+            }
+          }
+        }
+      ]
+    },
+    "us_equity": {
+      "requested": 361,
+      "received": 346,
+      "missing": {
+        "BK": "HTTP 404",
+        "WBA": "HTTP 404",
+        "CERN": "HTTP 404",
+        "CTLT": "HTTP 404",
+        "CT": "HTTP 404",
+        "CTRA": "HTTP 404",
+        "DFS": "HTTP 404",
+        "HES": "HTTP 404",
+        "HOLX": "HTTP 404",
+        "IPG": "HTTP 404",
+        "JNPR": "HTTP 404",
+        "K": "HTTP 404",
+        "MMC": "HTTP 404",
+        "MRO": "HTTP 404",
+        "SEE": "HTTP 404"
+      },
+      "skipped": {
+        "short_window": 1076,
+        "missing_outcome": 1029
+      },
+      "first_signal": "1990-04-02",
+      "last_signal": "2026-07-01",
+      "baseline": {
+        "n": 62535,
+        "up_pct": 60.77,
+        "down_pct": 39.19,
+        "unchanged_pct": 0.04
+      },
+      "bullish": {
+        "n": 62535,
+        "correct": 38001,
+        "hit_pct": 60.77,
+        "coverage_pct": 100.0,
+        "months": 187,
+        "symbols": 343,
+        "bootstrap_90_pct_interval": [
+          57.42,
+          64.2
+        ],
+        "meets_51_pct_observed": true,
+        "lower_bound_above_51_pct": true
+      },
+      "bearish": {
+        "n": 0,
+        "correct": 0,
+        "hit_pct": null,
+        "coverage_pct": 0.0,
+        "months": 0,
+        "symbols": 0,
+        "bootstrap_90_pct_interval": null,
+        "meets_51_pct_observed": null
+      },
+      "combined": {
+        "n": 62535,
+        "correct": 38001,
+        "hit_pct": 60.77,
+        "always_up_same_calls_pct": 60.77,
+        "always_down_same_calls_pct": 39.19,
+        "coverage_pct": 100.0
+      },
+      "abstained": 0,
+      "folds": [
+        {
+          "year": 2011,
+          "training_n": 63925,
+          "latest_training_exit": "2010-12-01",
+          "test": {
+            "n": 3780,
+            "stocks": 317,
+            "months": 12,
+            "up_pct": 57.99,
+            "down_pct": 41.93,
+            "unchanged_pct": 0.08,
+            "bullish": {
+              "n": 3780,
+              "months": 12,
+              "stocks": 317,
+              "hit_pct": 57.99
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 3220,
+              "months": 232,
+              "symbols": 303,
+              "direction": "bullish",
+              "lower_bound": 0.5496,
+              "observed_hit_rate": 0.6165
+            },
+            "1": {
+              "n": 7306,
+              "months": 245,
+              "symbols": 308,
+              "direction": "bullish",
+              "lower_bound": 0.5535,
+              "observed_hit_rate": 0.6088
+            },
+            "2": {
+              "n": 8620,
+              "months": 246,
+              "symbols": 311,
+              "direction": "bullish",
+              "lower_bound": 0.5481,
+              "observed_hit_rate": 0.5955
+            },
+            "3": {
+              "n": 13200,
+              "months": 246,
+              "symbols": 310,
+              "direction": "bullish",
+              "lower_bound": 0.5561,
+              "observed_hit_rate": 0.5947
+            },
+            "4": {
+              "n": 10879,
+              "months": 245,
+              "symbols": 310,
+              "direction": "bullish",
+              "lower_bound": 0.5582,
+              "observed_hit_rate": 0.597
+            },
+            "5": {
+              "n": 12105,
+              "months": 245,
+              "symbols": 310,
+              "direction": "bullish",
+              "lower_bound": 0.5531,
+              "observed_hit_rate": 0.5893
+            },
+            "6": {
+              "n": 8595,
+              "months": 240,
+              "symbols": 309,
+              "direction": "bullish",
+              "lower_bound": 0.5664,
+              "observed_hit_rate": 0.6034
+            }
+          }
+        },
+        {
+          "year": 2012,
+          "training_n": 67690,
+          "latest_training_exit": "2011-12-01",
+          "test": {
+            "n": 3830,
+            "stocks": 321,
+            "months": 12,
+            "up_pct": 67.28,
+            "down_pct": 32.64,
+            "unchanged_pct": 0.08,
+            "bullish": {
+              "n": 3830,
+              "months": 12,
+              "stocks": 321,
+              "hit_pct": 67.28
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 3305,
+              "months": 243,
+              "symbols": 307,
+              "direction": "bullish",
+              "lower_bound": 0.5415,
+              "observed_hit_rate": 0.6091
+            },
+            "1": {
+              "n": 7676,
+              "months": 257,
+              "symbols": 314,
+              "direction": "bullish",
+              "lower_bound": 0.5481,
+              "observed_hit_rate": 0.6002
+            },
+            "2": {
+              "n": 9053,
+              "months": 258,
+              "symbols": 314,
+              "direction": "bullish",
+              "lower_bound": 0.5489,
+              "observed_hit_rate": 0.5901
+            },
+            "3": {
+              "n": 13884,
+              "months": 258,
+              "symbols": 314,
+              "direction": "bullish",
+              "lower_bound": 0.5539,
+              "observed_hit_rate": 0.591
+            },
+            "4": {
+              "n": 11543,
+              "months": 257,
+              "symbols": 312,
+              "direction": "bullish",
+              "lower_bound": 0.5611,
+              "observed_hit_rate": 0.5956
+            },
+            "5": {
+              "n": 12987,
+              "months": 257,
+              "symbols": 313,
+              "direction": "bullish",
+              "lower_bound": 0.555,
+              "observed_hit_rate": 0.591
+            },
+            "6": {
+              "n": 9242,
+              "months": 252,
+              "symbols": 311,
+              "direction": "bullish",
+              "lower_bound": 0.5738,
+              "observed_hit_rate": 0.6077
+            }
+          }
+        },
+        {
+          "year": 2013,
+          "training_n": 71508,
+          "latest_training_exit": "2012-12-04",
+          "test": {
+            "n": 3894,
+            "stocks": 326,
+            "months": 12,
+            "up_pct": 73.14,
+            "down_pct": 26.84,
+            "unchanged_pct": 0.03,
+            "bullish": {
+              "n": 3894,
+              "months": 12,
+              "stocks": 326,
+              "hit_pct": 73.14
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 3541,
+              "months": 254,
+              "symbols": 314,
+              "direction": "bullish",
+              "lower_bound": 0.5621,
+              "observed_hit_rate": 0.6278
+            },
+            "1": {
+              "n": 8009,
+              "months": 269,
+              "symbols": 316,
+              "direction": "bullish",
+              "lower_bound": 0.5618,
+              "observed_hit_rate": 0.6099
+            },
+            "2": {
+              "n": 9461,
+              "months": 270,
+              "symbols": 318,
+              "direction": "bullish",
+              "lower_bound": 0.5574,
+              "observed_hit_rate": 0.5975
+            },
+            "3": {
+              "n": 14604,
+              "months": 270,
+              "symbols": 319,
+              "direction": "bullish",
+              "lower_bound": 0.561,
+              "observed_hit_rate": 0.5995
+            },
+            "4": {
+              "n": 12251,
+              "months": 269,
+              "symbols": 318,
+              "direction": "bullish",
+              "lower_bound": 0.5638,
+              "observed_hit_rate": 0.6014
+            },
+            "5": {
+              "n": 13867,
+              "months": 269,
+              "symbols": 318,
+              "direction": "bullish",
+              "lower_bound": 0.5553,
+              "observed_hit_rate": 0.5925
+            },
+            "6": {
+              "n": 9775,
+              "months": 263,
+              "symbols": 316,
+              "direction": "bullish",
+              "lower_bound": 0.5659,
+              "observed_hit_rate": 0.6029
+            }
+          }
+        },
+        {
+          "year": 2014,
+          "training_n": 75387,
+          "latest_training_exit": "2013-12-03",
+          "test": {
+            "n": 3920,
+            "stocks": 328,
+            "months": 12,
+            "up_pct": 69.74,
+            "down_pct": 30.2,
+            "unchanged_pct": 0.05,
+            "bullish": {
+              "n": 3920,
+              "months": 12,
+              "stocks": 328,
+              "hit_pct": 69.74
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 3590,
+              "months": 265,
+              "symbols": 315,
+              "direction": "bullish",
+              "lower_bound": 0.5651,
+              "observed_hit_rate": 0.6304
+            },
+            "1": {
+              "n": 8204,
+              "months": 281,
+              "symbols": 319,
+              "direction": "bullish",
+              "lower_bound": 0.5646,
+              "observed_hit_rate": 0.6118
+            },
+            "2": {
+              "n": 9878,
+              "months": 282,
+              "symbols": 322,
+              "direction": "bullish",
+              "lower_bound": 0.5639,
+              "observed_hit_rate": 0.6058
+            },
+            "3": {
+              "n": 15341,
+              "months": 282,
+              "symbols": 325,
+              "direction": "bullish",
+              "lower_bound": 0.5711,
+              "observed_hit_rate": 0.6078
+            },
+            "4": {
+              "n": 13006,
+              "months": 281,
+              "symbols": 321,
+              "direction": "bullish",
+              "lower_bound": 0.575,
+              "observed_hit_rate": 0.6136
+            },
+            "5": {
+              "n": 14859,
+              "months": 281,
+              "symbols": 325,
+              "direction": "bullish",
+              "lower_bound": 0.568,
+              "observed_hit_rate": 0.6051
+            },
+            "6": {
+              "n": 10509,
+              "months": 275,
+              "symbols": 322,
+              "direction": "bullish",
+              "lower_bound": 0.5773,
+              "observed_hit_rate": 0.6113
+            }
+          }
+        },
+        {
+          "year": 2015,
+          "training_n": 79302,
+          "latest_training_exit": "2014-12-02",
+          "test": {
+            "n": 3960,
+            "stocks": 332,
+            "months": 12,
+            "up_pct": 49.44,
+            "down_pct": 50.45,
+            "unchanged_pct": 0.1,
+            "bullish": {
+              "n": 3960,
+              "months": 12,
+              "stocks": 332,
+              "hit_pct": 49.44
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 3621,
+              "months": 274,
+              "symbols": 316,
+              "direction": "bullish",
+              "lower_bound": 0.5709,
+              "observed_hit_rate": 0.6321
+            },
+            "1": {
+              "n": 8475,
+              "months": 293,
+              "symbols": 321,
+              "direction": "bullish",
+              "lower_bound": 0.5737,
+              "observed_hit_rate": 0.6177
+            },
+            "2": {
+              "n": 10358,
+              "months": 294,
+              "symbols": 325,
+              "direction": "bullish",
+              "lower_bound": 0.5734,
+              "observed_hit_rate": 0.6127
+            },
+            "3": {
+              "n": 16150,
+              "months": 294,
+              "symbols": 327,
+              "direction": "bullish",
+              "lower_bound": 0.5769,
+              "observed_hit_rate": 0.612
+            },
+            "4": {
+              "n": 13781,
+              "months": 293,
+              "symbols": 326,
+              "direction": "bullish",
+              "lower_bound": 0.5796,
+              "observed_hit_rate": 0.6163
+            },
+            "5": {
+              "n": 15832,
+              "months": 293,
+              "symbols": 327,
+              "direction": "bullish",
+              "lower_bound": 0.5722,
+              "observed_hit_rate": 0.6067
+            },
+            "6": {
+              "n": 11085,
+              "months": 287,
+              "symbols": 325,
+              "direction": "bullish",
+              "lower_bound": 0.5803,
+              "observed_hit_rate": 0.6118
+            }
+          }
+        },
+        {
+          "year": 2016,
+          "training_n": 83249,
+          "latest_training_exit": "2015-12-01",
+          "test": {
+            "n": 3996,
+            "stocks": 333,
+            "months": 12,
+            "up_pct": 68.59,
+            "down_pct": 31.41,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 3996,
+              "months": 12,
+              "stocks": 333,
+              "hit_pct": 68.59
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 3739,
+              "months": 285,
+              "symbols": 320,
+              "direction": "bullish",
+              "lower_bound": 0.5674,
+              "observed_hit_rate": 0.632
+            },
+            "1": {
+              "n": 8982,
+              "months": 305,
+              "symbols": 327,
+              "direction": "bullish",
+              "lower_bound": 0.5667,
+              "observed_hit_rate": 0.6155
+            },
+            "2": {
+              "n": 10922,
+              "months": 306,
+              "symbols": 329,
+              "direction": "bullish",
+              "lower_bound": 0.5712,
+              "observed_hit_rate": 0.6111
+            },
+            "3": {
+              "n": 16963,
+              "months": 306,
+              "symbols": 328,
+              "direction": "bullish",
+              "lower_bound": 0.5735,
+              "observed_hit_rate": 0.6085
+            },
+            "4": {
+              "n": 14517,
+              "months": 305,
+              "symbols": 329,
+              "direction": "bullish",
+              "lower_bound": 0.58,
+              "observed_hit_rate": 0.6133
+            },
+            "5": {
+              "n": 16645,
+              "months": 305,
+              "symbols": 329,
+              "direction": "bullish",
+              "lower_bound": 0.5749,
+              "observed_hit_rate": 0.6063
+            },
+            "6": {
+              "n": 11481,
+              "months": 298,
+              "symbols": 329,
+              "direction": "bullish",
+              "lower_bound": 0.5821,
+              "observed_hit_rate": 0.6117
+            }
+          }
+        },
+        {
+          "year": 2017,
+          "training_n": 87242,
+          "latest_training_exit": "2016-12-01",
+          "test": {
+            "n": 4012,
+            "stocks": 335,
+            "months": 12,
+            "up_pct": 71.16,
+            "down_pct": 28.79,
+            "unchanged_pct": 0.05,
+            "bullish": {
+              "n": 4012,
+              "months": 12,
+              "stocks": 335,
+              "hit_pct": 71.16
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 3912,
+              "months": 295,
+              "symbols": 322,
+              "direction": "bullish",
+              "lower_bound": 0.5739,
+              "observed_hit_rate": 0.6355
+            },
+            "1": {
+              "n": 9385,
+              "months": 317,
+              "symbols": 331,
+              "direction": "bullish",
+              "lower_bound": 0.5773,
+              "observed_hit_rate": 0.6199
+            },
+            "2": {
+              "n": 11417,
+              "months": 318,
+              "symbols": 333,
+              "direction": "bullish",
+              "lower_bound": 0.576,
+              "observed_hit_rate": 0.6115
+            },
+            "3": {
+              "n": 17817,
+              "months": 318,
+              "symbols": 333,
+              "direction": "bullish",
+              "lower_bound": 0.5751,
+              "observed_hit_rate": 0.6085
+            },
+            "4": {
+              "n": 15263,
+              "months": 317,
+              "symbols": 333,
+              "direction": "bullish",
+              "lower_bound": 0.5798,
+              "observed_hit_rate": 0.6124
+            },
+            "5": {
+              "n": 17488,
+              "months": 317,
+              "symbols": 332,
+              "direction": "bullish",
+              "lower_bound": 0.5726,
+              "observed_hit_rate": 0.6026
+            },
+            "6": {
+              "n": 11960,
+              "months": 309,
+              "symbols": 331,
+              "direction": "bullish",
+              "lower_bound": 0.5793,
+              "observed_hit_rate": 0.6095
+            }
+          }
+        },
+        {
+          "year": 2018,
+          "training_n": 91248,
+          "latest_training_exit": "2017-12-01",
+          "test": {
+            "n": 4020,
+            "stocks": 335,
+            "months": 12,
+            "up_pct": 51.02,
+            "down_pct": 48.96,
+            "unchanged_pct": 0.02,
+            "bullish": {
+              "n": 4020,
+              "months": 12,
+              "stocks": 335,
+              "hit_pct": 51.02
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 4031,
+              "months": 306,
+              "symbols": 325,
+              "direction": "bullish",
+              "lower_bound": 0.5783,
+              "observed_hit_rate": 0.6388
+            },
+            "1": {
+              "n": 9803,
+              "months": 329,
+              "symbols": 333,
+              "direction": "bullish",
+              "lower_bound": 0.5821,
+              "observed_hit_rate": 0.6229
+            },
+            "2": {
+              "n": 11906,
+              "months": 330,
+              "symbols": 333,
+              "direction": "bullish",
+              "lower_bound": 0.5797,
+              "observed_hit_rate": 0.6152
+            },
+            "3": {
+              "n": 18516,
+              "months": 330,
+              "symbols": 335,
+              "direction": "bullish",
+              "lower_bound": 0.5783,
+              "observed_hit_rate": 0.6127
+            },
+            "4": {
+              "n": 15889,
+              "months": 329,
+              "symbols": 335,
+              "direction": "bullish",
+              "lower_bound": 0.584,
+              "observed_hit_rate": 0.6165
+            },
+            "5": {
+              "n": 18367,
+              "months": 329,
+              "symbols": 334,
+              "direction": "bullish",
+              "lower_bound": 0.5781,
+              "observed_hit_rate": 0.6096
+            },
+            "6": {
+              "n": 12736,
+              "months": 321,
+              "symbols": 333,
+              "direction": "bullish",
+              "lower_bound": 0.5862,
+              "observed_hit_rate": 0.6162
+            }
+          }
+        },
+        {
+          "year": 2019,
+          "training_n": 95268,
+          "latest_training_exit": "2018-12-04",
+          "test": {
+            "n": 4052,
+            "stocks": 340,
+            "months": 12,
+            "up_pct": 65.6,
+            "down_pct": 34.38,
+            "unchanged_pct": 0.02,
+            "bullish": {
+              "n": 4052,
+              "months": 12,
+              "stocks": 340,
+              "hit_pct": 65.6
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 4156,
+              "months": 318,
+              "symbols": 325,
+              "direction": "bullish",
+              "lower_bound": 0.5832,
+              "observed_hit_rate": 0.6379
+            },
+            "1": {
+              "n": 10288,
+              "months": 341,
+              "symbols": 334,
+              "direction": "bullish",
+              "lower_bound": 0.5838,
+              "observed_hit_rate": 0.6218
+            },
+            "2": {
+              "n": 12409,
+              "months": 342,
+              "symbols": 335,
+              "direction": "bullish",
+              "lower_bound": 0.5815,
+              "observed_hit_rate": 0.6136
+            },
+            "3": {
+              "n": 19260,
+              "months": 342,
+              "symbols": 335,
+              "direction": "bullish",
+              "lower_bound": 0.5787,
+              "observed_hit_rate": 0.6109
+            },
+            "4": {
+              "n": 16553,
+              "months": 341,
+              "symbols": 335,
+              "direction": "bullish",
+              "lower_bound": 0.5838,
+              "observed_hit_rate": 0.615
+            },
+            "5": {
+              "n": 19234,
+              "months": 341,
+              "symbols": 334,
+              "direction": "bullish",
+              "lower_bound": 0.5793,
+              "observed_hit_rate": 0.6085
+            },
+            "6": {
+              "n": 13368,
+              "months": 333,
+              "symbols": 334,
+              "direction": "bullish",
+              "lower_bound": 0.587,
+              "observed_hit_rate": 0.6143
+            }
+          }
+        },
+        {
+          "year": 2020,
+          "training_n": 99305,
+          "latest_training_exit": "2019-12-03",
+          "test": {
+            "n": 4094,
+            "stocks": 342,
+            "months": 12,
+            "up_pct": 64.51,
+            "down_pct": 35.37,
+            "unchanged_pct": 0.12,
+            "bullish": {
+              "n": 4094,
+              "months": 12,
+              "stocks": 342,
+              "hit_pct": 64.51
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 4330,
+              "months": 330,
+              "symbols": 328,
+              "direction": "bullish",
+              "lower_bound": 0.5826,
+              "observed_hit_rate": 0.6397
+            },
+            "1": {
+              "n": 10782,
+              "months": 353,
+              "symbols": 338,
+              "direction": "bullish",
+              "lower_bound": 0.5856,
+              "observed_hit_rate": 0.6247
+            },
+            "2": {
+              "n": 13001,
+              "months": 354,
+              "symbols": 338,
+              "direction": "bullish",
+              "lower_bound": 0.5796,
+              "observed_hit_rate": 0.6149
+            },
+            "3": {
+              "n": 20105,
+              "months": 354,
+              "symbols": 337,
+              "direction": "bullish",
+              "lower_bound": 0.5804,
+              "observed_hit_rate": 0.6106
+            },
+            "4": {
+              "n": 17230,
+              "months": 353,
+              "symbols": 335,
+              "direction": "bullish",
+              "lower_bound": 0.5833,
+              "observed_hit_rate": 0.6147
+            },
+            "5": {
+              "n": 19974,
+              "months": 353,
+              "symbols": 337,
+              "direction": "bullish",
+              "lower_bound": 0.5776,
+              "observed_hit_rate": 0.6069
+            },
+            "6": {
+              "n": 13883,
+              "months": 344,
+              "symbols": 335,
+              "direction": "bullish",
+              "lower_bound": 0.585,
+              "observed_hit_rate": 0.612
+            }
+          }
+        },
+        {
+          "year": 2021,
+          "training_n": 103393,
+          "latest_training_exit": "2020-12-01",
+          "test": {
+            "n": 4112,
+            "stocks": 343,
+            "months": 12,
+            "up_pct": 63.06,
+            "down_pct": 36.94,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 4112,
+              "months": 12,
+              "stocks": 343,
+              "hit_pct": 63.06
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 4506,
+              "months": 339,
+              "symbols": 333,
+              "direction": "bullish",
+              "lower_bound": 0.5874,
+              "observed_hit_rate": 0.6454
+            },
+            "1": {
+              "n": 11293,
+              "months": 365,
+              "symbols": 340,
+              "direction": "bullish",
+              "lower_bound": 0.5911,
+              "observed_hit_rate": 0.6283
+            },
+            "2": {
+              "n": 13546,
+              "months": 366,
+              "symbols": 340,
+              "direction": "bullish",
+              "lower_bound": 0.5821,
+              "observed_hit_rate": 0.616
+            },
+            "3": {
+              "n": 20990,
+              "months": 366,
+              "symbols": 340,
+              "direction": "bullish",
+              "lower_bound": 0.5806,
+              "observed_hit_rate": 0.6121
+            },
+            "4": {
+              "n": 17887,
+              "months": 365,
+              "symbols": 340,
+              "direction": "bullish",
+              "lower_bound": 0.5846,
+              "observed_hit_rate": 0.6143
+            },
+            "5": {
+              "n": 20676,
+              "months": 365,
+              "symbols": 341,
+              "direction": "bullish",
+              "lower_bound": 0.5743,
+              "observed_hit_rate": 0.6042
+            },
+            "6": {
+              "n": 14495,
+              "months": 356,
+              "symbols": 341,
+              "direction": "bullish",
+              "lower_bound": 0.5763,
+              "observed_hit_rate": 0.606
+            }
+          }
+        },
+        {
+          "year": 2022,
+          "training_n": 107502,
+          "latest_training_exit": "2021-12-01",
+          "test": {
+            "n": 4116,
+            "stocks": 343,
+            "months": 12,
+            "up_pct": 45.09,
+            "down_pct": 54.91,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 4116,
+              "months": 12,
+              "stocks": 343,
+              "hit_pct": 45.09
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 4556,
+              "months": 348,
+              "symbols": 333,
+              "direction": "bullish",
+              "lower_bound": 0.5903,
+              "observed_hit_rate": 0.6462
+            },
+            "1": {
+              "n": 11562,
+              "months": 377,
+              "symbols": 340,
+              "direction": "bullish",
+              "lower_bound": 0.5935,
+              "observed_hit_rate": 0.6296
+            },
+            "2": {
+              "n": 14032,
+              "months": 378,
+              "symbols": 342,
+              "direction": "bullish",
+              "lower_bound": 0.5876,
+              "observed_hit_rate": 0.6191
+            },
+            "3": {
+              "n": 21801,
+              "months": 378,
+              "symbols": 341,
+              "direction": "bullish",
+              "lower_bound": 0.5848,
+              "observed_hit_rate": 0.6151
+            },
+            "4": {
+              "n": 18646,
+              "months": 377,
+              "symbols": 342,
+              "direction": "bullish",
+              "lower_bound": 0.5877,
+              "observed_hit_rate": 0.6164
+            },
+            "5": {
+              "n": 21623,
+              "months": 377,
+              "symbols": 342,
+              "direction": "bullish",
+              "lower_bound": 0.5797,
+              "observed_hit_rate": 0.6089
+            },
+            "6": {
+              "n": 15282,
+              "months": 368,
+              "symbols": 342,
+              "direction": "bullish",
+              "lower_bound": 0.5832,
+              "observed_hit_rate": 0.6098
+            }
+          }
+        },
+        {
+          "year": 2023,
+          "training_n": 111618,
+          "latest_training_exit": "2022-12-01",
+          "test": {
+            "n": 4116,
+            "stocks": 343,
+            "months": 12,
+            "up_pct": 56.83,
+            "down_pct": 43.15,
+            "unchanged_pct": 0.02,
+            "bullish": {
+              "n": 4116,
+              "months": 12,
+              "stocks": 343,
+              "hit_pct": 56.83
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 4837,
+              "months": 360,
+              "symbols": 338,
+              "direction": "bullish",
+              "lower_bound": 0.5749,
+              "observed_hit_rate": 0.6299
+            },
+            "1": {
+              "n": 12279,
+              "months": 389,
+              "symbols": 342,
+              "direction": "bullish",
+              "lower_bound": 0.5852,
+              "observed_hit_rate": 0.6175
+            },
+            "2": {
+              "n": 14856,
+              "months": 390,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5784,
+              "observed_hit_rate": 0.6105
+            },
+            "3": {
+              "n": 22752,
+              "months": 390,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5777,
+              "observed_hit_rate": 0.6065
+            },
+            "4": {
+              "n": 19259,
+              "months": 389,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5829,
+              "observed_hit_rate": 0.6112
+            },
+            "5": {
+              "n": 22129,
+              "months": 389,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5762,
+              "observed_hit_rate": 0.6053
+            },
+            "6": {
+              "n": 15506,
+              "months": 379,
+              "symbols": 342,
+              "direction": "bullish",
+              "lower_bound": 0.5766,
+              "observed_hit_rate": 0.6067
+            }
+          }
+        },
+        {
+          "year": 2024,
+          "training_n": 115734,
+          "latest_training_exit": "2023-12-01",
+          "test": {
+            "n": 4116,
+            "stocks": 343,
+            "months": 12,
+            "up_pct": 58.24,
+            "down_pct": 41.69,
+            "unchanged_pct": 0.07,
+            "bullish": {
+              "n": 4116,
+              "months": 12,
+              "stocks": 343,
+              "hit_pct": 58.24
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 5015,
+              "months": 372,
+              "symbols": 338,
+              "direction": "bullish",
+              "lower_bound": 0.5806,
+              "observed_hit_rate": 0.6325
+            },
+            "1": {
+              "n": 12821,
+              "months": 401,
+              "symbols": 342,
+              "direction": "bullish",
+              "lower_bound": 0.5833,
+              "observed_hit_rate": 0.6173
+            },
+            "2": {
+              "n": 15513,
+              "months": 402,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5788,
+              "observed_hit_rate": 0.6089
+            },
+            "3": {
+              "n": 23639,
+              "months": 402,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.576,
+              "observed_hit_rate": 0.6041
+            },
+            "4": {
+              "n": 19923,
+              "months": 401,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5793,
+              "observed_hit_rate": 0.6071
+            },
+            "5": {
+              "n": 22891,
+              "months": 401,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5728,
+              "observed_hit_rate": 0.5991
+            },
+            "6": {
+              "n": 15932,
+              "months": 391,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5739,
+              "observed_hit_rate": 0.6007
+            }
+          }
+        },
+        {
+          "year": 2025,
+          "training_n": 119850,
+          "latest_training_exit": "2024-12-03",
+          "test": {
+            "n": 4116,
+            "stocks": 343,
+            "months": 12,
+            "up_pct": 56.17,
+            "down_pct": 43.83,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 4116,
+              "months": 12,
+              "stocks": 343,
+              "hit_pct": 56.17
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 5291,
+              "months": 384,
+              "symbols": 342,
+              "direction": "bullish",
+              "lower_bound": 0.5902,
+              "observed_hit_rate": 0.6417
+            },
+            "1": {
+              "n": 13357,
+              "months": 413,
+              "symbols": 342,
+              "direction": "bullish",
+              "lower_bound": 0.5885,
+              "observed_hit_rate": 0.6244
+            },
+            "2": {
+              "n": 15993,
+              "months": 414,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5811,
+              "observed_hit_rate": 0.612
+            },
+            "3": {
+              "n": 24330,
+              "months": 414,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5779,
+              "observed_hit_rate": 0.6066
+            },
+            "4": {
+              "n": 20547,
+              "months": 413,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5817,
+              "observed_hit_rate": 0.6089
+            },
+            "5": {
+              "n": 23698,
+              "months": 413,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5725,
+              "observed_hit_rate": 0.6004
+            },
+            "6": {
+              "n": 16634,
+              "months": 403,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5717,
+              "observed_hit_rate": 0.6008
+            }
+          }
+        },
+        {
+          "year": 2026,
+          "training_n": 123966,
+          "latest_training_exit": "2025-12-02",
+          "test": {
+            "n": 2401,
+            "stocks": 343,
+            "months": 7,
+            "up_pct": 52.02,
+            "down_pct": 47.98,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 2401,
+              "months": 7,
+              "stocks": 343,
+              "hit_pct": 52.02
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 0
+          },
+          "bins": {
+            "0": {
+              "n": 5490,
+              "months": 396,
+              "symbols": 342,
+              "direction": "bullish",
+              "lower_bound": 0.5888,
+              "observed_hit_rate": 0.6373
+            },
+            "1": {
+              "n": 13935,
+              "months": 425,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5856,
+              "observed_hit_rate": 0.6194
+            },
+            "2": {
+              "n": 16611,
+              "months": 426,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5788,
+              "observed_hit_rate": 0.6092
+            },
+            "3": {
+              "n": 25181,
+              "months": 426,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5746,
+              "observed_hit_rate": 0.6031
+            },
+            "4": {
+              "n": 21211,
+              "months": 425,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.58,
+              "observed_hit_rate": 0.6073
+            },
+            "5": {
+              "n": 24411,
+              "months": 425,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5713,
+              "observed_hit_rate": 0.5974
+            },
+            "6": {
+              "n": 17127,
+              "months": 415,
+              "symbols": 343,
+              "direction": "bullish",
+              "lower_bound": 0.5682,
+              "observed_hit_rate": 0.5966
+            }
+          }
+        }
+      ]
+    },
+    "PSE": {
+      "requested": 244,
+      "received": 244,
+      "missing": [],
+      "skipped": {
+        "short_window": 7413,
+        "missing_outcome": 580
+      },
+      "first_signal": "2007-06-01",
+      "last_signal": "2026-07-02",
+      "baseline": {
+        "n": 10706,
+        "up_pct": 40.92,
+        "down_pct": 57.1,
+        "unchanged_pct": 1.98
+      },
+      "bullish": {
+        "n": 0,
+        "correct": 0,
+        "hit_pct": null,
+        "coverage_pct": 0.0,
+        "months": 0,
+        "symbols": 0,
+        "bootstrap_90_pct_interval": null,
+        "meets_51_pct_observed": null
+      },
+      "bearish": {
+        "n": 6921,
+        "correct": 3866,
+        "hit_pct": 55.86,
+        "coverage_pct": 64.65,
+        "months": 67,
+        "symbols": 227,
+        "bootstrap_90_pct_interval": [
+          52.4,
+          59.83
+        ],
+        "meets_51_pct_observed": true,
+        "lower_bound_above_51_pct": true
+      },
+      "combined": {
+        "n": 6921,
+        "correct": 3866,
+        "hit_pct": 55.86,
+        "always_up_same_calls_pct": 41.9,
+        "always_down_same_calls_pct": 55.86,
+        "coverage_pct": 64.65
+      },
+      "abstained": 3785,
+      "folds": [
+        {
+          "year": 2011,
+          "training_n": 12,
+          "latest_training_exit": "2008-10-06",
+          "test": {
+            "n": 2,
+            "stocks": 2,
+            "months": 2,
+            "up_pct": 100.0,
+            "down_pct": 0.0,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 2
+          },
+          "bins": {
+            "0": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 1,
+              "months": 1,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 6,
+              "months": 6,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 1,
+              "months": 1,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 4,
+              "months": 4,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2012,
+          "training_n": 14,
+          "latest_training_exit": "2011-10-10",
+          "test": {
+            "n": 1,
+            "stocks": 1,
+            "months": 1,
+            "up_pct": 0.0,
+            "down_pct": 100.0,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 1
+          },
+          "bins": {
+            "0": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 1,
+              "months": 1,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 7,
+              "months": 7,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 1,
+              "months": 1,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 5,
+              "months": 5,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2013,
+          "training_n": 14,
+          "latest_training_exit": "2011-10-10",
+          "test": {
+            "n": 2,
+            "stocks": 1,
+            "months": 2,
+            "up_pct": 0.0,
+            "down_pct": 100.0,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 2
+          },
+          "bins": {
+            "0": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 1,
+              "months": 1,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 7,
+              "months": 7,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 1,
+              "months": 1,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 5,
+              "months": 5,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2014,
+          "training_n": 17,
+          "latest_training_exit": "2013-07-03",
+          "test": {
+            "n": 10,
+            "stocks": 3,
+            "months": 6,
+            "up_pct": 50.0,
+            "down_pct": 50.0,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 10
+          },
+          "bins": {
+            "0": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 2,
+              "months": 2,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 8,
+              "months": 8,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 1,
+              "months": 1,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 6,
+              "months": 6,
+              "symbols": 3,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2015,
+          "training_n": 22,
+          "latest_training_exit": "2014-12-01",
+          "test": {
+            "n": 2,
+            "stocks": 2,
+            "months": 2,
+            "up_pct": 0.0,
+            "down_pct": 100.0,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 2
+          },
+          "bins": {
+            "0": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 1,
+              "months": 1,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 0,
+              "months": 0,
+              "symbols": 0,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 2,
+              "months": 2,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 9,
+              "months": 9,
+              "symbols": 3,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 1,
+              "months": 1,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 9,
+              "months": 9,
+              "symbols": 5,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2016,
+          "training_n": 29,
+          "latest_training_exit": "2015-08-07",
+          "test": {
+            "n": 18,
+            "stocks": 6,
+            "months": 10,
+            "up_pct": 22.22,
+            "down_pct": 77.78,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 18
+          },
+          "bins": {
+            "0": {
+              "n": 2,
+              "months": 2,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 2,
+              "months": 2,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 1,
+              "months": 1,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 2,
+              "months": 2,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 9,
+              "months": 9,
+              "symbols": 3,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 2,
+              "months": 2,
+              "symbols": 2,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 11,
+              "months": 11,
+              "symbols": 5,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2017,
+          "training_n": 40,
+          "latest_training_exit": "2016-12-02",
+          "test": {
+            "n": 76,
+            "stocks": 13,
+            "months": 12,
+            "up_pct": 18.42,
+            "down_pct": 80.26,
+            "unchanged_pct": 1.32,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 76
+          },
+          "bins": {
+            "0": {
+              "n": 2,
+              "months": 2,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 2,
+              "months": 2,
+              "symbols": 1,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 3,
+              "months": 2,
+              "symbols": 3,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 8,
+              "months": 7,
+              "symbols": 5,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 9,
+              "months": 9,
+              "symbols": 3,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 5,
+              "months": 5,
+              "symbols": 4,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 11,
+              "months": 11,
+              "symbols": 5,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2018,
+          "training_n": 96,
+          "latest_training_exit": "2017-12-06",
+          "test": {
+            "n": 104,
+            "stocks": 21,
+            "months": 12,
+            "up_pct": 35.58,
+            "down_pct": 64.42,
+            "unchanged_pct": 0.0,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 104
+          },
+          "bins": {
+            "0": {
+              "n": 7,
+              "months": 7,
+              "symbols": 3,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 18,
+              "months": 11,
+              "symbols": 7,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 21,
+              "months": 12,
+              "symbols": 11,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 20,
+              "months": 13,
+              "symbols": 11,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 12,
+              "months": 11,
+              "symbols": 6,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 7,
+              "months": 7,
+              "symbols": 6,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 11,
+              "months": 11,
+              "symbols": 5,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2019,
+          "training_n": 200,
+          "latest_training_exit": "2018-12-06",
+          "test": {
+            "n": 188,
+            "stocks": 31,
+            "months": 12,
+            "up_pct": 25.53,
+            "down_pct": 72.34,
+            "unchanged_pct": 2.13,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 188
+          },
+          "bins": {
+            "0": {
+              "n": 20,
+              "months": 14,
+              "symbols": 8,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 41,
+              "months": 23,
+              "symbols": 15,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 54,
+              "months": 23,
+              "symbols": 20,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 39,
+              "months": 24,
+              "symbols": 17,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 23,
+              "months": 19,
+              "symbols": 12,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 11,
+              "months": 10,
+              "symbols": 7,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 12,
+              "months": 12,
+              "symbols": 6,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2020,
+          "training_n": 351,
+          "latest_training_exit": "2019-12-04",
+          "test": {
+            "n": 319,
+            "stocks": 52,
+            "months": 12,
+            "up_pct": 59.56,
+            "down_pct": 38.56,
+            "unchanged_pct": 1.88,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "abstained": 319
+          },
+          "bins": {
+            "0": {
+              "n": 28,
+              "months": 20,
+              "symbols": 12,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 74,
+              "months": 33,
+              "symbols": 24,
+              "direction": null,
+              "lower_bound": null
+            },
+            "2": {
+              "n": 85,
+              "months": 33,
+              "symbols": 30,
+              "direction": null,
+              "lower_bound": null
+            },
+            "3": {
+              "n": 83,
+              "months": 36,
+              "symbols": 30,
+              "direction": null,
+              "lower_bound": null
+            },
+            "4": {
+              "n": 41,
+              "months": 28,
+              "symbols": 21,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 25,
+              "months": 17,
+              "symbols": 15,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 15,
+              "months": 15,
+              "symbols": 9,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2021,
+          "training_n": 613,
+          "latest_training_exit": "2020-12-01",
+          "test": {
+            "n": 1154,
+            "stocks": 194,
+            "months": 12,
+            "up_pct": 38.47,
+            "down_pct": 59.36,
+            "unchanged_pct": 2.17,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 704,
+              "months": 12,
+              "stocks": 175,
+              "hit_pct": 58.81
+            },
+            "abstained": 450
+          },
+          "bins": {
+            "0": {
+              "n": 50,
+              "months": 28,
+              "symbols": 25,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 144,
+              "months": 45,
+              "symbols": 41,
+              "direction": "bearish",
+              "lower_bound": 0.5638,
+              "observed_hit_rate": 0.6389
+            },
+            "2": {
+              "n": 153,
+              "months": 45,
+              "symbols": 44,
+              "direction": "bearish",
+              "lower_bound": 0.6554,
+              "observed_hit_rate": 0.7059
+            },
+            "3": {
+              "n": 138,
+              "months": 47,
+              "symbols": 47,
+              "direction": "bearish",
+              "lower_bound": 0.5041,
+              "observed_hit_rate": 0.5942
+            },
+            "4": {
+              "n": 63,
+              "months": 39,
+              "symbols": 30,
+              "direction": null,
+              "lower_bound": null
+            },
+            "5": {
+              "n": 40,
+              "months": 24,
+              "symbols": 21,
+              "direction": null,
+              "lower_bound": null
+            },
+            "6": {
+              "n": 25,
+              "months": 20,
+              "symbols": 15,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2022,
+          "training_n": 1376,
+          "latest_training_exit": "2021-12-09",
+          "test": {
+            "n": 1881,
+            "stocks": 188,
+            "months": 12,
+            "up_pct": 36.79,
+            "down_pct": 61.62,
+            "unchanged_pct": 1.59,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 377,
+              "months": 12,
+              "stocks": 144,
+              "hit_pct": 56.76
+            },
+            "abstained": 1504
+          },
+          "bins": {
+            "0": {
+              "n": 88,
+              "months": 37,
+              "symbols": 45,
+              "direction": null,
+              "lower_bound": null
+            },
+            "1": {
+              "n": 257,
+              "months": 55,
+              "symbols": 87,
+              "direction": "bearish",
+              "lower_bound": 0.5417,
+              "observed_hit_rate": 0.6498
+            },
+            "2": {
+              "n": 309,
+              "months": 56,
+              "symbols": 97,
+              "direction": null,
+              "lower_bound": 0.4945,
+              "observed_hit_rate": 0.6019
+            },
+            "3": {
+              "n": 315,
+              "months": 59,
+              "symbols": 96,
+              "direction": null,
+              "lower_bound": 0.4355,
+              "observed_hit_rate": 0.6
+            },
+            "4": {
+              "n": 179,
+              "months": 51,
+              "symbols": 74,
+              "direction": null,
+              "lower_bound": 0.4615,
+              "observed_hit_rate": 0.6145
+            },
+            "5": {
+              "n": 135,
+              "months": 36,
+              "symbols": 73,
+              "direction": null,
+              "lower_bound": 0.4235,
+              "observed_hit_rate": 0.5704
+            },
+            "6": {
+              "n": 93,
+              "months": 32,
+              "symbols": 45,
+              "direction": null,
+              "lower_bound": null
+            }
+          }
+        },
+        {
+          "year": 2023,
+          "training_n": 3315,
+          "latest_training_exit": "2022-12-02",
+          "test": {
+            "n": 1804,
+            "stocks": 181,
+            "months": 12,
+            "up_pct": 37.64,
+            "down_pct": 60.31,
+            "unchanged_pct": 2.05,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 1508,
+              "months": 12,
+              "stocks": 180,
+              "hit_pct": 60.61
+            },
+            "abstained": 296
+          },
+          "bins": {
+            "0": {
+              "n": 306,
+              "months": 49,
+              "symbols": 120,
+              "direction": "bearish",
+              "lower_bound": 0.5824,
+              "observed_hit_rate": 0.6895
+            },
+            "1": {
+              "n": 633,
+              "months": 67,
+              "symbols": 187,
+              "direction": "bearish",
+              "lower_bound": 0.5732,
+              "observed_hit_rate": 0.6288
+            },
+            "2": {
+              "n": 720,
+              "months": 68,
+              "symbols": 201,
+              "direction": "bearish",
+              "lower_bound": 0.5812,
+              "observed_hit_rate": 0.6764
+            },
+            "3": {
+              "n": 781,
+              "months": 71,
+              "symbols": 206,
+              "direction": "bearish",
+              "lower_bound": 0.5351,
+              "observed_hit_rate": 0.6543
+            },
+            "4": {
+              "n": 405,
+              "months": 63,
+              "symbols": 173,
+              "direction": "bearish",
+              "lower_bound": 0.5342,
+              "observed_hit_rate": 0.6321
+            },
+            "5": {
+              "n": 294,
+              "months": 48,
+              "symbols": 145,
+              "direction": null,
+              "lower_bound": 0.4765,
+              "observed_hit_rate": 0.5782
+            },
+            "6": {
+              "n": 176,
+              "months": 44,
+              "symbols": 89,
+              "direction": null,
+              "lower_bound": 0.4774,
+              "observed_hit_rate": 0.5795
+            }
+          }
+        },
+        {
+          "year": 2024,
+          "training_n": 5127,
+          "latest_training_exit": "2023-12-06",
+          "test": {
+            "n": 1921,
+            "stocks": 187,
+            "months": 12,
+            "up_pct": 41.02,
+            "down_pct": 57.68,
+            "unchanged_pct": 1.3,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 1535,
+              "months": 12,
+              "stocks": 184,
+              "hit_pct": 57.39
+            },
+            "abstained": 386
+          },
+          "bins": {
+            "0": {
+              "n": 463,
+              "months": 60,
+              "symbols": 147,
+              "direction": null,
+              "lower_bound": 0.478,
+              "observed_hit_rate": 0.622
+            },
+            "1": {
+              "n": 947,
+              "months": 79,
+              "symbols": 208,
+              "direction": "bearish",
+              "lower_bound": 0.5308,
+              "observed_hit_rate": 0.6125
+            },
+            "2": {
+              "n": 1118,
+              "months": 80,
+              "symbols": 217,
+              "direction": "bearish",
+              "lower_bound": 0.5375,
+              "observed_hit_rate": 0.6208
+            },
+            "3": {
+              "n": 1208,
+              "months": 83,
+              "symbols": 221,
+              "direction": "bearish",
+              "lower_bound": 0.5469,
+              "observed_hit_rate": 0.6283
+            },
+            "4": {
+              "n": 652,
+              "months": 75,
+              "symbols": 203,
+              "direction": "bearish",
+              "lower_bound": 0.5192,
+              "observed_hit_rate": 0.592
+            },
+            "5": {
+              "n": 463,
+              "months": 60,
+              "symbols": 183,
+              "direction": null,
+              "lower_bound": 0.4965,
+              "observed_hit_rate": 0.5616
+            },
+            "6": {
+              "n": 276,
+              "months": 56,
+              "symbols": 126,
+              "direction": "bearish",
+              "lower_bound": 0.5356,
+              "observed_hit_rate": 0.6087
+            }
+          }
+        },
+        {
+          "year": 2025,
+          "training_n": 6962,
+          "latest_training_exit": "2024-12-04",
+          "test": {
+            "n": 2027,
+            "stocks": 197,
+            "months": 12,
+            "up_pct": 49.24,
+            "down_pct": 48.25,
+            "unchanged_pct": 2.52,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 1790,
+              "months": 12,
+              "stocks": 196,
+              "hit_pct": 48.66
+            },
+            "abstained": 237
+          },
+          "bins": {
+            "0": {
+              "n": 604,
+              "months": 72,
+              "symbols": 163,
+              "direction": "bearish",
+              "lower_bound": 0.5135,
+              "observed_hit_rate": 0.6209
+            },
+            "1": {
+              "n": 1275,
+              "months": 91,
+              "symbols": 215,
+              "direction": "bearish",
+              "lower_bound": 0.514,
+              "observed_hit_rate": 0.578
+            },
+            "2": {
+              "n": 1461,
+              "months": 92,
+              "symbols": 220,
+              "direction": "bearish",
+              "lower_bound": 0.545,
+              "observed_hit_rate": 0.6064
+            },
+            "3": {
+              "n": 1644,
+              "months": 95,
+              "symbols": 225,
+              "direction": "bearish",
+              "lower_bound": 0.5454,
+              "observed_hit_rate": 0.6022
+            },
+            "4": {
+              "n": 881,
+              "months": 87,
+              "symbols": 214,
+              "direction": "bearish",
+              "lower_bound": 0.5135,
+              "observed_hit_rate": 0.5641
+            },
+            "5": {
+              "n": 678,
+              "months": 72,
+              "symbols": 203,
+              "direction": null,
+              "lower_bound": 0.5,
+              "observed_hit_rate": 0.5369
+            },
+            "6": {
+              "n": 419,
+              "months": 68,
+              "symbols": 150,
+              "direction": "bearish",
+              "lower_bound": 0.5117,
+              "observed_hit_rate": 0.568
+            }
+          }
+        },
+        {
+          "year": 2026,
+          "training_n": 8982,
+          "latest_training_exit": "2025-12-04",
+          "test": {
+            "n": 1197,
+            "stocks": 194,
+            "months": 7,
+            "up_pct": 40.1,
+            "down_pct": 57.14,
+            "unchanged_pct": 2.76,
+            "bullish": {
+              "n": 0,
+              "months": 0,
+              "stocks": 0,
+              "hit_pct": null
+            },
+            "bearish": {
+              "n": 1007,
+              "months": 7,
+              "stocks": 192,
+              "hit_pct": 56.8
+            },
+            "abstained": 190
+          },
+          "bins": {
+            "0": {
+              "n": 749,
+              "months": 84,
+              "symbols": 175,
+              "direction": "bearish",
+              "lower_bound": 0.5116,
+              "observed_hit_rate": 0.6035
+            },
+            "1": {
+              "n": 1577,
+              "months": 103,
+              "symbols": 219,
+              "direction": "bearish",
+              "lower_bound": 0.5239,
+              "observed_hit_rate": 0.577
+            },
+            "2": {
+              "n": 1814,
+              "months": 104,
+              "symbols": 222,
+              "direction": "bearish",
+              "lower_bound": 0.5492,
+              "observed_hit_rate": 0.6058
+            },
+            "3": {
+              "n": 2153,
+              "months": 107,
+              "symbols": 230,
+              "direction": "bearish",
+              "lower_bound": 0.5453,
+              "observed_hit_rate": 0.5973
+            },
+            "4": {
+              "n": 1162,
+              "months": 99,
+              "symbols": 222,
+              "direction": null,
+              "lower_bound": 0.4996,
+              "observed_hit_rate": 0.5491
+            },
+            "5": {
+              "n": 939,
+              "months": 84,
+              "symbols": 217,
+              "direction": "bearish",
+              "lower_bound": 0.5061,
+              "observed_hit_rate": 0.5453
+            },
+            "6": {
+              "n": 588,
+              "months": 80,
+              "symbols": 178,
+              "direction": "bearish",
+              "lower_bound": 0.5211,
+              "observed_hit_rate": 0.5765
+            }
+          }
+        }
+      ]
+    }
+  }
+}

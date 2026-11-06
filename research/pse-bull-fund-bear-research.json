@@ -1,0 +1,1701 @@
+{
+  "method": "Reconstruct candidate filters using only signal-time chart features, prior completed outcomes, and previous-local-date peer bars. PSE candidate calls are always a subset of the actual existing bullish app label. Annual selection uses only validation signals in the preceding two years whose outcomes complete strictly before the test year, minimum 50 calls, six months, ten symbols, >=51% accuracy and >=1 point above validation baseline; otherwise abstain. Baseline for PSE is current bullish app labels, for funds always-down. Test 2020-2026, first monthly close to first close on or after three calendar months within 10 days; ties are incorrect. PSE >=50 bars; funds also require 6- and 12-month price references, matching the earlier bearish fund comparison. Previous fund rule is local score >=55%, bottom peer-return quartile, and market gate below 50%. Prior and new calls differ.",
+  "limitations": [
+    "Repeatedly inspected retrospective data; not an untouched or prospective holdout. Candidate and threshold search is not accounted for by bootstrap intervals.",
+    "Missing/pending outcomes are excluded, and samples were constructed using outcome availability. Current selected listings omit most delisted assets; corporate actions and ticker identity are unverified.",
+    "Previous-local-date peer bars do not guarantee actual cross-timezone availability. A signal-close entry may not be executable; returns exclude dividends, fees, slippage and tax.",
+    "Overlapping signals and common shocks are not independent. Funds include exchange-traded products beyond conventional ETFs. Research only; no deployment or change to current trend labels."
+  ],
+  "markets": {
+    "PSE": {
+      "test_n": 10303,
+      "candidate": {
+        "n": 112,
+        "correct": 51,
+        "hit_pct": 45.54,
+        "coverage_pct": 1.09,
+        "months": 19,
+        "symbols": 37,
+        "bootstrap_90_pct_interval": null,
+        "meets_51_pct_observed": false,
+        "same_cases_always_up_pct": 45.54,
+        "same_cases_always_down_pct": 53.57
+      },
+      "previous": {
+        "n": 1778,
+        "correct": 789,
+        "hit_pct": 44.38,
+        "coverage_pct": 17.26,
+        "months": 77,
+        "symbols": 217,
+        "bootstrap_90_pct_interval": [
+          40.22,
+          47.72
+        ],
+        "meets_51_pct_observed": false,
+        "lower_bound_above_51_pct": false,
+        "same_cases_always_up_pct": 44.38,
+        "same_cases_always_down_pct": 54.39
+      },
+      "always_direction": {
+        "n": 10303,
+        "correct": 4271,
+        "hit_pct": 41.45,
+        "coverage_pct": 100.0,
+        "months": 79,
+        "symbols": 231,
+        "bootstrap_90_pct_interval": [
+          37.33,
+          45.49
+        ],
+        "meets_51_pct_observed": false,
+        "lower_bound_above_51_pct": false,
+        "same_cases_always_up_pct": 41.45,
+        "same_cases_always_down_pct": 56.54
+      },
+      "folds": [
+        {
+          "year": 2020,
+          "validation_n": 228,
+          "latest_validation_exit": "2019-12-04",
+          "choice": null,
+          "validation_diagnostics": [
+            {
+              "rule": "bull",
+              "n": 21,
+              "correct": 2,
+              "months": 11,
+              "symbols": 13,
+              "hit_pct": 9.52,
+              "base_pct": 9.52,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_strong",
+              "n": 3,
+              "correct": 0,
+              "months": 3,
+              "symbols": 3,
+              "hit_pct": 0.0,
+              "base_pct": 9.52,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_local",
+              "n": 0,
+              "correct": 0,
+              "months": 0,
+              "symbols": 0,
+              "hit_pct": null,
+              "base_pct": 9.52,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_peer_momentum",
+              "n": 8,
+              "correct": 0,
+              "months": 5,
+              "symbols": 7,
+              "hit_pct": 0.0,
+              "base_pct": 9.52,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_local_peer_momentum",
+              "n": 0,
+              "correct": 0,
+              "months": 0,
+              "symbols": 0,
+              "hit_pct": null,
+              "base_pct": 9.52,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_low_volatility",
+              "n": 0,
+              "correct": 0,
+              "months": 0,
+              "symbols": 0,
+              "hit_pct": null,
+              "base_pct": 9.52,
+              "qualifies": false
+            }
+          ],
+          "candidate": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "previous": {
+            "n": 63,
+            "correct": 42,
+            "hit_pct": 66.67,
+            "coverage_pct": 19.75,
+            "months": 10,
+            "symbols": 33,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 66.67,
+            "same_cases_always_down_pct": 30.16
+          },
+          "always_direction": {
+            "n": 319,
+            "correct": 190,
+            "hit_pct": 59.56,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 52,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 59.56,
+            "same_cases_always_down_pct": 38.56
+          }
+        },
+        {
+          "year": 2021,
+          "validation_n": 386,
+          "latest_validation_exit": "2020-12-01",
+          "choice": null,
+          "validation_diagnostics": [
+            {
+              "rule": "bull",
+              "n": 41,
+              "correct": 17,
+              "months": 16,
+              "symbols": 19,
+              "hit_pct": 41.46,
+              "base_pct": 41.46,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_strong",
+              "n": 12,
+              "correct": 5,
+              "months": 7,
+              "symbols": 8,
+              "hit_pct": 41.67,
+              "base_pct": 41.46,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_local",
+              "n": 0,
+              "correct": 0,
+              "months": 0,
+              "symbols": 0,
+              "hit_pct": null,
+              "base_pct": 41.46,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_peer_momentum",
+              "n": 30,
+              "correct": 13,
+              "months": 13,
+              "symbols": 18,
+              "hit_pct": 43.33,
+              "base_pct": 41.46,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_local_peer_momentum",
+              "n": 0,
+              "correct": 0,
+              "months": 0,
+              "symbols": 0,
+              "hit_pct": null,
+              "base_pct": 41.46,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_low_volatility",
+              "n": 1,
+              "correct": 0,
+              "months": 1,
+              "symbols": 1,
+              "hit_pct": 0.0,
+              "base_pct": 41.46,
+              "qualifies": false
+            }
+          ],
+          "candidate": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "previous": {
+            "n": 204,
+            "correct": 93,
+            "hit_pct": 45.59,
+            "coverage_pct": 17.68,
+            "months": 12,
+            "symbols": 107,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 45.59,
+            "same_cases_always_down_pct": 53.92
+          },
+          "always_direction": {
+            "n": 1154,
+            "correct": 444,
+            "hit_pct": 38.47,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 194,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 38.47,
+            "same_cases_always_down_pct": 59.36
+          }
+        },
+        {
+          "year": 2022,
+          "validation_n": 961,
+          "latest_validation_exit": "2021-12-09",
+          "choice": null,
+          "validation_diagnostics": [
+            {
+              "rule": "bull",
+              "n": 186,
+              "correct": 89,
+              "months": 19,
+              "symbols": 69,
+              "hit_pct": 47.85,
+              "base_pct": 47.85,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_strong",
+              "n": 77,
+              "correct": 38,
+              "months": 16,
+              "symbols": 37,
+              "hit_pct": 49.35,
+              "base_pct": 47.85,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_local",
+              "n": 0,
+              "correct": 0,
+              "months": 0,
+              "symbols": 0,
+              "hit_pct": null,
+              "base_pct": 47.85,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_peer_momentum",
+              "n": 132,
+              "correct": 57,
+              "months": 19,
+              "symbols": 53,
+              "hit_pct": 43.18,
+              "base_pct": 47.85,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_local_peer_momentum",
+              "n": 0,
+              "correct": 0,
+              "months": 0,
+              "symbols": 0,
+              "hit_pct": null,
+              "base_pct": 47.85,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_low_volatility",
+              "n": 17,
+              "correct": 11,
+              "months": 10,
+              "symbols": 9,
+              "hit_pct": 64.71,
+              "base_pct": 47.85,
+              "qualifies": false
+            }
+          ],
+          "candidate": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "previous": {
+            "n": 180,
+            "correct": 59,
+            "hit_pct": 32.78,
+            "coverage_pct": 9.57,
+            "months": 12,
+            "symbols": 86,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 32.78,
+            "same_cases_always_down_pct": 66.67
+          },
+          "always_direction": {
+            "n": 1881,
+            "correct": 692,
+            "hit_pct": 36.79,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 188,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 36.79,
+            "same_cases_always_down_pct": 61.62
+          }
+        },
+        {
+          "year": 2023,
+          "validation_n": 2581,
+          "latest_validation_exit": "2022-12-02",
+          "choice": null,
+          "validation_diagnostics": [
+            {
+              "rule": "bull",
+              "n": 365,
+              "correct": 140,
+              "months": 21,
+              "symbols": 146,
+              "hit_pct": 38.36,
+              "base_pct": 38.36,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_strong",
+              "n": 132,
+              "correct": 49,
+              "months": 21,
+              "symbols": 73,
+              "hit_pct": 37.12,
+              "base_pct": 38.36,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_local",
+              "n": 0,
+              "correct": 0,
+              "months": 0,
+              "symbols": 0,
+              "hit_pct": null,
+              "base_pct": 38.36,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_peer_momentum",
+              "n": 323,
+              "correct": 120,
+              "months": 21,
+              "symbols": 129,
+              "hit_pct": 37.15,
+              "base_pct": 38.36,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_local_peer_momentum",
+              "n": 0,
+              "correct": 0,
+              "months": 0,
+              "symbols": 0,
+              "hit_pct": null,
+              "base_pct": 38.36,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_low_volatility",
+              "n": 42,
+              "correct": 23,
+              "months": 17,
+              "symbols": 22,
+              "hit_pct": 54.76,
+              "base_pct": 38.36,
+              "qualifies": false
+            }
+          ],
+          "candidate": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "previous": {
+            "n": 296,
+            "correct": 120,
+            "hit_pct": 40.54,
+            "coverage_pct": 16.41,
+            "months": 12,
+            "symbols": 115,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 40.54,
+            "same_cases_always_down_pct": 58.78
+          },
+          "always_direction": {
+            "n": 1804,
+            "correct": 679,
+            "hit_pct": 37.64,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 181,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 37.64,
+            "same_cases_always_down_pct": 60.31
+          }
+        },
+        {
+          "year": 2024,
+          "validation_n": 3239,
+          "latest_validation_exit": "2023-12-06",
+          "choice": null,
+          "validation_diagnostics": [
+            {
+              "rule": "bull",
+              "n": 430,
+              "correct": 159,
+              "months": 21,
+              "symbols": 133,
+              "hit_pct": 36.98,
+              "base_pct": 36.98,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_strong",
+              "n": 160,
+              "correct": 46,
+              "months": 21,
+              "symbols": 80,
+              "hit_pct": 28.75,
+              "base_pct": 36.98,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_local",
+              "n": 3,
+              "correct": 1,
+              "months": 3,
+              "symbols": 2,
+              "hit_pct": 33.33,
+              "base_pct": 36.98,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_peer_momentum",
+              "n": 384,
+              "correct": 139,
+              "months": 21,
+              "symbols": 127,
+              "hit_pct": 36.2,
+              "base_pct": 36.98,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_local_peer_momentum",
+              "n": 3,
+              "correct": 1,
+              "months": 3,
+              "symbols": 2,
+              "hit_pct": 33.33,
+              "base_pct": 36.98,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_low_volatility",
+              "n": 78,
+              "correct": 33,
+              "months": 17,
+              "symbols": 37,
+              "hit_pct": 42.31,
+              "base_pct": 36.98,
+              "qualifies": false
+            }
+          ],
+          "candidate": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "previous": {
+            "n": 446,
+            "correct": 197,
+            "hit_pct": 44.17,
+            "coverage_pct": 23.22,
+            "months": 12,
+            "symbols": 134,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 44.17,
+            "same_cases_always_down_pct": 54.93
+          },
+          "always_direction": {
+            "n": 1921,
+            "correct": 788,
+            "hit_pct": 41.02,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 187,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 41.02,
+            "same_cases_always_down_pct": 57.68
+          }
+        },
+        {
+          "year": 2025,
+          "validation_n": 3193,
+          "latest_validation_exit": "2024-12-04",
+          "choice": {
+            "rule": "bull_local",
+            "n": 68,
+            "correct": 45,
+            "months": 12,
+            "symbols": 24,
+            "hit_pct": 66.18,
+            "base_pct": 46.22,
+            "qualifies": true
+          },
+          "validation_diagnostics": [
+            {
+              "rule": "bull",
+              "n": 608,
+              "correct": 281,
+              "months": 21,
+              "symbols": 146,
+              "hit_pct": 46.22,
+              "base_pct": 46.22,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_strong",
+              "n": 238,
+              "correct": 105,
+              "months": 21,
+              "symbols": 94,
+              "hit_pct": 44.12,
+              "base_pct": 46.22,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_local",
+              "n": 68,
+              "correct": 45,
+              "months": 12,
+              "symbols": 24,
+              "hit_pct": 66.18,
+              "base_pct": 46.22,
+              "qualifies": true
+            },
+            {
+              "rule": "bull_peer_momentum",
+              "n": 517,
+              "correct": 235,
+              "months": 21,
+              "symbols": 139,
+              "hit_pct": 45.45,
+              "base_pct": 46.22,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_local_peer_momentum",
+              "n": 65,
+              "correct": 42,
+              "months": 12,
+              "symbols": 24,
+              "hit_pct": 64.62,
+              "base_pct": 46.22,
+              "qualifies": true
+            },
+            {
+              "rule": "bull_low_volatility",
+              "n": 164,
+              "correct": 90,
+              "months": 20,
+              "symbols": 51,
+              "hit_pct": 54.88,
+              "base_pct": 46.22,
+              "qualifies": true
+            }
+          ],
+          "candidate": {
+            "n": 79,
+            "correct": 40,
+            "hit_pct": 50.63,
+            "coverage_pct": 3.9,
+            "months": 12,
+            "symbols": 28,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 50.63,
+            "same_cases_always_down_pct": 49.37
+          },
+          "previous": {
+            "n": 375,
+            "correct": 190,
+            "hit_pct": 50.67,
+            "coverage_pct": 18.5,
+            "months": 12,
+            "symbols": 130,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 50.67,
+            "same_cases_always_down_pct": 47.73
+          },
+          "always_direction": {
+            "n": 2027,
+            "correct": 998,
+            "hit_pct": 49.24,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 197,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 49.24,
+            "same_cases_always_down_pct": 48.25
+          }
+        },
+        {
+          "year": 2026,
+          "validation_n": 3409,
+          "latest_validation_exit": "2025-12-04",
+          "choice": {
+            "rule": "bull_local_peer_momentum",
+            "n": 142,
+            "correct": 80,
+            "months": 21,
+            "symbols": 32,
+            "hit_pct": 56.34,
+            "base_pct": 44.94,
+            "qualifies": true
+          },
+          "validation_diagnostics": [
+            {
+              "rule": "bull",
+              "n": 741,
+              "correct": 333,
+              "months": 21,
+              "symbols": 160,
+              "hit_pct": 44.94,
+              "base_pct": 44.94,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_strong",
+              "n": 294,
+              "correct": 132,
+              "months": 21,
+              "symbols": 114,
+              "hit_pct": 44.9,
+              "base_pct": 44.94,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_local",
+              "n": 165,
+              "correct": 90,
+              "months": 21,
+              "symbols": 35,
+              "hit_pct": 54.55,
+              "base_pct": 44.94,
+              "qualifies": true
+            },
+            {
+              "rule": "bull_peer_momentum",
+              "n": 626,
+              "correct": 279,
+              "months": 21,
+              "symbols": 157,
+              "hit_pct": 44.57,
+              "base_pct": 44.94,
+              "qualifies": false
+            },
+            {
+              "rule": "bull_local_peer_momentum",
+              "n": 142,
+              "correct": 80,
+              "months": 21,
+              "symbols": 32,
+              "hit_pct": 56.34,
+              "base_pct": 44.94,
+              "qualifies": true
+            },
+            {
+              "rule": "bull_low_volatility",
+              "n": 189,
+              "correct": 99,
+              "months": 21,
+              "symbols": 51,
+              "hit_pct": 52.38,
+              "base_pct": 44.94,
+              "qualifies": true
+            }
+          ],
+          "candidate": {
+            "n": 33,
+            "correct": 11,
+            "hit_pct": 33.33,
+            "coverage_pct": 2.76,
+            "months": 7,
+            "symbols": 20,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 33.33,
+            "same_cases_always_down_pct": 63.64
+          },
+          "previous": {
+            "n": 214,
+            "correct": 88,
+            "hit_pct": 41.12,
+            "coverage_pct": 17.88,
+            "months": 7,
+            "symbols": 101,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 41.12,
+            "same_cases_always_down_pct": 56.07
+          },
+          "always_direction": {
+            "n": 1197,
+            "correct": 480,
+            "hit_pct": 40.1,
+            "coverage_pct": 100.0,
+            "months": 7,
+            "symbols": 194,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 40.1,
+            "same_cases_always_down_pct": 57.14
+          }
+        }
+      ],
+      "received": 244,
+      "requested": 244,
+      "observation_n": 10718,
+      "skipped": {
+        "short_window": 7413,
+        "missing_outcome": 580
+      }
+    },
+    "fund": {
+      "test_n": 7234,
+      "candidate": {
+        "n": 669,
+        "correct": 223,
+        "hit_pct": 33.33,
+        "coverage_pct": 9.25,
+        "months": 52,
+        "symbols": 91,
+        "bootstrap_90_pct_interval": [
+          18.16,
+          40.37
+        ],
+        "meets_51_pct_observed": false,
+        "lower_bound_above_51_pct": false,
+        "same_cases_always_up_pct": 66.67,
+        "same_cases_always_down_pct": 33.33
+      },
+      "previous": {
+        "n": 176,
+        "correct": 97,
+        "hit_pct": 55.11,
+        "coverage_pct": 2.43,
+        "months": 48,
+        "symbols": 28,
+        "bootstrap_90_pct_interval": [
+          42.86,
+          64.14
+        ],
+        "meets_51_pct_observed": true,
+        "lower_bound_above_51_pct": false,
+        "same_cases_always_up_pct": 44.89,
+        "same_cases_always_down_pct": 55.11
+      },
+      "always_direction": {
+        "n": 7234,
+        "correct": 3040,
+        "hit_pct": 42.02,
+        "coverage_pct": 100.0,
+        "months": 79,
+        "symbols": 92,
+        "bootstrap_90_pct_interval": [
+          34.45,
+          48.24
+        ],
+        "meets_51_pct_observed": false,
+        "lower_bound_above_51_pct": false,
+        "same_cases_always_up_pct": 57.6,
+        "same_cases_always_down_pct": 42.02
+      },
+      "folds": [
+        {
+          "year": 2020,
+          "validation_n": 1893,
+          "latest_validation_exit": "2019-12-03",
+          "choice": {
+            "rule": "strong_trend",
+            "n": 494,
+            "correct": 281,
+            "months": 21,
+            "symbols": 87,
+            "hit_pct": 56.88,
+            "base_pct": 45.17,
+            "qualifies": true
+          },
+          "validation_diagnostics": [
+            {
+              "rule": "momentum_contrarian",
+              "n": 27,
+              "correct": 5,
+              "months": 11,
+              "symbols": 9,
+              "hit_pct": 18.52,
+              "base_pct": 45.17,
+              "qualifies": false
+            },
+            {
+              "rule": "local",
+              "n": 152,
+              "correct": 72,
+              "months": 21,
+              "symbols": 23,
+              "hit_pct": 47.37,
+              "base_pct": 45.17,
+              "qualifies": false
+            },
+            {
+              "rule": "local_momentum",
+              "n": 49,
+              "correct": 16,
+              "months": 17,
+              "symbols": 13,
+              "hit_pct": 32.65,
+              "base_pct": 45.17,
+              "qualifies": false
+            },
+            {
+              "rule": "local_reversal",
+              "n": 54,
+              "correct": 28,
+              "months": 16,
+              "symbols": 17,
+              "hit_pct": 51.85,
+              "base_pct": 45.17,
+              "qualifies": true
+            },
+            {
+              "rule": "reversal_contrarian",
+              "n": 37,
+              "correct": 20,
+              "months": 12,
+              "symbols": 14,
+              "hit_pct": 54.05,
+              "base_pct": 45.17,
+              "qualifies": false
+            },
+            {
+              "rule": "weak_trend",
+              "n": 285,
+              "correct": 112,
+              "months": 21,
+              "symbols": 85,
+              "hit_pct": 39.3,
+              "base_pct": 45.17,
+              "qualifies": false
+            },
+            {
+              "rule": "strong_trend",
+              "n": 494,
+              "correct": 281,
+              "months": 21,
+              "symbols": 87,
+              "hit_pct": 56.88,
+              "base_pct": 45.17,
+              "qualifies": true
+            }
+          ],
+          "candidate": {
+            "n": 367,
+            "correct": 134,
+            "hit_pct": 36.51,
+            "coverage_pct": 33.61,
+            "months": 12,
+            "symbols": 87,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 63.49,
+            "same_cases_always_down_pct": 36.51
+          },
+          "previous": {
+            "n": 19,
+            "correct": 8,
+            "hit_pct": 42.11,
+            "coverage_pct": 1.74,
+            "months": 9,
+            "symbols": 6,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 57.89,
+            "same_cases_always_down_pct": 42.11
+          },
+          "always_direction": {
+            "n": 1092,
+            "correct": 351,
+            "hit_pct": 32.14,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 91,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 67.22,
+            "same_cases_always_down_pct": 32.14
+          }
+        },
+        {
+          "year": 2021,
+          "validation_n": 1905,
+          "latest_validation_exit": "2020-12-01",
+          "choice": {
+            "rule": "local_reversal",
+            "n": 62,
+            "correct": 32,
+            "months": 16,
+            "symbols": 20,
+            "hit_pct": 51.61,
+            "base_pct": 33.49,
+            "qualifies": true
+          },
+          "validation_diagnostics": [
+            {
+              "rule": "momentum_contrarian",
+              "n": 30,
+              "correct": 11,
+              "months": 12,
+              "symbols": 10,
+              "hit_pct": 36.67,
+              "base_pct": 33.49,
+              "qualifies": false
+            },
+            {
+              "rule": "local",
+              "n": 158,
+              "correct": 77,
+              "months": 21,
+              "symbols": 24,
+              "hit_pct": 48.73,
+              "base_pct": 33.49,
+              "qualifies": false
+            },
+            {
+              "rule": "local_momentum",
+              "n": 52,
+              "correct": 22,
+              "months": 18,
+              "symbols": 13,
+              "hit_pct": 42.31,
+              "base_pct": 33.49,
+              "qualifies": false
+            },
+            {
+              "rule": "local_reversal",
+              "n": 62,
+              "correct": 32,
+              "months": 16,
+              "symbols": 20,
+              "hit_pct": 51.61,
+              "base_pct": 33.49,
+              "qualifies": true
+            },
+            {
+              "rule": "reversal_contrarian",
+              "n": 45,
+              "correct": 24,
+              "months": 12,
+              "symbols": 15,
+              "hit_pct": 53.33,
+              "base_pct": 33.49,
+              "qualifies": false
+            },
+            {
+              "rule": "weak_trend",
+              "n": 234,
+              "correct": 43,
+              "months": 20,
+              "symbols": 78,
+              "hit_pct": 18.38,
+              "base_pct": 33.49,
+              "qualifies": false
+            },
+            {
+              "rule": "strong_trend",
+              "n": 665,
+              "correct": 263,
+              "months": 21,
+              "symbols": 89,
+              "hit_pct": 39.55,
+              "base_pct": 33.49,
+              "qualifies": false
+            }
+          ],
+          "candidate": {
+            "n": 30,
+            "correct": 9,
+            "hit_pct": 30.0,
+            "coverage_pct": 2.75,
+            "months": 12,
+            "symbols": 10,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 70.0,
+            "same_cases_always_down_pct": 30.0
+          },
+          "previous": {
+            "n": 10,
+            "correct": 6,
+            "hit_pct": 60.0,
+            "coverage_pct": 0.92,
+            "months": 7,
+            "symbols": 5,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 40.0,
+            "same_cases_always_down_pct": 60.0
+          },
+          "always_direction": {
+            "n": 1092,
+            "correct": 475,
+            "hit_pct": 43.5,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 91,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 56.23,
+            "same_cases_always_down_pct": 43.5
+          }
+        },
+        {
+          "year": 2022,
+          "validation_n": 1911,
+          "latest_validation_exit": "2021-12-01",
+          "choice": null,
+          "validation_diagnostics": [
+            {
+              "rule": "momentum_contrarian",
+              "n": 27,
+              "correct": 13,
+              "months": 14,
+              "symbols": 9,
+              "hit_pct": 48.15,
+              "base_pct": 34.28,
+              "qualifies": false
+            },
+            {
+              "rule": "local",
+              "n": 132,
+              "correct": 49,
+              "months": 21,
+              "symbols": 18,
+              "hit_pct": 37.12,
+              "base_pct": 34.28,
+              "qualifies": false
+            },
+            {
+              "rule": "local_momentum",
+              "n": 27,
+              "correct": 13,
+              "months": 14,
+              "symbols": 9,
+              "hit_pct": 48.15,
+              "base_pct": 34.28,
+              "qualifies": false
+            },
+            {
+              "rule": "local_reversal",
+              "n": 57,
+              "correct": 21,
+              "months": 19,
+              "symbols": 14,
+              "hit_pct": 36.84,
+              "base_pct": 34.28,
+              "qualifies": false
+            },
+            {
+              "rule": "reversal_contrarian",
+              "n": 57,
+              "correct": 21,
+              "months": 19,
+              "symbols": 14,
+              "hit_pct": 36.84,
+              "base_pct": 34.28,
+              "qualifies": false
+            },
+            {
+              "rule": "weak_trend",
+              "n": 242,
+              "correct": 86,
+              "months": 21,
+              "symbols": 88,
+              "hit_pct": 35.54,
+              "base_pct": 34.28,
+              "qualifies": false
+            },
+            {
+              "rule": "strong_trend",
+              "n": 767,
+              "correct": 224,
+              "months": 21,
+              "symbols": 90,
+              "hit_pct": 29.2,
+              "base_pct": 34.28,
+              "qualifies": false
+            }
+          ],
+          "candidate": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "previous": {
+            "n": 8,
+            "correct": 6,
+            "hit_pct": 75.0,
+            "coverage_pct": 0.73,
+            "months": 4,
+            "symbols": 5,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 25.0,
+            "same_cases_always_down_pct": 75.0
+          },
+          "always_direction": {
+            "n": 1094,
+            "correct": 734,
+            "hit_pct": 67.09,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 92,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 32.63,
+            "same_cases_always_down_pct": 67.09
+          }
+        },
+        {
+          "year": 2023,
+          "validation_n": 1911,
+          "latest_validation_exit": "2022-12-01",
+          "choice": {
+            "rule": "weak_trend",
+            "n": 375,
+            "correct": 285,
+            "months": 21,
+            "symbols": 88,
+            "hit_pct": 76.0,
+            "base_pct": 58.03,
+            "qualifies": true
+          },
+          "validation_diagnostics": [
+            {
+              "rule": "momentum_contrarian",
+              "n": 18,
+              "correct": 12,
+              "months": 11,
+              "symbols": 8,
+              "hit_pct": 66.67,
+              "base_pct": 58.03,
+              "qualifies": false
+            },
+            {
+              "rule": "local",
+              "n": 155,
+              "correct": 91,
+              "months": 21,
+              "symbols": 31,
+              "hit_pct": 58.71,
+              "base_pct": 58.03,
+              "qualifies": false
+            },
+            {
+              "rule": "local_momentum",
+              "n": 28,
+              "correct": 17,
+              "months": 13,
+              "symbols": 13,
+              "hit_pct": 60.71,
+              "base_pct": 58.03,
+              "qualifies": false
+            },
+            {
+              "rule": "local_reversal",
+              "n": 61,
+              "correct": 34,
+              "months": 20,
+              "symbols": 21,
+              "hit_pct": 55.74,
+              "base_pct": 58.03,
+              "qualifies": false
+            },
+            {
+              "rule": "reversal_contrarian",
+              "n": 47,
+              "correct": 21,
+              "months": 17,
+              "symbols": 12,
+              "hit_pct": 44.68,
+              "base_pct": 58.03,
+              "qualifies": false
+            },
+            {
+              "rule": "weak_trend",
+              "n": 375,
+              "correct": 285,
+              "months": 21,
+              "symbols": 88,
+              "hit_pct": 76.0,
+              "base_pct": 58.03,
+              "qualifies": true
+            },
+            {
+              "rule": "strong_trend",
+              "n": 528,
+              "correct": 180,
+              "months": 21,
+              "symbols": 87,
+              "hit_pct": 34.09,
+              "base_pct": 58.03,
+              "qualifies": false
+            }
+          ],
+          "candidate": {
+            "n": 210,
+            "correct": 51,
+            "hit_pct": 24.29,
+            "coverage_pct": 19.02,
+            "months": 12,
+            "symbols": 79,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 75.71,
+            "same_cases_always_down_pct": 24.29
+          },
+          "previous": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "always_direction": {
+            "n": 1104,
+            "correct": 450,
+            "hit_pct": 40.76,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 92,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 58.88,
+            "same_cases_always_down_pct": 40.76
+          }
+        },
+        {
+          "year": 2024,
+          "validation_n": 1922,
+          "latest_validation_exit": "2023-12-01",
+          "choice": {
+            "rule": "local_reversal",
+            "n": 69,
+            "correct": 47,
+            "months": 20,
+            "symbols": 23,
+            "hit_pct": 68.12,
+            "base_pct": 59.42,
+            "qualifies": true
+          },
+          "validation_diagnostics": [
+            {
+              "rule": "momentum_contrarian",
+              "n": 8,
+              "correct": 6,
+              "months": 4,
+              "symbols": 5,
+              "hit_pct": 75.0,
+              "base_pct": 59.42,
+              "qualifies": false
+            },
+            {
+              "rule": "local",
+              "n": 279,
+              "correct": 157,
+              "months": 21,
+              "symbols": 36,
+              "hit_pct": 56.27,
+              "base_pct": 59.42,
+              "qualifies": false
+            },
+            {
+              "rule": "local_momentum",
+              "n": 102,
+              "correct": 49,
+              "months": 18,
+              "symbols": 24,
+              "hit_pct": 48.04,
+              "base_pct": 59.42,
+              "qualifies": false
+            },
+            {
+              "rule": "local_reversal",
+              "n": 69,
+              "correct": 47,
+              "months": 20,
+              "symbols": 23,
+              "hit_pct": 68.12,
+              "base_pct": 59.42,
+              "qualifies": true
+            },
+            {
+              "rule": "reversal_contrarian",
+              "n": 17,
+              "correct": 12,
+              "months": 5,
+              "symbols": 8,
+              "hit_pct": 70.59,
+              "base_pct": 59.42,
+              "qualifies": false
+            },
+            {
+              "rule": "weak_trend",
+              "n": 424,
+              "correct": 264,
+              "months": 21,
+              "symbols": 91,
+              "hit_pct": 62.26,
+              "base_pct": 59.42,
+              "qualifies": true
+            },
+            {
+              "rule": "strong_trend",
+              "n": 348,
+              "correct": 218,
+              "months": 21,
+              "symbols": 90,
+              "hit_pct": 62.64,
+              "base_pct": 59.42,
+              "qualifies": true
+            }
+          ],
+          "candidate": {
+            "n": 17,
+            "correct": 10,
+            "hit_pct": 58.82,
+            "coverage_pct": 1.54,
+            "months": 7,
+            "symbols": 7,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 41.18,
+            "same_cases_always_down_pct": 58.82
+          },
+          "previous": {
+            "n": 66,
+            "correct": 37,
+            "hit_pct": 56.06,
+            "coverage_pct": 5.98,
+            "months": 12,
+            "symbols": 16,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 43.94,
+            "same_cases_always_down_pct": 56.06
+          },
+          "always_direction": {
+            "n": 1104,
+            "correct": 427,
+            "hit_pct": 38.68,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 92,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 60.96,
+            "same_cases_always_down_pct": 38.68
+          }
+        },
+        {
+          "year": 2025,
+          "validation_n": 1932,
+          "latest_validation_exit": "2024-12-03",
+          "choice": {
+            "rule": "local_momentum",
+            "n": 129,
+            "correct": 67,
+            "months": 21,
+            "symbols": 24,
+            "hit_pct": 51.94,
+            "base_pct": 36.54,
+            "qualifies": true
+          },
+          "validation_diagnostics": [
+            {
+              "rule": "momentum_contrarian",
+              "n": 51,
+              "correct": 26,
+              "months": 9,
+              "symbols": 15,
+              "hit_pct": 50.98,
+              "base_pct": 36.54,
+              "qualifies": false
+            },
+            {
+              "rule": "local",
+              "n": 267,
+              "correct": 131,
+              "months": 21,
+              "symbols": 32,
+              "hit_pct": 49.06,
+              "base_pct": 36.54,
+              "qualifies": false
+            },
+            {
+              "rule": "local_momentum",
+              "n": 129,
+              "correct": 67,
+              "months": 21,
+              "symbols": 24,
+              "hit_pct": 51.94,
+              "base_pct": 36.54,
+              "qualifies": true
+            },
+            {
+              "rule": "local_reversal",
+              "n": 49,
+              "correct": 26,
+              "months": 17,
+              "symbols": 18,
+              "hit_pct": 53.06,
+              "base_pct": 36.54,
+              "qualifies": false
+            },
+            {
+              "rule": "reversal_contrarian",
+              "n": 13,
+              "correct": 6,
+              "months": 5,
+              "symbols": 6,
+              "hit_pct": 46.15,
+              "base_pct": 36.54,
+              "qualifies": false
+            },
+            {
+              "rule": "weak_trend",
+              "n": 278,
+              "correct": 73,
+              "months": 21,
+              "symbols": 79,
+              "hit_pct": 26.26,
+              "base_pct": 36.54,
+              "qualifies": false
+            },
+            {
+              "rule": "strong_trend",
+              "n": 609,
+              "correct": 290,
+              "months": 21,
+              "symbols": 88,
+              "hit_pct": 47.62,
+              "base_pct": 36.54,
+              "qualifies": false
+            }
+          ],
+          "candidate": {
+            "n": 45,
+            "correct": 19,
+            "hit_pct": 42.22,
+            "coverage_pct": 4.08,
+            "months": 9,
+            "symbols": 18,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 57.78,
+            "same_cases_always_down_pct": 42.22
+          },
+          "previous": {
+            "n": 45,
+            "correct": 19,
+            "hit_pct": 42.22,
+            "coverage_pct": 4.08,
+            "months": 9,
+            "symbols": 18,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 57.78,
+            "same_cases_always_down_pct": 42.22
+          },
+          "always_direction": {
+            "n": 1104,
+            "correct": 302,
+            "hit_pct": 27.36,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 92,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 72.46,
+            "same_cases_always_down_pct": 27.36
+          }
+        },
+        {
+          "year": 2026,
+          "validation_n": 1932,
+          "latest_validation_exit": "2025-12-02",
+          "choice": null,
+          "validation_diagnostics": [
+            {
+              "rule": "momentum_contrarian",
+              "n": 96,
+              "correct": 44,
+              "months": 18,
+              "symbols": 22,
+              "hit_pct": 45.83,
+              "base_pct": 33.28,
+              "qualifies": false
+            },
+            {
+              "rule": "local",
+              "n": 234,
+              "correct": 93,
+              "months": 21,
+              "symbols": 28,
+              "hit_pct": 39.74,
+              "base_pct": 33.28,
+              "qualifies": false
+            },
+            {
+              "rule": "local_momentum",
+              "n": 96,
+              "correct": 44,
+              "months": 18,
+              "symbols": 22,
+              "hit_pct": 45.83,
+              "base_pct": 33.28,
+              "qualifies": false
+            },
+            {
+              "rule": "local_reversal",
+              "n": 51,
+              "correct": 19,
+              "months": 16,
+              "symbols": 14,
+              "hit_pct": 37.25,
+              "base_pct": 33.28,
+              "qualifies": false
+            },
+            {
+              "rule": "reversal_contrarian",
+              "n": 51,
+              "correct": 19,
+              "months": 16,
+              "symbols": 14,
+              "hit_pct": 37.25,
+              "base_pct": 33.28,
+              "qualifies": false
+            },
+            {
+              "rule": "weak_trend",
+              "n": 189,
+              "correct": 54,
+              "months": 21,
+              "symbols": 60,
+              "hit_pct": 28.57,
+              "base_pct": 33.28,
+              "qualifies": false
+            },
+            {
+              "rule": "strong_trend",
+              "n": 675,
+              "correct": 261,
+              "months": 21,
+              "symbols": 90,
+              "hit_pct": 38.67,
+              "base_pct": 33.28,
+              "qualifies": false
+            }
+          ],
+          "candidate": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "previous": {
+            "n": 28,
+            "correct": 21,
+            "hit_pct": 75.0,
+            "coverage_pct": 4.35,
+            "months": 7,
+            "symbols": 14,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 25.0,
+            "same_cases_always_down_pct": 75.0
+          },
+          "always_direction": {
+            "n": 644,
+            "correct": 301,
+            "hit_pct": 46.74,
+            "coverage_pct": 100.0,
+            "months": 7,
+            "symbols": 92,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 52.64,
+            "same_cases_always_down_pct": 46.74
+          }
+        }
+      ],
+      "received": 92,
+      "requested": 92,
+      "observation_n": 17495,
+      "skipped": {
+        "missing_outcome": 276,
+        "short_window": 51,
+        "insufficient_long_history": 168
+      }
+    }
+  }
+}

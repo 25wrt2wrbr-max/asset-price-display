@@ -1,0 +1,58 @@
+{
+  "as_of_utc_date": "2026-10-30",
+  "method": "Arithmetic extremes for the selected retrospectively reconstructed calls: combine observed correct counts with all unresolved calls hypothetically wrong or hypothetically right. Flat outcomes are misses. Count minimum additional correct outcomes needed for at least 51% over combined calls. Unresolved outcomes are never classified as wins or losses.",
+  "limitations": [
+    "These are worst/best arithmetic scenarios, not confidence intervals, forecasts, or prospective validation. The reconstructed calls were not necessarily made at their signal dates.",
+    "Matured-missing and invalid outcomes may never resolve; future outcomes may not fall within exit grace. Current listing survivorship, identity and corporate actions, cross-timezone timing, and repeated model selection remain unresolved."
+  ],
+  "markets": {
+    "currency": {
+      "observed_calls": 113,
+      "observed_correct": 67,
+      "observed_hit_pct": 59.29,
+      "unresolved_calls": {
+        "not_due": 16,
+        "within_exit_grace": 0,
+        "matured_missing": 0,
+        "invalid_exit_price": 0
+      },
+      "all_calls": 129,
+      "all_unresolved_miss_pct": 51.94,
+      "all_unresolved_correct_pct": 64.34,
+      "additional_correct_needed_for_51_pct": 0,
+      "target_possible": true
+    },
+    "us_equity": {
+      "observed_calls": 252,
+      "observed_correct": 123,
+      "observed_hit_pct": 48.81,
+      "unresolved_calls": {
+        "not_due": 24,
+        "within_exit_grace": 0,
+        "matured_missing": 0,
+        "invalid_exit_price": 0
+      },
+      "all_calls": 276,
+      "all_unresolved_miss_pct": 44.57,
+      "all_unresolved_correct_pct": 53.26,
+      "additional_correct_needed_for_51_pct": 18,
+      "target_possible": true
+    },
+    "crypto": {
+      "observed_calls": 97,
+      "observed_correct": 53,
+      "observed_hit_pct": 54.64,
+      "unresolved_calls": {
+        "not_due": 6,
+        "within_exit_grace": 0,
+        "matured_missing": 0,
+        "invalid_exit_price": 0
+      },
+      "all_calls": 103,
+      "all_unresolved_miss_pct": 51.46,
+      "all_unresolved_correct_pct": 57.28,
+      "additional_correct_needed_for_51_pct": 0,
+      "target_possible": true
+    }
+  }
+}

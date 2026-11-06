@@ -1,0 +1,5530 @@
+{
+  "as_of": "2026-10-30T16:40:51.137355+08:00",
+  "source": "TradingView PSE daily bars, split adjusted",
+  "method": "Snapshot uses bars dated before collection day in Asia/Manila and within the chart's trailing 90 calendar days. Applies trend.classify unchanged. Reports >=50 bars and <=7 calendar days since last bar as audit data-quality checks; shorter series are separately scored and stale/missing series are unavailable in this audit, not necessarily in the live app. A bullish label is present price trend, not an outcome forecast. The seven-day heuristic is not an exchange calendar.",
+  "limitations": [
+    "Saved histories cover current selected listings, not a point-in-time complete universe. Some bars may be revised; a timestamp alone cannot prove data quality.",
+    "No independent ground-truth labels exist here: price-change agreement is descriptive, not classifier accuracy. This does not establish future returns.",
+    "The live chart may include a current partial bar and can fall back to old bars; this conservative completed-bar snapshot intentionally differs from live behavior."
+  ],
+  "requested": 244,
+  "received": 244,
+  "status": {
+    "short_window": 57,
+    "ok": 179,
+    "stale": 8
+  },
+  "all_scorable_labels": {
+    "neutral": 152,
+    "bearish": 62,
+    "bullish": 22
+  },
+  "full_window_labels": {
+    "bearish": 57,
+    "neutral": 105,
+    "bullish": 17
+  },
+  "full_bullish_net_rising": 17,
+  "rows": [
+    {
+      "symbol": "PSE:AB",
+      "bars": 43,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.82,
+      "last_close": 1.93,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0304,
+        "confidence": "flat",
+        "bars": 43,
+        "components": {
+          "momentum": 0.0722,
+          "trend": 0.1251,
+          "efficiency": 0.0397,
+          "range": -0.2353,
+          "r2": 0.3843
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ABA",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.33,
+      "last_close": 0.3,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3011,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1616,
+          "trend": -0.348,
+          "efficiency": -0.0909,
+          "range": -0.875,
+          "r2": 0.6396
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ABG",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 48.5,
+      "last_close": 21.8,
+      "trend": {
+        "label": "bearish",
+        "score": -0.4294,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2926,
+          "trend": -0.4663,
+          "efficiency": -0.2348,
+          "range": -0.9922,
+          "r2": 0.4663
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ABS",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 3.69,
+      "last_close": 2.47,
+      "trend": {
+        "label": "bearish",
+        "score": -0.5713,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.4307,
+          "trend": -0.8352,
+          "efficiency": -0.2699,
+          "range": -0.9082,
+          "r2": 0.8352
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ABSP",
+      "bars": 32,
+      "malformed_rows": 0,
+      "status": "stale",
+      "last_date": "2026-10-22",
+      "age_days": 8,
+      "trend": null
+    },
+    {
+      "symbol": "PSE:AC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 514.5,
+      "last_close": 539.0,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1891,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": 0.0955,
+          "trend": 0.1246,
+          "efficiency": 0.0513,
+          "range": 0.7297,
+          "r2": 0.4241
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ACE",
+      "bars": 19,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-27",
+      "age_days": 3,
+      "first_close": 1.25,
+      "last_close": 1.39,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1026,
+        "confidence": "weak",
+        "bars": 19,
+        "components": {
+          "momentum": 0.1475,
+          "trend": 0.2471,
+          "efficiency": 0.14,
+          "range": 0.1176,
+          "r2": 0.4474
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ACEN",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.91,
+      "last_close": 2.63,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2289,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1591,
+          "trend": -0.272,
+          "efficiency": -0.0909,
+          "range": -0.5273,
+          "r2": 0.5783
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ACR",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.71,
+      "last_close": 0.9,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0498,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": 0.2075,
+          "trend": 0.024,
+          "efficiency": 0.0815,
+          "range": -0.3699,
+          "r2": 0.0504
+        }
+      }
+    },
+    {
+      "symbol": "PSE:AEV",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 36.5,
+      "last_close": 39.5,
+      "trend": {
+        "label": "neutral",
+        "score": 0.2171,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": 0.188,
+          "trend": 0.2097,
+          "efficiency": 0.0872,
+          "range": 0.48,
+          "r2": 0.6967
+        }
+      }
+    },
+    {
+      "symbol": "PSE:AGI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 8.65,
+      "last_close": 8.79,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0818,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": 0.0562,
+          "trend": -0.0055,
+          "efficiency": 0.0272,
+          "range": -0.7222,
+          "r2": 0.0823
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ALCO",
+      "bars": 31,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-27",
+      "age_days": 3,
+      "first_close": 0.425,
+      "last_close": 0.425,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1182,
+        "confidence": "weak",
+        "bars": 31,
+        "components": {
+          "momentum": 0.0,
+          "trend": -0.0004,
+          "efficiency": 0.0,
+          "range": -1.0,
+          "r2": 0.0096
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ALHI",
+      "bars": 9,
+      "malformed_rows": 0,
+      "status": "stale",
+      "last_date": "2026-10-22",
+      "age_days": 8,
+      "trend": null
+    },
+    {
+      "symbol": "PSE:ALI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 16.0,
+      "last_close": 15.34,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0722,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": -0.0895,
+          "trend": -0.0008,
+          "efficiency": -0.0464,
+          "range": -0.1795,
+          "r2": 0.0216
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ALLHC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.23,
+      "last_close": 1.07,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3886,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.3236,
+          "trend": -0.2843,
+          "efficiency": -0.1905,
+          "range": -1.0,
+          "r2": 0.7515
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ALTER",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.79,
+      "last_close": 0.6,
+      "trend": {
+        "label": "bearish",
+        "score": -0.6834,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.577,
+          "trend": -0.9236,
+          "efficiency": -0.3585,
+          "range": -1.0,
+          "r2": 0.93
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ANS",
+      "bars": 58,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 17.0,
+      "last_close": 16.28,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1568,
+        "confidence": "weak",
+        "bars": 58,
+        "components": {
+          "momentum": -0.1256,
+          "trend": -0.0822,
+          "efficiency": -0.0643,
+          "range": -0.4878,
+          "r2": 0.4912
+        }
+      }
+    },
+    {
+      "symbol": "PSE:AP",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 43.0,
+      "last_close": 44.8,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0794,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": 0.1487,
+          "trend": 0.0768,
+          "efficiency": 0.07,
+          "range": -0.0886,
+          "r2": 0.4931
+        }
+      }
+    },
+    {
+      "symbol": "PSE:APC",
+      "bars": 49,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-26",
+      "age_days": 4,
+      "first_close": 0.113,
+      "last_close": 0.101,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3452,
+        "confidence": "moderate",
+        "bars": 49,
+        "components": {
+          "momentum": -0.2399,
+          "trend": -0.3366,
+          "efficiency": -0.2,
+          "range": -0.8571,
+          "r2": 0.7735
+        }
+      }
+    },
+    {
+      "symbol": "PSE:APL",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.0064,
+      "last_close": 0.0048,
+      "trend": {
+        "label": "bearish",
+        "score": -0.5022,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.4475,
+          "trend": -0.4723,
+          "efficiency": -0.2759,
+          "range": -1.0,
+          "r2": 0.7246
+        }
+      }
+    },
+    {
+      "symbol": "PSE:APO",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.3,
+      "last_close": 1.01,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2266,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1318,
+          "trend": -0.1044,
+          "efficiency": -0.0782,
+          "range": -0.881,
+          "r2": 0.1482
+        }
+      }
+    },
+    {
+      "symbol": "PSE:APVI",
+      "bars": 55,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 10.06,
+      "last_close": 11.26,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0791,
+        "confidence": "flat",
+        "bars": 55,
+        "components": {
+          "momentum": 0.1611,
+          "trend": 0.0,
+          "efficiency": 0.0855,
+          "range": -0.0164,
+          "r2": 0.001
+        }
+      }
+    },
+    {
+      "symbol": "PSE:APX",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 14.5,
+      "last_close": 15.88,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0504,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": 0.1254,
+          "trend": 0.1285,
+          "efficiency": 0.0536,
+          "range": -0.284,
+          "r2": 0.2876
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ARA",
+      "bars": 42,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-27",
+      "age_days": 3,
+      "first_close": 0.27,
+      "last_close": 0.255,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1638,
+        "confidence": "weak",
+        "bars": 42,
+        "components": {
+          "momentum": -0.0627,
+          "trend": -0.0808,
+          "efficiency": -0.0423,
+          "range": -0.8333,
+          "r2": 0.2759
+        }
+      }
+    },
+    {
+      "symbol": "PSE:AREIT",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 37.35,
+      "last_close": 35.8,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2289,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1379,
+          "trend": -0.081,
+          "efficiency": -0.0751,
+          "range": -0.9231,
+          "r2": 0.5671
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ASLAG",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.06,
+      "last_close": 1.14,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1344,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": 0.1337,
+          "trend": 0.0141,
+          "efficiency": 0.0656,
+          "range": 0.4286,
+          "r2": 0.0901
+        }
+      }
+    },
+    {
+      "symbol": "PSE:AT",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 13.36,
+      "last_close": 18.36,
+      "trend": {
+        "label": "neutral",
+        "score": 0.2009,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": 0.3897,
+          "trend": 0.053,
+          "efficiency": 0.1389,
+          "range": 0.0267,
+          "r2": 0.1169
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ATN",
+      "bars": 53,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.415,
+      "last_close": 0.385,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2051,
+        "confidence": "weak",
+        "bars": 53,
+        "components": {
+          "momentum": -0.1689,
+          "trend": -0.0722,
+          "efficiency": -0.12,
+          "range": -0.6364,
+          "r2": 0.3298
+        }
+      }
+    },
+    {
+      "symbol": "PSE:AUB",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 49.0,
+      "last_close": 43.6,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3379,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2582,
+          "trend": -0.2489,
+          "efficiency": -0.1488,
+          "range": -0.9509,
+          "r2": 0.4918
+        }
+      }
+    },
+    {
+      "symbol": "PSE:AXLM",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.85,
+      "last_close": 2.76,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0891,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": -0.0611,
+          "trend": -0.092,
+          "efficiency": -0.035,
+          "range": -0.2308,
+          "r2": 0.3551
+        }
+      }
+    },
+    {
+      "symbol": "PSE:BALAI",
+      "bars": 39,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.315,
+      "last_close": 0.31,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0175,
+        "confidence": "flat",
+        "bars": 39,
+        "components": {
+          "momentum": -0.0261,
+          "trend": -0.0626,
+          "efficiency": -0.0204,
+          "range": 0.3333,
+          "r2": 0.2743
+        }
+      }
+    },
+    {
+      "symbol": "PSE:BC",
+      "bars": 58,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 6.3,
+      "last_close": 6.08,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2139,
+        "confidence": "weak",
+        "bars": 58,
+        "components": {
+          "momentum": -0.0732,
+          "trend": -0.1244,
+          "efficiency": -0.0354,
+          "range": -0.9766,
+          "r2": 0.2672
+        }
+      }
+    },
+    {
+      "symbol": "PSE:BCOR",
+      "bars": 23,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 9.71,
+      "last_close": 7.95,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1827,
+        "confidence": "weak",
+        "bars": 23,
+        "components": {
+          "momentum": -0.2022,
+          "trend": -0.314,
+          "efficiency": -0.2222,
+          "range": -0.4367,
+          "r2": 0.5437
+        }
+      }
+    },
+    {
+      "symbol": "PSE:BDO",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 126.0,
+      "last_close": 117.4,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1773,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2073,
+          "trend": -0.201,
+          "efficiency": -0.1086,
+          "range": -0.1497,
+          "r2": 0.5672
+        }
+      }
+    },
+    {
+      "symbol": "PSE:BEL",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.22,
+      "last_close": 1.17,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0586,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": -0.0838,
+          "trend": -0.3325,
+          "efficiency": -0.0649,
+          "range": 0.4737,
+          "r2": 0.7979
+        }
+      }
+    },
+    {
+      "symbol": "PSE:BHI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.035,
+      "last_close": 0.029,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2968,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2241,
+          "trend": -0.1085,
+          "efficiency": -0.15,
+          "range": -1.0,
+          "r2": 0.3086
+        }
+      }
+    },
+    {
+      "symbol": "PSE:BKR",
+      "bars": 38,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-28",
+      "age_days": 2,
+      "first_close": 0.51,
+      "last_close": 0.495,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0503,
+        "confidence": "flat",
+        "bars": 38,
+        "components": {
+          "momentum": -0.0575,
+          "trend": -0.0009,
+          "efficiency": -0.0476,
+          "range": -0.1667,
+          "r2": 0.0212
+        }
+      }
+    },
+    {
+      "symbol": "PSE:BLOOM",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.07,
+      "last_close": 1.85,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3014,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1433,
+          "trend": -0.3321,
+          "efficiency": -0.0753,
+          "range": -0.9733,
+          "r2": 0.457
+        }
+      }
+    },
+    {
+      "symbol": "PSE:BNCOM",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 10.44,
+      "last_close": 9.99,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2212,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1373,
+          "trend": -0.0005,
+          "efficiency": -0.0808,
+          "range": -1.0,
+          "r2": 0.0171
+        }
+      }
+    },
+    {
+      "symbol": "PSE:BPI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 104.8,
+      "last_close": 95.0,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2762,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2042,
+          "trend": -0.2527,
+          "efficiency": -0.1138,
+          "range": -0.7241,
+          "r2": 0.6149
+        }
+      }
+    },
+    {
+      "symbol": "PSE:BRN",
+      "bars": 61,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.71,
+      "last_close": 0.84,
+      "trend": {
+        "label": "neutral",
+        "score": 0.2287,
+        "confidence": "weak",
+        "bars": 61,
+        "components": {
+          "momentum": 0.272,
+          "trend": 0.0452,
+          "efficiency": 0.1262,
+          "range": 0.5556,
+          "r2": 0.1739
+        }
+      }
+    },
+    {
+      "symbol": "PSE:BSC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.116,
+      "last_close": 0.106,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2603,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2533,
+          "trend": -0.2643,
+          "efficiency": -0.1429,
+          "range": -0.4286,
+          "r2": 0.8272
+        }
+      }
+    },
+    {
+      "symbol": "PSE:C",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.8,
+      "last_close": 1.03,
+      "trend": {
+        "label": "bullish",
+        "score": 0.31,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": 0.3139,
+          "trend": 0.3805,
+          "efficiency": 0.1377,
+          "range": 0.4118,
+          "r2": 0.51
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CA",
+      "bars": 55,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 53.05,
+      "last_close": 56.0,
+      "trend": {
+        "label": "neutral",
+        "score": 0.059,
+        "confidence": "flat",
+        "bars": 55,
+        "components": {
+          "momentum": 0.0597,
+          "trend": 0.0159,
+          "efficiency": 0.0513,
+          "range": 0.1395,
+          "r2": 0.1063
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CAT",
+      "bars": 26,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 9.54,
+      "last_close": 8.68,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2928,
+        "confidence": "moderate",
+        "bars": 26,
+        "components": {
+          "momentum": -0.3238,
+          "trend": -0.3514,
+          "efficiency": -0.3333,
+          "range": -0.8129,
+          "r2": 0.8548
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CBC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 53.1,
+      "last_close": 48.9,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3152,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2542,
+          "trend": -0.37,
+          "efficiency": -0.1458,
+          "range": -0.6119,
+          "r2": 0.8201
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CDC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.6,
+      "last_close": 0.54,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2546,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1358,
+          "trend": -0.2581,
+          "efficiency": -0.0789,
+          "range": -0.8,
+          "r2": 0.5879
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CEB",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 28.9,
+      "last_close": 26.0,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1537,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1616,
+          "trend": -0.5298,
+          "efficiency": -0.1157,
+          "range": 0.4439,
+          "r2": 0.5298
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CEI",
+      "bars": 51,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.087,
+      "last_close": 0.088,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0308,
+        "confidence": "flat",
+        "bars": 51,
+        "components": {
+          "momentum": 0.0249,
+          "trend": 0.0033,
+          "efficiency": 0.0169,
+          "range": 0.1111,
+          "r2": 0.0586
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CEU",
+      "bars": 61,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 14.84,
+      "last_close": 12.2,
+      "trend": {
+        "label": "bearish",
+        "score": -0.41,
+        "confidence": "moderate",
+        "bars": 61,
+        "components": {
+          "momentum": -0.3797,
+          "trend": -0.2601,
+          "efficiency": -0.2157,
+          "range": -1.0,
+          "r2": 0.5644
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CHP",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.94,
+      "last_close": 1.17,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1251,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": 0.2802,
+          "trend": -0.0019,
+          "efficiency": 0.1133,
+          "range": -0.0612,
+          "r2": 0.0145
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CIC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 11.32,
+      "last_close": 10.78,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1261,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1076,
+          "trend": -0.0317,
+          "efficiency": -0.0632,
+          "range": -0.4167,
+          "r2": 0.2572
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CLI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.18,
+      "last_close": 1.95,
+      "trend": {
+        "label": "bearish",
+        "score": -0.479,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.4756,
+          "trend": -0.4387,
+          "efficiency": -0.2527,
+          "range": -0.8571,
+          "r2": 0.8961
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CNPF",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 31.05,
+      "last_close": 28.6,
+      "trend": {
+        "label": "neutral",
+        "score": -0.238,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1838,
+          "trend": -0.0965,
+          "efficiency": -0.0966,
+          "range": -0.807,
+          "r2": 0.338
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CNVRG",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 10.8,
+      "last_close": 9.18,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2942,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2793,
+          "trend": -0.2181,
+          "efficiency": -0.1875,
+          "range": -0.6031,
+          "r2": 0.4346
+        }
+      }
+    },
+    {
+      "symbol": "PSE:COL",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.825,
+      "last_close": 1.19,
+      "trend": {
+        "label": "bullish",
+        "score": 0.4802,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": 0.4466,
+          "trend": 0.62,
+          "efficiency": 0.3303,
+          "range": 0.5368,
+          "r2": 0.62
+        }
+      }
+    },
+    {
+      "symbol": "PSE:COSCO",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 8.29,
+      "last_close": 7.39,
+      "trend": {
+        "label": "bearish",
+        "score": -0.4214,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.3731,
+          "trend": -0.4053,
+          "efficiency": -0.2153,
+          "range": -0.8519,
+          "r2": 0.8468
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CPG",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.7,
+      "last_close": 0.64,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2522,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1674,
+          "trend": -0.331,
+          "efficiency": -0.1154,
+          "range": -0.5294,
+          "r2": 0.5002
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CPM",
+      "bars": 22,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.0,
+      "last_close": 2.0,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0765,
+        "confidence": "flat",
+        "bars": 22,
+        "components": {
+          "momentum": 0.0,
+          "trend": -0.1612,
+          "efficiency": 0.0,
+          "range": -0.5,
+          "r2": 0.3793
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CREC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 4.47,
+      "last_close": 4.44,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1218,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.0168,
+          "trend": -0.014,
+          "efficiency": -0.0096,
+          "range": -0.7313,
+          "r2": 0.0923
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CREIT",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 3.4,
+      "last_close": 2.75,
+      "trend": {
+        "label": "bearish",
+        "score": -0.6987,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.7266,
+          "trend": -0.6583,
+          "efficiency": -0.4676,
+          "range": -1.0,
+          "r2": 0.8901
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CROWN",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.74,
+      "last_close": 1.91,
+      "trend": {
+        "label": "neutral",
+        "score": 0.2238,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": 0.2328,
+          "trend": 0.017,
+          "efficiency": 0.1069,
+          "range": 0.7,
+          "r2": 0.1634
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CSB",
+      "bars": 14,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-28",
+      "age_days": 2,
+      "first_close": 13.12,
+      "last_close": 12.96,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0551,
+        "confidence": "flat",
+        "bars": 14,
+        "components": {
+          "momentum": -0.0276,
+          "trend": -0.0833,
+          "efficiency": -0.0417,
+          "range": -0.4255,
+          "r2": 0.3126
+        }
+      }
+    },
+    {
+      "symbol": "PSE:CTS",
+      "bars": 43,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.36,
+      "last_close": 0.34,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1093,
+        "confidence": "weak",
+        "bars": 43,
+        "components": {
+          "momentum": -0.1028,
+          "trend": -0.181,
+          "efficiency": -0.0741,
+          "range": -0.1111,
+          "r2": 0.6138
+        }
+      }
+    },
+    {
+      "symbol": "PSE:DD",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 12.06,
+      "last_close": 11.62,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0839,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1376,
+          "trend": -0.0908,
+          "efficiency": -0.0809,
+          "range": 0.0667,
+          "r2": 0.507
+        }
+      }
+    },
+    {
+      "symbol": "PSE:DDMPR",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.04,
+      "last_close": 1.03,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0346,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": -0.0663,
+          "trend": -0.0004,
+          "efficiency": -0.04,
+          "range": 0.0,
+          "r2": 0.0388
+        }
+      }
+    },
+    {
+      "symbol": "PSE:DELM",
+      "bars": 60,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 4.07,
+      "last_close": 3.5,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2714,
+        "confidence": "moderate",
+        "bars": 60,
+        "components": {
+          "momentum": -0.1945,
+          "trend": -0.3767,
+          "efficiency": -0.1367,
+          "range": -0.4805,
+          "r2": 0.6842
+        }
+      }
+    },
+    {
+      "symbol": "PSE:DFNN",
+      "bars": 51,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.67,
+      "last_close": 0.65,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0658,
+        "confidence": "flat",
+        "bars": 51,
+        "components": {
+          "momentum": -0.0383,
+          "trend": -0.0804,
+          "efficiency": -0.027,
+          "range": -0.1667,
+          "r2": 0.2939
+        }
+      }
+    },
+    {
+      "symbol": "PSE:DITO",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.73,
+      "last_close": 0.57,
+      "trend": {
+        "label": "bearish",
+        "score": -0.571,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.4747,
+          "trend": -0.8604,
+          "efficiency": -0.2759,
+          "range": -0.7391,
+          "r2": 0.8604
+        }
+      }
+    },
+    {
+      "symbol": "PSE:DIZ",
+      "bars": 36,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 3.35,
+      "last_close": 3.39,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1328,
+        "confidence": "weak",
+        "bars": 36,
+        "components": {
+          "momentum": 0.013,
+          "trend": -0.1657,
+          "efficiency": 0.012,
+          "range": -0.8182,
+          "r2": 0.233
+        }
+      }
+    },
+    {
+      "symbol": "PSE:DMC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 7.43,
+      "last_close": 6.48,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2945,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2529,
+          "trend": -0.1143,
+          "efficiency": -0.1371,
+          "range": -0.9153,
+          "r2": 0.3223
+        }
+      }
+    },
+    {
+      "symbol": "PSE:DNL",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 3.49,
+      "last_close": 3.38,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1907,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1347,
+          "trend": -0.1452,
+          "efficiency": -0.071,
+          "range": -0.5758,
+          "r2": 0.6611
+        }
+      }
+    },
+    {
+      "symbol": "PSE:DWC",
+      "bars": 45,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.92,
+      "last_close": 1.02,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1116,
+        "confidence": "weak",
+        "bars": 45,
+        "components": {
+          "momentum": 0.1372,
+          "trend": 0.0202,
+          "efficiency": 0.0909,
+          "range": 0.2632,
+          "r2": 0.1113
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ECVC",
+      "bars": 52,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.25,
+      "last_close": 0.3,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0212,
+        "confidence": "flat",
+        "bars": 52,
+        "components": {
+          "momentum": 0.1358,
+          "trend": 0.0049,
+          "efficiency": 0.0781,
+          "range": -0.3333,
+          "r2": 0.0238
+        }
+      }
+    },
+    {
+      "symbol": "PSE:EEI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.1,
+      "last_close": 1.81,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3109,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2777,
+          "trend": -0.0653,
+          "efficiency": -0.1676,
+          "range": -1.0,
+          "r2": 0.2866
+        }
+      }
+    },
+    {
+      "symbol": "PSE:EGRN",
+      "bars": 59,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.029,
+      "last_close": 0.026,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1825,
+        "confidence": "weak",
+        "bars": 59,
+        "components": {
+          "momentum": -0.139,
+          "trend": -0.3099,
+          "efficiency": -0.0968,
+          "range": -0.2,
+          "r2": 0.6651
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ELI",
+      "bars": 55,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-28",
+      "age_days": 2,
+      "first_close": 0.1,
+      "last_close": 0.1,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0174,
+        "confidence": "flat",
+        "bars": 55,
+        "components": {
+          "momentum": 0.0,
+          "trend": 0.0503,
+          "efficiency": 0.0,
+          "range": -0.2,
+          "r2": 0.2985
+        }
+      }
+    },
+    {
+      "symbol": "PSE:EMI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 15.5,
+      "last_close": 15.26,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1146,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.039,
+          "trend": -0.0075,
+          "efficiency": -0.0265,
+          "range": -0.6119,
+          "r2": 0.1092
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ENEX",
+      "bars": 50,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 3.82,
+      "last_close": 3.16,
+      "trend": {
+        "label": "neutral",
+        "score": -0.176,
+        "confidence": "weak",
+        "bars": 50,
+        "components": {
+          "momentum": -0.1483,
+          "trend": 0.0,
+          "efficiency": -0.1003,
+          "range": -0.6444,
+          "r2": 0.0012
+        }
+      }
+    },
+    {
+      "symbol": "PSE:EURO",
+      "bars": 58,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.07,
+      "last_close": 1.27,
+      "trend": {
+        "label": "bullish",
+        "score": 0.2974,
+        "confidence": "moderate",
+        "bars": 58,
+        "components": {
+          "momentum": 0.2522,
+          "trend": 0.1167,
+          "efficiency": 0.1493,
+          "range": 0.9167,
+          "r2": 0.3382
+        }
+      }
+    },
+    {
+      "symbol": "PSE:EW",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 11.78,
+      "last_close": 9.6,
+      "trend": {
+        "label": "bearish",
+        "score": -0.6461,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.7535,
+          "trend": -0.4693,
+          "efficiency": -0.507,
+          "range": -0.8397,
+          "r2": 0.8053
+        }
+      }
+    },
+    {
+      "symbol": "PSE:FAF",
+      "bars": 45,
+      "malformed_rows": 0,
+      "status": "stale",
+      "last_date": "2026-10-21",
+      "age_days": 9,
+      "trend": null
+    },
+    {
+      "symbol": "PSE:FB",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 49.2,
+      "last_close": 44.6,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3143,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.3741,
+          "trend": -0.2703,
+          "efficiency": -0.2706,
+          "range": -0.2867,
+          "r2": 0.6965
+        }
+      }
+    },
+    {
+      "symbol": "PSE:FCG",
+      "bars": 61,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.59,
+      "last_close": 0.78,
+      "trend": {
+        "label": "bullish",
+        "score": 0.5196,
+        "confidence": "strong",
+        "bars": 61,
+        "components": {
+          "momentum": 0.4636,
+          "trend": 0.591,
+          "efficiency": 0.2533,
+          "range": 0.9048,
+          "r2": 0.6484
+        }
+      }
+    },
+    {
+      "symbol": "PSE:FDC",
+      "bars": 58,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 3.4,
+      "last_close": 3.8,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1876,
+        "confidence": "weak",
+        "bars": 58,
+        "components": {
+          "momentum": 0.1711,
+          "trend": 0.2997,
+          "efficiency": 0.0889,
+          "range": 0.1765,
+          "r2": 0.6021
+        }
+      }
+    },
+    {
+      "symbol": "PSE:FERRO",
+      "bars": 50,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-26",
+      "age_days": 4,
+      "first_close": 4.15,
+      "last_close": 3.5,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2963,
+        "confidence": "moderate",
+        "bars": 50,
+        "components": {
+          "momentum": -0.1208,
+          "trend": -0.3282,
+          "efficiency": -0.0796,
+          "range": -1.0,
+          "r2": 0.4834
+        }
+      }
+    },
+    {
+      "symbol": "PSE:FEU",
+      "bars": 41,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 795.0,
+      "last_close": 788.5,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0075,
+        "confidence": "flat",
+        "bars": 41,
+        "components": {
+          "momentum": -0.0173,
+          "trend": -0.0205,
+          "efficiency": -0.0172,
+          "range": 0.0483,
+          "r2": 0.1945
+        }
+      }
+    },
+    {
+      "symbol": "PSE:FGEN",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 19.2,
+      "last_close": 19.58,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1667,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": 0.0162,
+          "trend": -0.2787,
+          "efficiency": 0.0077,
+          "range": -0.7003,
+          "r2": 0.2826
+        }
+      }
+    },
+    {
+      "symbol": "PSE:FILRT",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.92,
+      "last_close": 2.83,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1265,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1693,
+          "trend": -0.0393,
+          "efficiency": -0.0947,
+          "range": -0.2,
+          "r2": 0.3227
+        }
+      }
+    },
+    {
+      "symbol": "PSE:FJP",
+      "bars": 24,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.63,
+      "last_close": 2.6,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0373,
+        "confidence": "flat",
+        "bars": 24,
+        "components": {
+          "momentum": -0.0094,
+          "trend": -0.0006,
+          "efficiency": -0.0088,
+          "range": -0.3214,
+          "r2": 0.0095
+        }
+      }
+    },
+    {
+      "symbol": "PSE:FLI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.7,
+      "last_close": 0.69,
+      "trend": {
+        "label": "neutral",
+        "score": -0.08,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": -0.0591,
+          "trend": 0.0003,
+          "efficiency": -0.0323,
+          "range": -0.3333,
+          "r2": 0.0186
+        }
+      }
+    },
+    {
+      "symbol": "PSE:FNI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.94,
+      "last_close": 1.57,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3802,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2342,
+          "trend": -0.4915,
+          "efficiency": -0.1118,
+          "range": -0.9417,
+          "r2": 0.4915
+        }
+      }
+    },
+    {
+      "symbol": "PSE:FOOD",
+      "bars": 49,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.35,
+      "last_close": 0.64,
+      "trend": {
+        "label": "bullish",
+        "score": 0.5399,
+        "confidence": "strong",
+        "bars": 49,
+        "components": {
+          "momentum": 0.4784,
+          "trend": 0.8206,
+          "efficiency": 0.2086,
+          "range": 0.7143,
+          "r2": 0.8206
+        }
+      }
+    },
+    {
+      "symbol": "PSE:FPH",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 92.05,
+      "last_close": 83.7,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3004,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1543,
+          "trend": -0.2805,
+          "efficiency": -0.0926,
+          "range": -1.0,
+          "r2": 0.4724
+        }
+      }
+    },
+    {
+      "symbol": "PSE:FPI",
+      "bars": 15,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.26,
+      "last_close": 0.33,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1777,
+        "confidence": "weak",
+        "bars": 15,
+        "components": {
+          "momentum": 0.284,
+          "trend": 0.0,
+          "efficiency": 0.3043,
+          "range": 1.0,
+          "r2": 0.0002
+        }
+      }
+    },
+    {
+      "symbol": "PSE:FRUIT",
+      "bars": 61,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.67,
+      "last_close": 0.66,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0485,
+        "confidence": "flat",
+        "bars": 61,
+        "components": {
+          "momentum": -0.0475,
+          "trend": -0.0093,
+          "efficiency": -0.0286,
+          "range": -0.1429,
+          "r2": 0.1086
+        }
+      }
+    },
+    {
+      "symbol": "PSE:GCASH",
+      "bars": 8,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 6.6,
+      "last_close": 6.69,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1021,
+        "confidence": "weak",
+        "bars": 8,
+        "components": {
+          "momentum": null,
+          "trend": 0.0039,
+          "efficiency": 0.1111,
+          "range": 0.8667,
+          "r2": 0.0614
+        }
+      }
+    },
+    {
+      "symbol": "PSE:GEO",
+      "bars": 60,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.08,
+      "last_close": 0.079,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1745,
+        "confidence": "weak",
+        "bars": 60,
+        "components": {
+          "momentum": -0.0098,
+          "trend": -0.175,
+          "efficiency": -0.0055,
+          "range": -0.8378,
+          "r2": 0.2423
+        }
+      }
+    },
+    {
+      "symbol": "PSE:GERI",
+      "bars": 57,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.6,
+      "last_close": 0.62,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0077,
+        "confidence": "flat",
+        "bars": 57,
+        "components": {
+          "momentum": 0.0521,
+          "trend": 0.0238,
+          "efficiency": 0.0323,
+          "range": -0.2727,
+          "r2": 0.1529
+        }
+      }
+    },
+    {
+      "symbol": "PSE:GLO",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1821.0,
+      "last_close": 1534.0,
+      "trend": {
+        "label": "bearish",
+        "score": -0.4665,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.4638,
+          "trend": -0.436,
+          "efficiency": -0.256,
+          "range": -0.805,
+          "r2": 0.8072
+        }
+      }
+    },
+    {
+      "symbol": "PSE:GMA7",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 4.49,
+      "last_close": 3.35,
+      "trend": {
+        "label": "bearish",
+        "score": -0.6635,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.595,
+          "trend": -0.9237,
+          "efficiency": -0.3958,
+          "range": -0.7692,
+          "r2": 0.9237
+        }
+      }
+    },
+    {
+      "symbol": "PSE:GMAP",
+      "bars": 33,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-28",
+      "age_days": 2,
+      "first_close": 4.41,
+      "last_close": 3.2,
+      "trend": {
+        "label": "bearish",
+        "score": -0.4197,
+        "confidence": "moderate",
+        "bars": 33,
+        "components": {
+          "momentum": -0.3305,
+          "trend": -0.789,
+          "efficiency": -0.3612,
+          "range": -0.7664,
+          "r2": 0.789
+        }
+      }
+    },
+    {
+      "symbol": "PSE:GPH",
+      "bars": 28,
+      "malformed_rows": 0,
+      "status": "stale",
+      "last_date": "2026-10-20",
+      "age_days": 10,
+      "trend": null
+    },
+    {
+      "symbol": "PSE:GREEN",
+      "bars": 61,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.135,
+      "last_close": 0.133,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1935,
+        "confidence": "weak",
+        "bars": 61,
+        "components": {
+          "momentum": -0.0229,
+          "trend": -0.2114,
+          "efficiency": -0.0122,
+          "range": -0.8605,
+          "r2": 0.3536
+        }
+      }
+    },
+    {
+      "symbol": "PSE:GSMI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 262.0,
+      "last_close": 217.8,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3156,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.3518,
+          "trend": -0.2506,
+          "efficiency": -0.2506,
+          "range": -0.4144,
+          "r2": 0.5145
+        }
+      }
+    },
+    {
+      "symbol": "PSE:GTCAP",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 495.0,
+      "last_close": 437.0,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3226,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2371,
+          "trend": -0.4845,
+          "efficiency": -0.1258,
+          "range": -0.5431,
+          "r2": 0.711
+        }
+      }
+    },
+    {
+      "symbol": "PSE:HI",
+      "bars": 45,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-28",
+      "age_days": 2,
+      "first_close": 4.7,
+      "last_close": 4.98,
+      "trend": {
+        "label": "neutral",
+        "score": 0.053,
+        "confidence": "flat",
+        "bars": 45,
+        "components": {
+          "momentum": 0.0972,
+          "trend": -0.0019,
+          "efficiency": 0.0757,
+          "range": 0.0154,
+          "r2": 0.0319
+        }
+      }
+    },
+    {
+      "symbol": "PSE:HTI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.5,
+      "last_close": 1.4,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1155,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1496,
+          "trend": -0.0011,
+          "efficiency": -0.0893,
+          "range": -0.25,
+          "r2": 0.0255
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ICT",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1005.0,
+      "last_close": 840.0,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3738,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2796,
+          "trend": -0.4818,
+          "efficiency": -0.1585,
+          "range": -0.7323,
+          "r2": 0.7917
+        }
+      }
+    },
+    {
+      "symbol": "PSE:IDC",
+      "bars": 57,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.66,
+      "last_close": 0.61,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2098,
+        "confidence": "weak",
+        "bars": 57,
+        "components": {
+          "momentum": -0.1055,
+          "trend": -0.4186,
+          "efficiency": -0.0649,
+          "range": -0.3333,
+          "r2": 0.5952
+        }
+      }
+    },
+    {
+      "symbol": "PSE:IMI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 6.36,
+      "last_close": 5.6,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2506,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1183,
+          "trend": -0.3405,
+          "efficiency": -0.0618,
+          "range": -0.7052,
+          "r2": 0.3505
+        }
+      }
+    },
+    {
+      "symbol": "PSE:IMP",
+      "bars": 22,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.89,
+      "last_close": 0.97,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1876,
+        "confidence": "weak",
+        "bars": 22,
+        "components": {
+          "momentum": 0.166,
+          "trend": 0.1123,
+          "efficiency": 0.2857,
+          "range": 0.875,
+          "r2": 0.2983
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ION",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.37,
+      "last_close": 2.8,
+      "trend": {
+        "label": "bullish",
+        "score": 0.4334,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": 0.6723,
+          "trend": 0.4795,
+          "efficiency": 0.1904,
+          "range": 0.0435,
+          "r2": 0.4795
+        }
+      }
+    },
+    {
+      "symbol": "PSE:IPM",
+      "bars": 25,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-27",
+      "age_days": 3,
+      "first_close": 1.64,
+      "last_close": 1.95,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0843,
+        "confidence": "flat",
+        "bars": 25,
+        "components": {
+          "momentum": 0.1602,
+          "trend": -0.002,
+          "efficiency": 0.1512,
+          "range": 0.1698,
+          "r2": 0.0169
+        }
+      }
+    },
+    {
+      "symbol": "PSE:IPO",
+      "bars": 53,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-28",
+      "age_days": 2,
+      "first_close": 7.22,
+      "last_close": 7.12,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0255,
+        "confidence": "flat",
+        "bars": 53,
+        "components": {
+          "momentum": -0.0251,
+          "trend": -0.0008,
+          "efficiency": -0.0215,
+          "range": 0.2667,
+          "r2": 0.0223
+        }
+      }
+    },
+    {
+      "symbol": "PSE:IS",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.163,
+      "last_close": 0.133,
+      "trend": {
+        "label": "neutral",
+        "score": -0.173,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1757,
+          "trend": -0.0257,
+          "efficiency": -0.1293,
+          "range": -0.4694,
+          "r2": 0.0888
+        }
+      }
+    },
+    {
+      "symbol": "PSE:JFC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 150.0,
+      "last_close": 141.9,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2252,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1317,
+          "trend": -0.2381,
+          "efficiency": -0.0672,
+          "range": -0.6638,
+          "r2": 0.618
+        }
+      }
+    },
+    {
+      "symbol": "PSE:JGS",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 22.65,
+      "last_close": 16.6,
+      "trend": {
+        "label": "bearish",
+        "score": -0.6869,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.6024,
+          "trend": -0.9528,
+          "efficiency": -0.3344,
+          "range": -0.9394,
+          "r2": 0.9528
+        }
+      }
+    },
+    {
+      "symbol": "PSE:JOH",
+      "bars": 4,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-26",
+      "age_days": 4,
+      "first_close": 3.95,
+      "last_close": 3.94,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1655,
+        "confidence": "weak",
+        "bars": 4,
+        "components": {
+          "momentum": null,
+          "trend": -0.0046,
+          "efficiency": -1.0,
+          "range": -1.0,
+          "r2": 0.6
+        }
+      }
+    },
+    {
+      "symbol": "PSE:KEEPR",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.99,
+      "last_close": 1.9,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0264,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1241,
+          "trend": -0.0232,
+          "efficiency": -0.0647,
+          "range": 0.28,
+          "r2": 0.1796
+        }
+      }
+    },
+    {
+      "symbol": "PSE:KEP",
+      "bars": 44,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.5,
+      "last_close": 2.4,
+      "trend": {
+        "label": "neutral",
+        "score": -0.141,
+        "confidence": "weak",
+        "bars": 44,
+        "components": {
+          "momentum": -0.0516,
+          "trend": -0.0001,
+          "efficiency": -0.041,
+          "range": -0.8095,
+          "r2": 0.0039
+        }
+      }
+    },
+    {
+      "symbol": "PSE:KPPI",
+      "bars": 30,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-27",
+      "age_days": 3,
+      "first_close": 1.35,
+      "last_close": 1.37,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0769,
+        "confidence": "flat",
+        "bars": 30,
+        "components": {
+          "momentum": 0.0243,
+          "trend": -0.0,
+          "efficiency": 0.025,
+          "range": -0.76,
+          "r2": 0.0003
+        }
+      }
+    },
+    {
+      "symbol": "PSE:LBC",
+      "bars": 54,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 6.53,
+      "last_close": 10.18,
+      "trend": {
+        "label": "bullish",
+        "score": 0.3898,
+        "confidence": "moderate",
+        "bars": 54,
+        "components": {
+          "momentum": 0.3581,
+          "trend": 0.7315,
+          "efficiency": 0.1692,
+          "range": 0.1987,
+          "r2": 0.7315
+        }
+      }
+    },
+    {
+      "symbol": "PSE:LC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.203,
+      "last_close": 0.218,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0313,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": 0.1137,
+          "trend": -0.0162,
+          "efficiency": 0.0502,
+          "range": -0.5522,
+          "r2": 0.0836
+        }
+      }
+    },
+    {
+      "symbol": "PSE:LCB",
+      "bars": 60,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.205,
+      "last_close": 0.217,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0407,
+        "confidence": "flat",
+        "bars": 60,
+        "components": {
+          "momentum": 0.0887,
+          "trend": -0.0041,
+          "efficiency": 0.0469,
+          "range": -0.5636,
+          "r2": 0.0353
+        }
+      }
+    },
+    {
+      "symbol": "PSE:LFM",
+      "bars": 53,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 23.95,
+      "last_close": 20.8,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2472,
+        "confidence": "weak",
+        "bars": 53,
+        "components": {
+          "momentum": -0.21,
+          "trend": -0.0178,
+          "efficiency": -0.1332,
+          "range": -0.8806,
+          "r2": 0.1189
+        }
+      }
+    },
+    {
+      "symbol": "PSE:LODE",
+      "bars": 55,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.36,
+      "last_close": 0.475,
+      "trend": {
+        "label": "bullish",
+        "score": 0.3627,
+        "confidence": "moderate",
+        "bars": 55,
+        "components": {
+          "momentum": 0.302,
+          "trend": 0.4277,
+          "efficiency": 0.1523,
+          "range": 0.697,
+          "r2": 0.4699
+        }
+      }
+    },
+    {
+      "symbol": "PSE:LOTO",
+      "bars": 52,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.85,
+      "last_close": 1.58,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2456,
+        "confidence": "weak",
+        "bars": 52,
+        "components": {
+          "momentum": -0.2438,
+          "trend": -0.2038,
+          "efficiency": -0.2,
+          "range": -0.381,
+          "r2": 0.3958
+        }
+      }
+    },
+    {
+      "symbol": "PSE:LPC",
+      "bars": 40,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.022,
+      "last_close": 0.021,
+      "trend": {
+        "label": "neutral",
+        "score": -0.06,
+        "confidence": "flat",
+        "bars": 40,
+        "components": {
+          "momentum": -0.023,
+          "trend": 0.0127,
+          "efficiency": -0.0169,
+          "range": -0.3846,
+          "r2": 0.0433
+        }
+      }
+    },
+    {
+      "symbol": "PSE:LPZ",
+      "bars": 60,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 6.1,
+      "last_close": 4.4,
+      "trend": {
+        "label": "bearish",
+        "score": -0.6605,
+        "confidence": "strong",
+        "bars": 60,
+        "components": {
+          "momentum": -0.5736,
+          "trend": -0.8512,
+          "efficiency": -0.3414,
+          "range": -1.0,
+          "r2": 0.8512
+        }
+      }
+    },
+    {
+      "symbol": "PSE:LSC",
+      "bars": 47,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-27",
+      "age_days": 3,
+      "first_close": 0.65,
+      "last_close": 0.7,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1534,
+        "confidence": "weak",
+        "bars": 47,
+        "components": {
+          "momentum": 0.0774,
+          "trend": 0.0009,
+          "efficiency": 0.0515,
+          "range": 0.7778,
+          "r2": 0.015
+        }
+      }
+    },
+    {
+      "symbol": "PSE:LTG",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 14.7,
+      "last_close": 14.94,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0088,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": 0.0846,
+          "trend": 0.0237,
+          "efficiency": 0.0405,
+          "range": -0.3778,
+          "r2": 0.281
+        }
+      }
+    },
+    {
+      "symbol": "PSE:LTL",
+      "bars": 25,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.2,
+      "last_close": 1.2,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0,
+        "confidence": "flat",
+        "bars": 25,
+        "components": {
+          "momentum": 0.0,
+          "trend": 0.0001,
+          "efficiency": 0.0,
+          "range": 0.0,
+          "r2": 0.0166
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MA",
+      "bars": 58,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.0075,
+      "last_close": 0.0084,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1172,
+        "confidence": "weak",
+        "bars": 58,
+        "components": {
+          "momentum": 0.1538,
+          "trend": 0.0296,
+          "efficiency": 0.0783,
+          "range": 0.2174,
+          "r2": 0.1101
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MAB",
+      "bars": 25,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-27",
+      "age_days": 3,
+      "first_close": 0.007,
+      "last_close": 0.0087,
+      "trend": {
+        "label": "neutral",
+        "score": 0.2311,
+        "confidence": "weak",
+        "bars": 25,
+        "components": {
+          "momentum": 0.3106,
+          "trend": 0.4265,
+          "efficiency": 0.2099,
+          "range": 0.36,
+          "r2": 0.5682
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MAC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 3.73,
+      "last_close": 3.25,
+      "trend": {
+        "label": "bearish",
+        "score": -0.466,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.411,
+          "trend": -0.5096,
+          "efficiency": -0.24,
+          "range": -0.8413,
+          "r2": 0.8661
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MACAY",
+      "bars": 13,
+      "malformed_rows": 0,
+      "status": "stale",
+      "last_date": "2026-10-21",
+      "age_days": 9,
+      "trend": null
+    },
+    {
+      "symbol": "PSE:MAH",
+      "bars": 30,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.37,
+      "last_close": 0.57,
+      "trend": {
+        "label": "neutral",
+        "score": 0.127,
+        "confidence": "weak",
+        "bars": 30,
+        "components": {
+          "momentum": 0.2499,
+          "trend": -0.0,
+          "efficiency": 0.2128,
+          "range": 0.1429,
+          "r2": 0.0001
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MARC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.65,
+      "last_close": 0.75,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1285,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": 0.2692,
+          "trend": 0.0142,
+          "efficiency": 0.119,
+          "range": -0.0435,
+          "r2": 0.074
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MAXS",
+      "bars": 57,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.1,
+      "last_close": 1.9,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2697,
+        "confidence": "moderate",
+        "bars": 57,
+        "components": {
+          "momentum": -0.1571,
+          "trend": -0.1612,
+          "efficiency": -0.0826,
+          "range": -1.0,
+          "r2": 0.4514
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MB",
+      "bars": 32,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-28",
+      "age_days": 2,
+      "first_close": 0.176,
+      "last_close": 0.161,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1377,
+        "confidence": "weak",
+        "bars": 32,
+        "components": {
+          "momentum": -0.0775,
+          "trend": -0.2755,
+          "efficiency": -0.0746,
+          "range": -0.3818,
+          "r2": 0.4534
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MBC",
+      "bars": 26,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-26",
+      "age_days": 4,
+      "first_close": 5.49,
+      "last_close": 5.0,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1782,
+        "confidence": "weak",
+        "bars": 26,
+        "components": {
+          "momentum": -0.1538,
+          "trend": -0.0027,
+          "efficiency": -0.1744,
+          "range": -1.0,
+          "r2": 0.0369
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MBT",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 66.2,
+      "last_close": 60.55,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3109,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2533,
+          "trend": -0.3629,
+          "efficiency": -0.1387,
+          "range": -0.6077,
+          "r2": 0.787
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MED",
+      "bars": 37,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-28",
+      "age_days": 2,
+      "first_close": 0.109,
+      "last_close": 0.098,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1305,
+        "confidence": "weak",
+        "bars": 37,
+        "components": {
+          "momentum": -0.0881,
+          "trend": -0.0331,
+          "efficiency": -0.0748,
+          "range": -0.6216,
+          "r2": 0.1101
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MEDIC",
+      "bars": 60,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.208,
+      "last_close": 0.24,
+      "trend": {
+        "label": "bullish",
+        "score": 0.3636,
+        "confidence": "moderate",
+        "bars": 60,
+        "components": {
+          "momentum": 0.3079,
+          "trend": 0.2212,
+          "efficiency": 0.1758,
+          "range": 1.0,
+          "r2": 0.6504
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MEG",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.22,
+      "last_close": 2.29,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1058,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": 0.0738,
+          "trend": -0.0057,
+          "efficiency": 0.0387,
+          "range": 0.4667,
+          "r2": 0.0655
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MER",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 487.0,
+      "last_close": 427.2,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3179,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.263,
+          "trend": -0.3335,
+          "efficiency": -0.1457,
+          "range": -0.6678,
+          "r2": 0.6319
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MFC",
+      "bars": 47,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2478.0,
+      "last_close": 2700.0,
+      "trend": {
+        "label": "bullish",
+        "score": 0.262,
+        "confidence": "moderate",
+        "bars": 47,
+        "components": {
+          "momentum": 0.2183,
+          "trend": 0.0016,
+          "efficiency": 0.1625,
+          "range": 1.0,
+          "r2": 0.0327
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MG",
+      "bars": 43,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.071,
+      "last_close": 0.075,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1987,
+        "confidence": "weak",
+        "bars": 43,
+        "components": {
+          "momentum": 0.1093,
+          "trend": 0.0155,
+          "efficiency": 0.0833,
+          "range": 1.0,
+          "r2": 0.1436
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MONDE",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 7.03,
+      "last_close": 5.95,
+      "trend": {
+        "label": "bearish",
+        "score": -0.4278,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.3456,
+          "trend": -0.5822,
+          "efficiency": -0.2069,
+          "range": -0.6842,
+          "r2": 0.8218
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MRC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.77,
+      "last_close": 0.62,
+      "trend": {
+        "label": "bearish",
+        "score": -0.4596,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.4943,
+          "trend": -0.2122,
+          "efficiency": -0.2941,
+          "range": -1.0,
+          "r2": 0.5801
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MREIT",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 14.22,
+      "last_close": 13.56,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1951,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1973,
+          "trend": -0.073,
+          "efficiency": -0.1218,
+          "range": -0.4902,
+          "r2": 0.4709
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MRSGI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.07,
+      "last_close": 1.05,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1046,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.0691,
+          "trend": -0.0161,
+          "efficiency": -0.0435,
+          "range": -0.4286,
+          "r2": 0.2023
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MVC",
+      "bars": 35,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-27",
+      "age_days": 3,
+      "first_close": 5.05,
+      "last_close": 5.22,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1681,
+        "confidence": "weak",
+        "bars": 35,
+        "components": {
+          "momentum": 0.1681,
+          "trend": 0.0167,
+          "efficiency": 0.1753,
+          "range": 0.6296,
+          "r2": 0.2157
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MWC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 34.85,
+      "last_close": 31.1,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3238,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2335,
+          "trend": -0.2706,
+          "efficiency": -0.117,
+          "range": -0.9286,
+          "r2": 0.6378
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MWIDE",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 4.18,
+      "last_close": 5.31,
+      "trend": {
+        "label": "bullish",
+        "score": 0.5925,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": 0.7104,
+          "trend": 0.4922,
+          "efficiency": 0.3201,
+          "range": 0.808,
+          "r2": 0.706
+        }
+      }
+    },
+    {
+      "symbol": "PSE:MYNLD",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 19.5,
+      "last_close": 17.2,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2491,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2752,
+          "trend": -0.3078,
+          "efficiency": -0.1523,
+          "range": -0.2105,
+          "r2": 0.6128
+        }
+      }
+    },
+    {
+      "symbol": "PSE:NI",
+      "bars": 61,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.435,
+      "last_close": 0.53,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1579,
+        "confidence": "weak",
+        "bars": 61,
+        "components": {
+          "momentum": 0.1446,
+          "trend": 0.1959,
+          "efficiency": 0.0676,
+          "range": 0.25,
+          "r2": 0.2309
+        }
+      }
+    },
+    {
+      "symbol": "PSE:NIKL",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 3.89,
+      "last_close": 3.85,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1461,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.0158,
+          "trend": -0.0998,
+          "efficiency": -0.0084,
+          "range": -0.7547,
+          "r2": 0.2655
+        }
+      }
+    },
+    {
+      "symbol": "PSE:NOW",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.5,
+      "last_close": 0.365,
+      "trend": {
+        "label": "bearish",
+        "score": -0.5608,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.4154,
+          "trend": -0.9096,
+          "efficiency": -0.2269,
+          "range": -0.8125,
+          "r2": 0.9096
+        }
+      }
+    },
+    {
+      "symbol": "PSE:NRCP",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.96,
+      "last_close": 1.22,
+      "trend": {
+        "label": "neutral",
+        "score": 0.2092,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": 0.3709,
+          "trend": 0.126,
+          "efficiency": 0.1605,
+          "range": -0.0182,
+          "r2": 0.1959
+        }
+      }
+    },
+    {
+      "symbol": "PSE:OGP",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 35.0,
+      "last_close": 33.6,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1671,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.0963,
+          "trend": -0.0789,
+          "efficiency": -0.0481,
+          "range": -0.6615,
+          "r2": 0.3237
+        }
+      }
+    },
+    {
+      "symbol": "PSE:OM",
+      "bars": 44,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.102,
+      "last_close": 0.105,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0259,
+        "confidence": "flat",
+        "bars": 44,
+        "components": {
+          "momentum": 0.0379,
+          "trend": 0.0001,
+          "efficiency": 0.0361,
+          "range": -0.3333,
+          "r2": 0.0048
+        }
+      }
+    },
+    {
+      "symbol": "PSE:OPM",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.013,
+      "last_close": 0.016,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1589,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": 0.1687,
+          "trend": 0.181,
+          "efficiency": 0.0811,
+          "range": 0.2,
+          "r2": 0.3455
+        }
+      }
+    },
+    {
+      "symbol": "PSE:OPMB",
+      "bars": 44,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.013,
+      "last_close": 0.015,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0789,
+        "confidence": "flat",
+        "bars": 44,
+        "components": {
+          "momentum": 0.1594,
+          "trend": 0.1124,
+          "efficiency": 0.1111,
+          "range": -0.2,
+          "r2": 0.252
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ORE",
+      "bars": 61,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.47,
+      "last_close": 0.55,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1156,
+        "confidence": "weak",
+        "bars": 61,
+        "components": {
+          "momentum": 0.2144,
+          "trend": 0.0698,
+          "efficiency": 0.1013,
+          "range": -0.0526,
+          "r2": 0.1761
+        }
+      }
+    },
+    {
+      "symbol": "PSE:OV",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.008,
+      "last_close": 0.01,
+      "trend": {
+        "label": "bullish",
+        "score": 0.4333,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": 0.3334,
+          "trend": 0.8034,
+          "efficiency": 0.2,
+          "range": 0.3939,
+          "r2": 0.8034
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PA",
+      "bars": 53,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.76,
+      "last_close": 2.27,
+      "trend": {
+        "label": "bullish",
+        "score": 0.7069,
+        "confidence": "strong",
+        "bars": 53,
+        "components": {
+          "momentum": 0.946,
+          "trend": 0.5353,
+          "efficiency": 0.4206,
+          "range": 0.7371,
+          "r2": 0.5353
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PAL",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.18,
+      "last_close": 4.05,
+      "trend": {
+        "label": "bullish",
+        "score": 0.8657,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": 0.9974,
+          "trend": 0.915,
+          "efficiency": 0.44,
+          "range": 1.0,
+          "r2": 0.915
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PAX",
+      "bars": 48,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-28",
+      "age_days": 2,
+      "first_close": 2.42,
+      "last_close": 3.02,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0719,
+        "confidence": "flat",
+        "bars": 48,
+        "components": {
+          "momentum": 0.239,
+          "trend": -0.0039,
+          "efficiency": 0.1154,
+          "range": -0.2955,
+          "r2": 0.0187
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PBB",
+      "bars": 57,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 6.95,
+      "last_close": 6.98,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0008,
+        "confidence": "flat",
+        "bars": 57,
+        "components": {
+          "momentum": 0.03,
+          "trend": -0.0009,
+          "efficiency": 0.0204,
+          "range": -0.1111,
+          "r2": 0.0511
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PBC",
+      "bars": 27,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-28",
+      "age_days": 2,
+      "first_close": 14.8,
+      "last_close": 14.66,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2742,
+        "confidence": "moderate",
+        "bars": 27,
+        "components": {
+          "momentum": -0.354,
+          "trend": -0.0312,
+          "efficiency": -0.3684,
+          "range": -1.0,
+          "r2": 0.8459
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PCOR",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.39,
+      "last_close": 2.24,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2339,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2008,
+          "trend": -0.1819,
+          "efficiency": -0.1064,
+          "range": -0.5789,
+          "r2": 0.7717
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PERC",
+      "bars": 58,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-28",
+      "age_days": 2,
+      "first_close": 3.51,
+      "last_close": 4.65,
+      "trend": {
+        "label": "bullish",
+        "score": 0.4136,
+        "confidence": "moderate",
+        "bars": 58,
+        "components": {
+          "momentum": 0.4658,
+          "trend": 0.4492,
+          "efficiency": 0.2143,
+          "range": 0.4805,
+          "r2": 0.5281
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PGOLD",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 40.55,
+      "last_close": 40.05,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0362,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": -0.0443,
+          "trend": -0.0061,
+          "efficiency": -0.0238,
+          "range": -0.0811,
+          "r2": 0.1396
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PHA",
+      "bars": 60,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.15,
+      "last_close": 0.17,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1511,
+        "confidence": "weak",
+        "bars": 60,
+        "components": {
+          "momentum": 0.2125,
+          "trend": -0.0006,
+          "efficiency": 0.1064,
+          "range": 0.3,
+          "r2": 0.0086
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PHC",
+      "bars": 28,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.61,
+      "last_close": 1.62,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0336,
+        "confidence": "flat",
+        "bars": 28,
+        "components": {
+          "momentum": 0.0514,
+          "trend": 0.0002,
+          "efficiency": 0.0476,
+          "range": -0.5,
+          "r2": 0.0204
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PHES",
+      "bars": 38,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.365,
+      "last_close": 0.43,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1987,
+        "confidence": "weak",
+        "bars": 38,
+        "components": {
+          "momentum": 0.1942,
+          "trend": 0.217,
+          "efficiency": 0.1215,
+          "range": 0.4783,
+          "r2": 0.4517
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PHN",
+      "bars": 44,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 14.94,
+      "last_close": 14.5,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0144,
+        "confidence": "flat",
+        "bars": 44,
+        "components": {
+          "momentum": -0.0622,
+          "trend": -0.026,
+          "efficiency": -0.0553,
+          "range": 0.1803,
+          "r2": 0.2013
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PHR",
+      "bars": 38,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.239,
+      "last_close": 0.43,
+      "trend": {
+        "label": "bullish",
+        "score": 0.5144,
+        "confidence": "strong",
+        "bars": 38,
+        "components": {
+          "momentum": 0.4826,
+          "trend": 0.7015,
+          "efficiency": 0.3583,
+          "range": 1.0,
+          "r2": 0.7015
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PIZZA",
+      "bars": 61,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 6.0,
+      "last_close": 5.46,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2096,
+        "confidence": "weak",
+        "bars": 61,
+        "components": {
+          "momentum": -0.1682,
+          "trend": -0.4728,
+          "efficiency": -0.1343,
+          "range": 0.0182,
+          "r2": 0.7853
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PLUS",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 9.75,
+      "last_close": 6.76,
+      "trend": {
+        "label": "bearish",
+        "score": -0.5602,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.3674,
+          "trend": -0.8831,
+          "efficiency": -0.2122,
+          "range": -1.0,
+          "r2": 0.8831
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PMPC",
+      "bars": 61,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 7.79,
+      "last_close": 7.27,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1512,
+        "confidence": "weak",
+        "bars": 61,
+        "components": {
+          "momentum": -0.1891,
+          "trend": -0.0005,
+          "efficiency": -0.1275,
+          "range": -0.3333,
+          "r2": 0.0172
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PNB",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 62.0,
+      "last_close": 82.05,
+      "trend": {
+        "label": "bullish",
+        "score": 0.5515,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": 0.6255,
+          "trend": 0.4858,
+          "efficiency": 0.276,
+          "range": 0.8311,
+          "r2": 0.649
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PPC",
+      "bars": 61,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 15.06,
+      "last_close": 16.3,
+      "trend": {
+        "label": "neutral",
+        "score": 0.113,
+        "confidence": "weak",
+        "bars": 61,
+        "components": {
+          "momentum": 0.1401,
+          "trend": 0.2894,
+          "efficiency": 0.0987,
+          "range": -0.2344,
+          "r2": 0.6338
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PRC",
+      "bars": 14,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-26",
+      "age_days": 4,
+      "first_close": 5.01,
+      "last_close": 5.02,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0725,
+        "confidence": "flat",
+        "bars": 14,
+        "components": {
+          "momentum": 0.0064,
+          "trend": 0.0002,
+          "efficiency": 0.013,
+          "range": -0.9487,
+          "r2": 0.0082
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PREIT",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.06,
+      "last_close": 0.91,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3777,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2759,
+          "trend": -0.4545,
+          "efficiency": -0.1765,
+          "range": -0.7895,
+          "r2": 0.8217
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PRIM",
+      "bars": 61,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.85,
+      "last_close": 0.82,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1533,
+        "confidence": "weak",
+        "bars": 61,
+        "components": {
+          "momentum": -0.0255,
+          "trend": -0.0778,
+          "efficiency": -0.0127,
+          "range": -0.8077,
+          "r2": 0.1308
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PRMX",
+      "bars": 41,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.99,
+      "last_close": 1.08,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1313,
+        "confidence": "weak",
+        "bars": 41,
+        "components": {
+          "momentum": 0.0939,
+          "trend": 0.0129,
+          "efficiency": 0.0709,
+          "range": 0.6,
+          "r2": 0.0758
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PSB",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 52.9,
+      "last_close": 49.15,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3067,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2254,
+          "trend": -0.1998,
+          "efficiency": -0.1407,
+          "range": -0.9231,
+          "r2": 0.7783
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PSE",
+      "bars": 61,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 205.0,
+      "last_close": 205.0,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0949,
+        "confidence": "flat",
+        "bars": 61,
+        "components": {
+          "momentum": 0.0,
+          "trend": -0.0,
+          "efficiency": 0.0,
+          "range": -0.6327,
+          "r2": 0.0046
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PX",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 9.2,
+      "last_close": 10.1,
+      "trend": {
+        "label": "neutral",
+        "score": -0.015,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": 0.14,
+          "trend": 0.0034,
+          "efficiency": 0.0549,
+          "range": -0.5522,
+          "r2": 0.0228
+        }
+      }
+    },
+    {
+      "symbol": "PSE:PXP",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.71,
+      "last_close": 3.0,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0933,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": 0.1472,
+          "trend": 0.0049,
+          "efficiency": 0.0723,
+          "range": 0.125,
+          "r2": 0.0363
+        }
+      }
+    },
+    {
+      "symbol": "PSE:RCB",
+      "bars": 58,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 23.35,
+      "last_close": 20.0,
+      "trend": {
+        "label": "bearish",
+        "score": -0.4886,
+        "confidence": "strong",
+        "bars": 58,
+        "components": {
+          "momentum": -0.4248,
+          "trend": -0.4581,
+          "efficiency": -0.3146,
+          "range": -0.942,
+          "r2": 0.8052
+        }
+      }
+    },
+    {
+      "symbol": "PSE:RCI",
+      "bars": 58,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.39,
+      "last_close": 2.47,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0536,
+        "confidence": "flat",
+        "bars": 58,
+        "components": {
+          "momentum": 0.025,
+          "trend": 0.0,
+          "efficiency": 0.0145,
+          "range": -0.4435,
+          "r2": 0.0011
+        }
+      }
+    },
+    {
+      "symbol": "PSE:RCR",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 7.18,
+      "last_close": 6.03,
+      "trend": {
+        "label": "bearish",
+        "score": -0.4819,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.3435,
+          "trend": -0.628,
+          "efficiency": -0.2174,
+          "range": -0.96,
+          "r2": 0.8639
+        }
+      }
+    },
+    {
+      "symbol": "PSE:REDC",
+      "bars": 55,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 8.85,
+      "last_close": 9.7,
+      "trend": {
+        "label": "bullish",
+        "score": 0.3808,
+        "confidence": "moderate",
+        "bars": 55,
+        "components": {
+          "momentum": 0.4847,
+          "trend": 0.0194,
+          "efficiency": 0.3184,
+          "range": 0.7895,
+          "r2": 0.1921
+        }
+      }
+    },
+    {
+      "symbol": "PSE:REG",
+      "bars": 13,
+      "malformed_rows": 0,
+      "status": "stale",
+      "last_date": "2026-10-22",
+      "age_days": 8,
+      "trend": null
+    },
+    {
+      "symbol": "PSE:RFM",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 5.41,
+      "last_close": 5.35,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0704,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": -0.0602,
+          "trend": -0.0343,
+          "efficiency": -0.0349,
+          "range": 0.7333,
+          "r2": 0.2482
+        }
+      }
+    },
+    {
+      "symbol": "PSE:RLC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 17.08,
+      "last_close": 16.08,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2102,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1343,
+          "trend": -0.2236,
+          "efficiency": -0.066,
+          "range": -0.5826,
+          "r2": 0.6509
+        }
+      }
+    },
+    {
+      "symbol": "PSE:RLT",
+      "bars": 37,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.09,
+      "last_close": 0.105,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1921,
+        "confidence": "weak",
+        "bars": 37,
+        "components": {
+          "momentum": 0.1936,
+          "trend": 0.222,
+          "efficiency": 0.1429,
+          "range": 0.4118,
+          "r2": 0.3414
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ROCK",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 3.0,
+      "last_close": 2.65,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2728,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1653,
+          "trend": -0.4432,
+          "efficiency": -0.0959,
+          "range": -0.5111,
+          "r2": 0.6124
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SBS",
+      "bars": 31,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-28",
+      "age_days": 2,
+      "first_close": 3.23,
+      "last_close": 2.98,
+      "trend": {
+        "label": "bearish",
+        "score": -0.272,
+        "confidence": "moderate",
+        "bars": 31,
+        "components": {
+          "momentum": -0.2846,
+          "trend": -0.1243,
+          "efficiency": -0.2525,
+          "range": -1.0,
+          "r2": 0.5597
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SCC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 21.05,
+      "last_close": 10.66,
+      "trend": {
+        "label": "bearish",
+        "score": -0.6373,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.4904,
+          "trend": -0.8908,
+          "efficiency": -0.3652,
+          "range": -0.9697,
+          "r2": 0.8908
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SECB",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 67.8,
+      "last_close": 62.95,
+      "trend": {
+        "label": "bearish",
+        "score": -0.2796,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2733,
+          "trend": -0.2973,
+          "efficiency": -0.1542,
+          "range": -0.4342,
+          "r2": 0.8049
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SEVN",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 33.3,
+      "last_close": 32.0,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1106,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1003,
+          "trend": -0.2001,
+          "efficiency": -0.0522,
+          "range": -0.0667,
+          "r2": 0.5724
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SFI",
+      "bars": 47,
+      "malformed_rows": 0,
+      "status": "stale",
+      "last_date": "2026-10-20",
+      "age_days": 10,
+      "trend": null
+    },
+    {
+      "symbol": "PSE:SGI",
+      "bars": 60,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.19,
+      "last_close": 1.1,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2245,
+        "confidence": "weak",
+        "bars": 60,
+        "components": {
+          "momentum": -0.142,
+          "trend": -0.0112,
+          "efficiency": -0.0744,
+          "range": -1.0,
+          "r2": 0.1148
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SGP",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 28.45,
+      "last_close": 25.5,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1722,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1545,
+          "trend": -0.3488,
+          "efficiency": -0.0879,
+          "range": -0.0374,
+          "r2": 0.451
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SHLPH",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 8.79,
+      "last_close": 7.99,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2438,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2084,
+          "trend": -0.2068,
+          "efficiency": -0.1205,
+          "range": -0.5639,
+          "r2": 0.5715
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SHNG",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 3.16,
+      "last_close": 2.83,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3162,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.2344,
+          "trend": -0.406,
+          "efficiency": -0.1392,
+          "range": -0.6207,
+          "r2": 0.7929
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SLF",
+      "bars": 51,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 4870.0,
+      "last_close": 5000.0,
+      "trend": {
+        "label": "neutral",
+        "score": 0.2004,
+        "confidence": "weak",
+        "bars": 51,
+        "components": {
+          "momentum": 0.0957,
+          "trend": 0.0004,
+          "efficiency": 0.0601,
+          "range": 1.0,
+          "r2": 0.0145
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SLI",
+      "bars": 60,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.04,
+      "last_close": 1.73,
+      "trend": {
+        "label": "bearish",
+        "score": -0.343,
+        "confidence": "moderate",
+        "bars": 60,
+        "components": {
+          "momentum": -0.2122,
+          "trend": -0.5659,
+          "efficiency": -0.133,
+          "range": -0.6,
+          "r2": 0.8474
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SM",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 595.0,
+      "last_close": 546.0,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1808,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1785,
+          "trend": -0.2691,
+          "efficiency": -0.1037,
+          "range": -0.1429,
+          "r2": 0.5294
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SMC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 65.9,
+      "last_close": 66.0,
+      "trend": {
+        "label": "neutral",
+        "score": 0.126,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": 0.0053,
+          "trend": -0.0012,
+          "efficiency": 0.0031,
+          "range": 0.8239,
+          "r2": 0.0228
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SMPH",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 18.56,
+      "last_close": 17.56,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1084,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1133,
+          "trend": -0.1723,
+          "efficiency": -0.0693,
+          "range": -0.0412,
+          "r2": 0.4101
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SPC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 10.28,
+      "last_close": 8.72,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3741,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.3138,
+          "trend": -0.3856,
+          "efficiency": -0.1965,
+          "range": -0.7528,
+          "r2": 0.8082
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SPM",
+      "bars": 18,
+      "malformed_rows": 0,
+      "status": "stale",
+      "last_date": "2026-10-19",
+      "age_days": 11,
+      "trend": null
+    },
+    {
+      "symbol": "PSE:SPNEC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.38,
+      "last_close": 1.37,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1118,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.0132,
+          "trend": -0.0282,
+          "efficiency": -0.0093,
+          "range": 0.84,
+          "r2": 0.1388
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SRDC",
+      "bars": 40,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 8.0,
+      "last_close": 28.5,
+      "trend": {
+        "label": "bullish",
+        "score": 0.5236,
+        "confidence": "strong",
+        "bars": 40,
+        "components": {
+          "momentum": 1.0,
+          "trend": 0.4703,
+          "efficiency": 0.2056,
+          "range": 0.1782,
+          "r2": 0.4703
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SSI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.04,
+      "last_close": 1.94,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2215,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1139,
+          "trend": -0.0513,
+          "efficiency": -0.0658,
+          "range": -1.0,
+          "r2": 0.3248
+        }
+      }
+    },
+    {
+      "symbol": "PSE:STI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.23,
+      "last_close": 1.2,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1689,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.0874,
+          "trend": 0.0089,
+          "efficiency": -0.0462,
+          "range": -0.8462,
+          "r2": 0.0913
+        }
+      }
+    },
+    {
+      "symbol": "PSE:STN",
+      "bars": 38,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.95,
+      "last_close": 1.81,
+      "trend": {
+        "label": "neutral",
+        "score": -0.2175,
+        "confidence": "weak",
+        "bars": 38,
+        "components": {
+          "momentum": -0.1193,
+          "trend": -0.1636,
+          "efficiency": -0.0972,
+          "range": -0.9429,
+          "r2": 0.5056
+        }
+      }
+    },
+    {
+      "symbol": "PSE:SUN",
+      "bars": 36,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.46,
+      "last_close": 0.415,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1794,
+        "confidence": "weak",
+        "bars": 36,
+        "components": {
+          "momentum": -0.2254,
+          "trend": -0.0175,
+          "efficiency": -0.2093,
+          "range": -0.5,
+          "r2": 0.131
+        }
+      }
+    },
+    {
+      "symbol": "PSE:TBGI",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.117,
+      "last_close": 0.119,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0156,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": 0.0395,
+          "trend": -0.0009,
+          "efficiency": 0.0227,
+          "range": -0.2381,
+          "r2": 0.0179
+        }
+      }
+    },
+    {
+      "symbol": "PSE:TECH",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.04,
+      "last_close": 1.35,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1069,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": 0.1888,
+          "trend": 0.0022,
+          "efficiency": 0.0836,
+          "range": 0.0938,
+          "r2": 0.0137
+        }
+      }
+    },
+    {
+      "symbol": "PSE:TEL",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1218.0,
+      "last_close": 1133.0,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1576,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": -0.1626,
+          "trend": -0.0071,
+          "efficiency": -0.0903,
+          "range": -0.4844,
+          "r2": 0.0615
+        }
+      }
+    },
+    {
+      "symbol": "PSE:TFC",
+      "bars": 25,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-27",
+      "age_days": 3,
+      "first_close": 52.0,
+      "last_close": 50.05,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1275,
+        "confidence": "weak",
+        "bars": 25,
+        "components": {
+          "momentum": -0.0411,
+          "trend": -0.0004,
+          "efficiency": -0.0751,
+          "range": -0.9916,
+          "r2": 0.0066
+        }
+      }
+    },
+    {
+      "symbol": "PSE:TFHI",
+      "bars": 55,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 52.8,
+      "last_close": 55.0,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0849,
+        "confidence": "flat",
+        "bars": 55,
+        "components": {
+          "momentum": 0.0851,
+          "trend": -0.0181,
+          "efficiency": 0.0531,
+          "range": 0.2982,
+          "r2": 0.1588
+        }
+      }
+    },
+    {
+      "symbol": "PSE:TOP",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.62,
+      "last_close": 1.7,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0211,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": 0.1212,
+          "trend": -0.0022,
+          "efficiency": 0.0702,
+          "range": -0.2727,
+          "r2": 0.0345
+        }
+      }
+    },
+    {
+      "symbol": "PSE:TUGS",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 1.09,
+      "last_close": 1.65,
+      "trend": {
+        "label": "neutral",
+        "score": 0.2026,
+        "confidence": "weak",
+        "bars": 62,
+        "components": {
+          "momentum": 0.3602,
+          "trend": 0.0211,
+          "efficiency": 0.134,
+          "range": 0.1765,
+          "r2": 0.0457
+        }
+      }
+    },
+    {
+      "symbol": "PSE:UBP",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 24.9,
+      "last_close": 21.4,
+      "trend": {
+        "label": "bearish",
+        "score": -0.4801,
+        "confidence": "strong",
+        "bars": 62,
+        "components": {
+          "momentum": -0.4114,
+          "trend": -0.7145,
+          "efficiency": -0.2482,
+          "range": -0.5818,
+          "r2": 0.8987
+        }
+      }
+    },
+    {
+      "symbol": "PSE:UPM",
+      "bars": 59,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.0062,
+      "last_close": 0.0094,
+      "trend": {
+        "label": "bullish",
+        "score": 0.4886,
+        "confidence": "strong",
+        "bars": 59,
+        "components": {
+          "momentum": 0.5106,
+          "trend": 0.5439,
+          "efficiency": 0.2286,
+          "range": 0.6842,
+          "r2": 0.6119
+        }
+      }
+    },
+    {
+      "symbol": "PSE:UPSON",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.7,
+      "last_close": 0.78,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0228,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": 0.1355,
+          "trend": 0.0028,
+          "efficiency": 0.0678,
+          "range": -0.3043,
+          "r2": 0.0246
+        }
+      }
+    },
+    {
+      "symbol": "PSE:URC",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 58.95,
+      "last_close": 59.55,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0033,
+        "confidence": "flat",
+        "bars": 62,
+        "components": {
+          "momentum": 0.0342,
+          "trend": -0.0686,
+          "efficiency": 0.0163,
+          "range": -0.0204,
+          "r2": 0.3461
+        }
+      }
+    },
+    {
+      "symbol": "PSE:V",
+      "bars": 54,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.8,
+      "last_close": 1.24,
+      "trend": {
+        "label": "bullish",
+        "score": 0.4359,
+        "confidence": "moderate",
+        "bars": 54,
+        "components": {
+          "momentum": 0.3992,
+          "trend": 0.678,
+          "efficiency": 0.2619,
+          "range": 0.3623,
+          "r2": 0.678
+        }
+      }
+    },
+    {
+      "symbol": "PSE:VITA",
+      "bars": 58,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.51,
+      "last_close": 0.49,
+      "trend": {
+        "label": "neutral",
+        "score": -0.1672,
+        "confidence": "weak",
+        "bars": 58,
+        "components": {
+          "momentum": -0.0897,
+          "trend": -0.1242,
+          "efficiency": -0.0513,
+          "range": -0.6,
+          "r2": 0.5491
+        }
+      }
+    },
+    {
+      "symbol": "PSE:VVT",
+      "bars": 31,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 20.85,
+      "last_close": 20.9,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1193,
+        "confidence": "weak",
+        "bars": 31,
+        "components": {
+          "momentum": 0.003,
+          "trend": -0.0007,
+          "efficiency": 0.0026,
+          "range": 1.0,
+          "r2": 0.0148
+        }
+      }
+    },
+    {
+      "symbol": "PSE:WEB",
+      "bars": 60,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 13.06,
+      "last_close": 13.88,
+      "trend": {
+        "label": "neutral",
+        "score": 0.0174,
+        "confidence": "flat",
+        "bars": 60,
+        "components": {
+          "momentum": 0.1554,
+          "trend": 0.0008,
+          "efficiency": 0.0764,
+          "range": -0.4015,
+          "r2": 0.016
+        }
+      }
+    },
+    {
+      "symbol": "PSE:WLCON",
+      "bars": 62,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 5.87,
+      "last_close": 5.2,
+      "trend": {
+        "label": "bearish",
+        "score": -0.3823,
+        "confidence": "moderate",
+        "bars": 62,
+        "components": {
+          "momentum": -0.3365,
+          "trend": -0.2864,
+          "efficiency": -0.1759,
+          "range": -0.9394,
+          "r2": 0.7481
+        }
+      }
+    },
+    {
+      "symbol": "PSE:WPI",
+      "bars": 37,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.37,
+      "last_close": 0.47,
+      "trend": {
+        "label": "bullish",
+        "score": 0.4906,
+        "confidence": "strong",
+        "bars": 37,
+        "components": {
+          "momentum": 0.5554,
+          "trend": 0.5071,
+          "efficiency": 0.3571,
+          "range": 1.0,
+          "r2": 0.8386
+        }
+      }
+    },
+    {
+      "symbol": "PSE:X",
+      "bars": 61,
+      "malformed_rows": 0,
+      "status": "ok",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 0.195,
+      "last_close": 0.223,
+      "trend": {
+        "label": "neutral",
+        "score": 0.1546,
+        "confidence": "weak",
+        "bars": 61,
+        "components": {
+          "momentum": 0.1115,
+          "trend": 0.2309,
+          "efficiency": 0.0567,
+          "range": 0.2727,
+          "r2": 0.4193
+        }
+      }
+    },
+    {
+      "symbol": "PSE:XG",
+      "bars": 34,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-29",
+      "age_days": 1,
+      "first_close": 2.75,
+      "last_close": 2.7,
+      "trend": {
+        "label": "neutral",
+        "score": 0.007,
+        "confidence": "flat",
+        "bars": 34,
+        "components": {
+          "momentum": -0.06,
+          "trend": -0.0033,
+          "efficiency": -0.0538,
+          "range": 0.2941,
+          "r2": 0.0607
+        }
+      }
+    },
+    {
+      "symbol": "PSE:ZHI",
+      "bars": 47,
+      "malformed_rows": 0,
+      "status": "short_window",
+      "last_date": "2026-10-28",
+      "age_days": 2,
+      "first_close": 0.068,
+      "last_close": 0.069,
+      "trend": {
+        "label": "neutral",
+        "score": -0.0221,
+        "confidence": "flat",
+        "bars": 47,
+        "components": {
+          "momentum": 0.0132,
+          "trend": 0.0127,
+          "efficiency": 0.0105,
+          "range": -0.2222,
+          "r2": 0.0669
+        }
+      }
+    }
+  ]
+}

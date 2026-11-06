@@ -1,0 +1,1448 @@
+{
+  "method": "Market- and direction-specific regularized logistic models, fit to preceding three-month chart-window features. For each test year, coefficients are fitted using outcomes completed before the preceding two-year validation period; thresholds are chosen on that validation period, with outcomes completed before the test year. Calls in both directions conflict and are withheld. Monthly signal close versus first close on or after three calendar months, no more than ten days late. Ties are misses. Strictly chronological, but not a new untouched holdout.",
+  "features": [
+    "trend_score",
+    "return_5",
+    "return_20",
+    "window_return",
+    "volatility",
+    "range_position",
+    "unchanged_fraction"
+  ],
+  "years": [
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025,
+    2026
+  ],
+  "limitations": [
+    "Exploratory historical data, overlapping outcomes and correlated market shocks; bootstrap intervals are approximate and not corrected for model/threshold search.",
+    "Present-day selected universe omits many delisted assets. Outcome data may contain corporate-action distortions, and a same-close entry may not be executable.",
+    "No dividends, fees, taxes or slippage; a price-direction forecast is not a trading return. Crypto validation is Yahoo, not the app's Binance feed.",
+    "Short or missing windows and delayed exits are excluded, not negative observations. No bond yields or funds are evaluated.",
+    "Live partial daily bars, staleness, market identification, and chart/table parity have not been validated; models are not deployed."
+  ],
+  "markets": {
+    "us_equity": {
+      "requested": 361,
+      "received": 346,
+      "skipped": {
+        "short_window": 1076,
+        "missing_outcome": 1029
+      },
+      "test_n": 43151,
+      "directions": {
+        "bearish": {
+          "n": 0,
+          "correct": 0,
+          "hit_pct": null,
+          "coverage_pct": 0.0,
+          "months": 0,
+          "symbols": 0,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": null
+        }
+      },
+      "abstained": 43151,
+      "folds": [
+        {
+          "year": 2016,
+          "fit_n": 75387,
+          "validation_n": 6884,
+          "test_n": 3996,
+          "last_fit_exit": "2013-12-03",
+          "last_validation_exit": "2015-12-01",
+          "models": {
+            "bearish": null
+          },
+          "directions": {
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 3996
+        },
+        {
+          "year": 2017,
+          "fit_n": 79302,
+          "validation_n": 6957,
+          "test_n": 4012,
+          "last_fit_exit": "2014-12-02",
+          "last_validation_exit": "2016-12-01",
+          "models": {
+            "bearish": null
+          },
+          "directions": {
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 4012
+        },
+        {
+          "year": 2018,
+          "fit_n": 83249,
+          "validation_n": 7003,
+          "test_n": 4020,
+          "last_fit_exit": "2015-12-01",
+          "last_validation_exit": "2017-12-01",
+          "models": {
+            "bearish": null
+          },
+          "directions": {
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 4020
+        },
+        {
+          "year": 2019,
+          "fit_n": 87242,
+          "validation_n": 7027,
+          "test_n": 4052,
+          "last_fit_exit": "2016-12-01",
+          "last_validation_exit": "2018-12-04",
+          "models": {
+            "bearish": null
+          },
+          "directions": {
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 4052
+        },
+        {
+          "year": 2020,
+          "fit_n": 91248,
+          "validation_n": 7052,
+          "test_n": 4094,
+          "last_fit_exit": "2017-12-01",
+          "last_validation_exit": "2019-12-03",
+          "models": {
+            "bearish": null
+          },
+          "directions": {
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 4094
+        },
+        {
+          "year": 2021,
+          "fit_n": 95268,
+          "validation_n": 7120,
+          "test_n": 4112,
+          "last_fit_exit": "2018-12-04",
+          "last_validation_exit": "2020-12-01",
+          "models": {
+            "bearish": null
+          },
+          "directions": {
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 4112
+        },
+        {
+          "year": 2022,
+          "fit_n": 99305,
+          "validation_n": 7177,
+          "test_n": 4116,
+          "last_fit_exit": "2019-12-03",
+          "last_validation_exit": "2021-12-01",
+          "models": {
+            "bearish": null
+          },
+          "directions": {
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 4116
+        },
+        {
+          "year": 2023,
+          "fit_n": 103393,
+          "validation_n": 7199,
+          "test_n": 4116,
+          "last_fit_exit": "2020-12-01",
+          "last_validation_exit": "2022-12-01",
+          "models": {
+            "bearish": null
+          },
+          "directions": {
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 4116
+        },
+        {
+          "year": 2024,
+          "fit_n": 107502,
+          "validation_n": 7203,
+          "test_n": 4116,
+          "last_fit_exit": "2021-12-01",
+          "last_validation_exit": "2023-12-01",
+          "models": {
+            "bearish": null
+          },
+          "directions": {
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 4116
+        },
+        {
+          "year": 2025,
+          "fit_n": 111618,
+          "validation_n": 7203,
+          "test_n": 4116,
+          "last_fit_exit": "2022-12-01",
+          "last_validation_exit": "2024-12-03",
+          "models": {
+            "bearish": null
+          },
+          "directions": {
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 4116
+        },
+        {
+          "year": 2026,
+          "fit_n": 115734,
+          "validation_n": 7203,
+          "test_n": 2401,
+          "last_fit_exit": "2023-12-01",
+          "last_validation_exit": "2025-12-02",
+          "models": {
+            "bearish": null
+          },
+          "directions": {
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 2401
+        }
+      ]
+    },
+    "PSE": {
+      "requested": 244,
+      "received": 244,
+      "skipped": {
+        "short_window": 7413,
+        "missing_outcome": 580
+      },
+      "test_n": 10689,
+      "directions": {
+        "bullish": {
+          "n": 0,
+          "correct": 0,
+          "hit_pct": null,
+          "coverage_pct": 0.0,
+          "months": 0,
+          "symbols": 0,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": null
+        }
+      },
+      "abstained": 10689,
+      "folds": [
+        {
+          "year": 2016,
+          "fit_n": 17,
+          "validation_n": 12,
+          "test_n": 18,
+          "last_fit_exit": "2013-07-03",
+          "last_validation_exit": "2015-08-07",
+          "models": {
+            "bullish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 18
+        },
+        {
+          "year": 2017,
+          "fit_n": 22,
+          "validation_n": 13,
+          "test_n": 76,
+          "last_fit_exit": "2014-12-01",
+          "last_validation_exit": "2016-12-02",
+          "models": {
+            "bullish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 76
+        },
+        {
+          "year": 2018,
+          "fit_n": 29,
+          "validation_n": 67,
+          "test_n": 104,
+          "last_fit_exit": "2015-08-07",
+          "last_validation_exit": "2017-12-06",
+          "models": {
+            "bullish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 104
+        },
+        {
+          "year": 2019,
+          "fit_n": 40,
+          "validation_n": 153,
+          "test_n": 188,
+          "last_fit_exit": "2016-12-02",
+          "last_validation_exit": "2018-12-06",
+          "models": {
+            "bullish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 188
+        },
+        {
+          "year": 2020,
+          "fit_n": 96,
+          "validation_n": 228,
+          "test_n": 319,
+          "last_fit_exit": "2017-12-06",
+          "last_validation_exit": "2019-12-04",
+          "models": {
+            "bullish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 319
+        },
+        {
+          "year": 2021,
+          "fit_n": 200,
+          "validation_n": 386,
+          "test_n": 1154,
+          "last_fit_exit": "2018-12-06",
+          "last_validation_exit": "2020-12-01",
+          "models": {
+            "bullish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 1154
+        },
+        {
+          "year": 2022,
+          "fit_n": 351,
+          "validation_n": 961,
+          "test_n": 1881,
+          "last_fit_exit": "2019-12-04",
+          "last_validation_exit": "2021-12-09",
+          "models": {
+            "bullish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 1881
+        },
+        {
+          "year": 2023,
+          "fit_n": 613,
+          "validation_n": 2581,
+          "test_n": 1804,
+          "last_fit_exit": "2020-12-01",
+          "last_validation_exit": "2022-12-02",
+          "models": {
+            "bullish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 1804
+        },
+        {
+          "year": 2024,
+          "fit_n": 1376,
+          "validation_n": 3239,
+          "test_n": 1921,
+          "last_fit_exit": "2021-12-09",
+          "last_validation_exit": "2023-12-06",
+          "models": {
+            "bullish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 1921
+        },
+        {
+          "year": 2025,
+          "fit_n": 3315,
+          "validation_n": 3193,
+          "test_n": 2027,
+          "last_fit_exit": "2022-12-02",
+          "last_validation_exit": "2024-12-04",
+          "models": {
+            "bullish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 2027
+        },
+        {
+          "year": 2026,
+          "fit_n": 5127,
+          "validation_n": 3409,
+          "test_n": 1197,
+          "last_fit_exit": "2023-12-06",
+          "last_validation_exit": "2025-12-04",
+          "models": {
+            "bullish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 1197
+        }
+      ]
+    },
+    "currency": {
+      "requested": 42,
+      "received": 42,
+      "skipped": {
+        "short_window": 198,
+        "missing_outcome": 168
+      },
+      "test_n": 5334,
+      "directions": {
+        "bullish": {
+          "n": 0,
+          "correct": 0,
+          "hit_pct": null,
+          "coverage_pct": 0.0,
+          "months": 0,
+          "symbols": 0,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": null
+        },
+        "bearish": {
+          "n": 0,
+          "correct": 0,
+          "hit_pct": null,
+          "coverage_pct": 0.0,
+          "months": 0,
+          "symbols": 0,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": null
+        }
+      },
+      "abstained": 5334,
+      "folds": [
+        {
+          "year": 2016,
+          "fit_n": 4922,
+          "validation_n": 882,
+          "test_n": 504,
+          "last_fit_exit": "2013-12-02",
+          "last_validation_exit": "2015-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 504
+        },
+        {
+          "year": 2017,
+          "fit_n": 5426,
+          "validation_n": 882,
+          "test_n": 504,
+          "last_fit_exit": "2014-12-01",
+          "last_validation_exit": "2016-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 504
+        },
+        {
+          "year": 2018,
+          "fit_n": 5930,
+          "validation_n": 882,
+          "test_n": 504,
+          "last_fit_exit": "2015-12-01",
+          "last_validation_exit": "2017-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 504
+        },
+        {
+          "year": 2019,
+          "fit_n": 6434,
+          "validation_n": 882,
+          "test_n": 504,
+          "last_fit_exit": "2016-12-01",
+          "last_validation_exit": "2018-12-03",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 504
+        },
+        {
+          "year": 2020,
+          "fit_n": 6938,
+          "validation_n": 882,
+          "test_n": 504,
+          "last_fit_exit": "2017-12-01",
+          "last_validation_exit": "2019-12-02",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 504
+        },
+        {
+          "year": 2021,
+          "fit_n": 7442,
+          "validation_n": 882,
+          "test_n": 504,
+          "last_fit_exit": "2018-12-03",
+          "last_validation_exit": "2020-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 504
+        },
+        {
+          "year": 2022,
+          "fit_n": 7946,
+          "validation_n": 882,
+          "test_n": 504,
+          "last_fit_exit": "2019-12-02",
+          "last_validation_exit": "2021-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 504
+        },
+        {
+          "year": 2023,
+          "fit_n": 8450,
+          "validation_n": 882,
+          "test_n": 504,
+          "last_fit_exit": "2020-12-01",
+          "last_validation_exit": "2022-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 504
+        },
+        {
+          "year": 2024,
+          "fit_n": 8954,
+          "validation_n": 882,
+          "test_n": 504,
+          "last_fit_exit": "2021-12-01",
+          "last_validation_exit": "2023-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 504
+        },
+        {
+          "year": 2025,
+          "fit_n": 9458,
+          "validation_n": 882,
+          "test_n": 504,
+          "last_fit_exit": "2022-12-01",
+          "last_validation_exit": "2024-12-02",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 504
+        },
+        {
+          "year": 2026,
+          "fit_n": 9962,
+          "validation_n": 882,
+          "test_n": 294,
+          "last_fit_exit": "2023-12-01",
+          "last_validation_exit": "2025-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 294
+        }
+      ]
+    },
+    "crypto": {
+      "requested": 43,
+      "received": 37,
+      "skipped": {
+        "short_window": 89,
+        "missing_outcome": 111
+      },
+      "test_n": 3410,
+      "directions": {
+        "bullish": {
+          "n": 0,
+          "correct": 0,
+          "hit_pct": null,
+          "coverage_pct": 0.0,
+          "months": 0,
+          "symbols": 0,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": null
+        },
+        "bearish": {
+          "n": 0,
+          "correct": 0,
+          "hit_pct": null,
+          "coverage_pct": 0.0,
+          "months": 0,
+          "symbols": 0,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": null
+        }
+      },
+      "abstained": 3410,
+      "folds": [
+        {
+          "year": 2016,
+          "fit_n": 0,
+          "validation_n": 20,
+          "test_n": 24,
+          "last_fit_exit": null,
+          "last_validation_exit": "2015-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 24
+        },
+        {
+          "year": 2017,
+          "fit_n": 0,
+          "validation_n": 42,
+          "test_n": 24,
+          "last_fit_exit": null,
+          "last_validation_exit": "2016-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 24
+        },
+        {
+          "year": 2018,
+          "fit_n": 20,
+          "validation_n": 42,
+          "test_n": 273,
+          "last_fit_exit": "2015-12-01",
+          "last_validation_exit": "2017-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 273
+        },
+        {
+          "year": 2019,
+          "fit_n": 44,
+          "validation_n": 225,
+          "test_n": 300,
+          "last_fit_exit": "2016-12-01",
+          "last_validation_exit": "2018-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 300
+        },
+        {
+          "year": 2020,
+          "fit_n": 68,
+          "validation_n": 494,
+          "test_n": 339,
+          "last_fit_exit": "2017-12-01",
+          "last_validation_exit": "2019-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 339
+        },
+        {
+          "year": 2021,
+          "fit_n": 275,
+          "validation_n": 547,
+          "test_n": 420,
+          "last_fit_exit": "2018-12-01",
+          "last_validation_exit": "2020-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 420
+        },
+        {
+          "year": 2022,
+          "fit_n": 568,
+          "validation_n": 651,
+          "test_n": 439,
+          "last_fit_exit": "2019-12-01",
+          "last_validation_exit": "2021-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 439
+        },
+        {
+          "year": 2023,
+          "fit_n": 894,
+          "validation_n": 748,
+          "test_n": 444,
+          "last_fit_exit": "2020-12-01",
+          "last_validation_exit": "2022-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 444
+        },
+        {
+          "year": 2024,
+          "fit_n": 1298,
+          "validation_n": 772,
+          "test_n": 444,
+          "last_fit_exit": "2021-12-01",
+          "last_validation_exit": "2023-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 444
+        },
+        {
+          "year": 2025,
+          "fit_n": 1734,
+          "validation_n": 777,
+          "test_n": 444,
+          "last_fit_exit": "2022-12-01",
+          "last_validation_exit": "2024-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 444
+        },
+        {
+          "year": 2026,
+          "fit_n": 2178,
+          "validation_n": 777,
+          "test_n": 259,
+          "last_fit_exit": "2023-12-01",
+          "last_validation_exit": "2025-12-01",
+          "models": {
+            "bullish": null,
+            "bearish": null
+          },
+          "directions": {
+            "bullish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            },
+            "bearish": {
+              "n": 0,
+              "correct": 0,
+              "hit_pct": null,
+              "coverage_pct": 0.0,
+              "months": 0,
+              "symbols": 0,
+              "bootstrap_90_pct_interval": null,
+              "meets_51_pct_observed": null
+            }
+          },
+          "abstained": 259
+        }
+      ]
+    }
+  }
+}

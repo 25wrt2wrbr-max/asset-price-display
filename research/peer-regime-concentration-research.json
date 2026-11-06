@@ -1,0 +1,2414 @@
+{
+  "method": "Replay original selected local+peer+contrarian calls; verify their count and correct count match the previously saved combined experiment, then summarize call shares and accuracy by signal year, month and symbol and report accuracy with each group excluded. Flat outcomes count as misses. Exclusion is a hindsight diagnostic, not a signal or independent validation.",
+  "limitations": [
+    "Post-selection audit of already inspected data: exclusion statistics and bootstrap intervals are not corrected for search or multiple comparisons.",
+    "Calendar groups and symbols remain correlated; no group count represents independent trials. Prior local-date peers do not establish cross-timezone availability.",
+    "Outcomes must be observable to enter the sample; current listings omit many delisted assets. Yahoo crypto differs from Binance. Same-close execution, fees and dividends are unmodeled."
+  ],
+  "markets": {
+    "currency": {
+      "selected_only": {
+        "n": 113,
+        "correct": 67,
+        "hit_pct": 59.29,
+        "months": 40,
+        "symbols": 25,
+        "bootstrap_90_pct_interval": [
+          50.0,
+          71.13
+        ],
+        "meets_51_pct_observed": true,
+        "lower_bound_above_51_pct": false,
+        "same_cases_always_up_pct": 40.71,
+        "same_cases_always_down_pct": 59.29
+      },
+      "years": [
+        {
+          "group": "2021",
+          "calls": 19,
+          "correct": 11,
+          "hit_pct": 57.89,
+          "share_pct": 16.81,
+          "other_calls": 94,
+          "without_group_hit_pct": 59.57
+        },
+        {
+          "group": "2022",
+          "calls": 23,
+          "correct": 9,
+          "hit_pct": 39.13,
+          "share_pct": 20.35,
+          "other_calls": 90,
+          "without_group_hit_pct": 64.44
+        },
+        {
+          "group": "2023",
+          "calls": 20,
+          "correct": 15,
+          "hit_pct": 75.0,
+          "share_pct": 17.7,
+          "other_calls": 93,
+          "without_group_hit_pct": 55.91
+        },
+        {
+          "group": "2024",
+          "calls": 31,
+          "correct": 23,
+          "hit_pct": 74.19,
+          "share_pct": 27.43,
+          "other_calls": 82,
+          "without_group_hit_pct": 53.66
+        },
+        {
+          "group": "2025",
+          "calls": 18,
+          "correct": 9,
+          "hit_pct": 50.0,
+          "share_pct": 15.93,
+          "other_calls": 95,
+          "without_group_hit_pct": 61.05
+        },
+        {
+          "group": "2026",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 60.36
+        }
+      ],
+      "months": [
+        {
+          "group": "2021-06",
+          "calls": 3,
+          "correct": 2,
+          "hit_pct": 66.67,
+          "share_pct": 2.65,
+          "other_calls": 110,
+          "without_group_hit_pct": 59.09
+        },
+        {
+          "group": "2021-07",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 60.36
+        },
+        {
+          "group": "2021-08",
+          "calls": 3,
+          "correct": 2,
+          "hit_pct": 66.67,
+          "share_pct": 2.65,
+          "other_calls": 110,
+          "without_group_hit_pct": 59.09
+        },
+        {
+          "group": "2021-09",
+          "calls": 5,
+          "correct": 2,
+          "hit_pct": 40.0,
+          "share_pct": 4.42,
+          "other_calls": 108,
+          "without_group_hit_pct": 60.19
+        },
+        {
+          "group": "2021-11",
+          "calls": 5,
+          "correct": 5,
+          "hit_pct": 100.0,
+          "share_pct": 4.42,
+          "other_calls": 108,
+          "without_group_hit_pct": 57.41
+        },
+        {
+          "group": "2021-12",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.88,
+          "other_calls": 112,
+          "without_group_hit_pct": 59.82
+        },
+        {
+          "group": "2022-01",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 60.36
+        },
+        {
+          "group": "2022-02",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 59.46
+        },
+        {
+          "group": "2022-03",
+          "calls": 5,
+          "correct": 2,
+          "hit_pct": 40.0,
+          "share_pct": 4.42,
+          "other_calls": 108,
+          "without_group_hit_pct": 60.19
+        },
+        {
+          "group": "2022-04",
+          "calls": 4,
+          "correct": 2,
+          "hit_pct": 50.0,
+          "share_pct": 3.54,
+          "other_calls": 109,
+          "without_group_hit_pct": 59.63
+        },
+        {
+          "group": "2022-05",
+          "calls": 3,
+          "correct": 1,
+          "hit_pct": 33.33,
+          "share_pct": 2.65,
+          "other_calls": 110,
+          "without_group_hit_pct": 60.0
+        },
+        {
+          "group": "2022-06",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 59.46
+        },
+        {
+          "group": "2022-12",
+          "calls": 5,
+          "correct": 2,
+          "hit_pct": 40.0,
+          "share_pct": 4.42,
+          "other_calls": 108,
+          "without_group_hit_pct": 60.19
+        },
+        {
+          "group": "2023-01",
+          "calls": 4,
+          "correct": 2,
+          "hit_pct": 50.0,
+          "share_pct": 3.54,
+          "other_calls": 109,
+          "without_group_hit_pct": 59.63
+        },
+        {
+          "group": "2023-02",
+          "calls": 5,
+          "correct": 4,
+          "hit_pct": 80.0,
+          "share_pct": 4.42,
+          "other_calls": 108,
+          "without_group_hit_pct": 58.33
+        },
+        {
+          "group": "2023-03",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 59.46
+        },
+        {
+          "group": "2023-06",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.88,
+          "other_calls": 112,
+          "without_group_hit_pct": 59.82
+        },
+        {
+          "group": "2023-08",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.88,
+          "other_calls": 112,
+          "without_group_hit_pct": 58.93
+        },
+        {
+          "group": "2023-10",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.88,
+          "other_calls": 112,
+          "without_group_hit_pct": 58.93
+        },
+        {
+          "group": "2023-11",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.88,
+          "other_calls": 112,
+          "without_group_hit_pct": 58.93
+        },
+        {
+          "group": "2023-12",
+          "calls": 5,
+          "correct": 5,
+          "hit_pct": 100.0,
+          "share_pct": 4.42,
+          "other_calls": 108,
+          "without_group_hit_pct": 57.41
+        },
+        {
+          "group": "2024-01",
+          "calls": 5,
+          "correct": 5,
+          "hit_pct": 100.0,
+          "share_pct": 4.42,
+          "other_calls": 108,
+          "without_group_hit_pct": 57.41
+        },
+        {
+          "group": "2024-02",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.88,
+          "other_calls": 112,
+          "without_group_hit_pct": 58.93
+        },
+        {
+          "group": "2024-05",
+          "calls": 4,
+          "correct": 4,
+          "hit_pct": 100.0,
+          "share_pct": 3.54,
+          "other_calls": 109,
+          "without_group_hit_pct": 57.8
+        },
+        {
+          "group": "2024-06",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.88,
+          "other_calls": 112,
+          "without_group_hit_pct": 58.93
+        },
+        {
+          "group": "2024-07",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 60.36
+        },
+        {
+          "group": "2024-08",
+          "calls": 3,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 2.65,
+          "other_calls": 110,
+          "without_group_hit_pct": 60.91
+        },
+        {
+          "group": "2024-09",
+          "calls": 6,
+          "correct": 5,
+          "hit_pct": 83.33,
+          "share_pct": 5.31,
+          "other_calls": 107,
+          "without_group_hit_pct": 57.94
+        },
+        {
+          "group": "2024-10",
+          "calls": 6,
+          "correct": 5,
+          "hit_pct": 83.33,
+          "share_pct": 5.31,
+          "other_calls": 107,
+          "without_group_hit_pct": 57.94
+        },
+        {
+          "group": "2024-11",
+          "calls": 2,
+          "correct": 2,
+          "hit_pct": 100.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 58.56
+        },
+        {
+          "group": "2024-12",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.88,
+          "other_calls": 112,
+          "without_group_hit_pct": 59.82
+        },
+        {
+          "group": "2025-01",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.88,
+          "other_calls": 112,
+          "without_group_hit_pct": 58.93
+        },
+        {
+          "group": "2025-02",
+          "calls": 2,
+          "correct": 2,
+          "hit_pct": 100.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 58.56
+        },
+        {
+          "group": "2025-03",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.88,
+          "other_calls": 112,
+          "without_group_hit_pct": 58.93
+        },
+        {
+          "group": "2025-04",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 59.46
+        },
+        {
+          "group": "2025-05",
+          "calls": 4,
+          "correct": 1,
+          "hit_pct": 25.0,
+          "share_pct": 3.54,
+          "other_calls": 109,
+          "without_group_hit_pct": 60.55
+        },
+        {
+          "group": "2025-06",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 59.46
+        },
+        {
+          "group": "2025-07",
+          "calls": 4,
+          "correct": 2,
+          "hit_pct": 50.0,
+          "share_pct": 3.54,
+          "other_calls": 109,
+          "without_group_hit_pct": 59.63
+        },
+        {
+          "group": "2025-08",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 60.36
+        },
+        {
+          "group": "2026-07",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 60.36
+        }
+      ],
+      "symbols": [
+        {
+          "group": "AUDCAD=X",
+          "calls": 9,
+          "correct": 8,
+          "hit_pct": 88.89,
+          "share_pct": 7.96,
+          "other_calls": 104,
+          "without_group_hit_pct": 56.73
+        },
+        {
+          "group": "AUDCHF=X",
+          "calls": 7,
+          "correct": 5,
+          "hit_pct": 71.43,
+          "share_pct": 6.19,
+          "other_calls": 106,
+          "without_group_hit_pct": 58.49
+        },
+        {
+          "group": "AUDJPY=X",
+          "calls": 8,
+          "correct": 2,
+          "hit_pct": 25.0,
+          "share_pct": 7.08,
+          "other_calls": 105,
+          "without_group_hit_pct": 61.9
+        },
+        {
+          "group": "AUDUSD=X",
+          "calls": 11,
+          "correct": 9,
+          "hit_pct": 81.82,
+          "share_pct": 9.73,
+          "other_calls": 102,
+          "without_group_hit_pct": 56.86
+        },
+        {
+          "group": "CAD=X",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.88,
+          "other_calls": 112,
+          "without_group_hit_pct": 58.93
+        },
+        {
+          "group": "CADCHF=X",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.88,
+          "other_calls": 112,
+          "without_group_hit_pct": 58.93
+        },
+        {
+          "group": "CADJPY=X",
+          "calls": 6,
+          "correct": 2,
+          "hit_pct": 33.33,
+          "share_pct": 5.31,
+          "other_calls": 107,
+          "without_group_hit_pct": 60.75
+        },
+        {
+          "group": "CHF=X",
+          "calls": 8,
+          "correct": 5,
+          "hit_pct": 62.5,
+          "share_pct": 7.08,
+          "other_calls": 105,
+          "without_group_hit_pct": 59.05
+        },
+        {
+          "group": "EURAUD=X",
+          "calls": 4,
+          "correct": 3,
+          "hit_pct": 75.0,
+          "share_pct": 3.54,
+          "other_calls": 109,
+          "without_group_hit_pct": 58.72
+        },
+        {
+          "group": "EURCAD=X",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 60.36
+        },
+        {
+          "group": "EURCHF=X",
+          "calls": 3,
+          "correct": 3,
+          "hit_pct": 100.0,
+          "share_pct": 2.65,
+          "other_calls": 110,
+          "without_group_hit_pct": 58.18
+        },
+        {
+          "group": "EURGBP=X",
+          "calls": 3,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 2.65,
+          "other_calls": 110,
+          "without_group_hit_pct": 60.91
+        },
+        {
+          "group": "EURUSD=X",
+          "calls": 11,
+          "correct": 4,
+          "hit_pct": 36.36,
+          "share_pct": 9.73,
+          "other_calls": 102,
+          "without_group_hit_pct": 61.76
+        },
+        {
+          "group": "GBPAUD=X",
+          "calls": 4,
+          "correct": 1,
+          "hit_pct": 25.0,
+          "share_pct": 3.54,
+          "other_calls": 109,
+          "without_group_hit_pct": 60.55
+        },
+        {
+          "group": "GBPCAD=X",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 60.36
+        },
+        {
+          "group": "GBPCHF=X",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 59.46
+        },
+        {
+          "group": "KRW=X",
+          "calls": 3,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 2.65,
+          "other_calls": 110,
+          "without_group_hit_pct": 60.91
+        },
+        {
+          "group": "MXN=X",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 60.36
+        },
+        {
+          "group": "NOK=X",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.88,
+          "other_calls": 112,
+          "without_group_hit_pct": 59.82
+        },
+        {
+          "group": "NZDCAD=X",
+          "calls": 9,
+          "correct": 8,
+          "hit_pct": 88.89,
+          "share_pct": 7.96,
+          "other_calls": 104,
+          "without_group_hit_pct": 56.73
+        },
+        {
+          "group": "NZDCHF=X",
+          "calls": 2,
+          "correct": 2,
+          "hit_pct": 100.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 58.56
+        },
+        {
+          "group": "NZDJPY=X",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.88,
+          "other_calls": 112,
+          "without_group_hit_pct": 58.93
+        },
+        {
+          "group": "NZDUSD=X",
+          "calls": 9,
+          "correct": 9,
+          "hit_pct": 100.0,
+          "share_pct": 7.96,
+          "other_calls": 104,
+          "without_group_hit_pct": 55.77
+        },
+        {
+          "group": "SGD=X",
+          "calls": 2,
+          "correct": 2,
+          "hit_pct": 100.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 58.56
+        },
+        {
+          "group": "THB=X",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.77,
+          "other_calls": 111,
+          "without_group_hit_pct": 60.36
+        }
+      ],
+      "matched_original_report": true,
+      "received": 42,
+      "requested": 42,
+      "skipped": {
+        "missing_outcome": 126
+      }
+    },
+    "us_equity": {
+      "selected_only": {
+        "n": 271,
+        "correct": 142,
+        "hit_pct": 52.4,
+        "months": 61,
+        "symbols": 62,
+        "bootstrap_90_pct_interval": [
+          41.83,
+          60.38
+        ],
+        "meets_51_pct_observed": true,
+        "lower_bound_above_51_pct": false,
+        "same_cases_always_up_pct": 47.6,
+        "same_cases_always_down_pct": 52.4
+      },
+      "years": [
+        {
+          "group": "2020",
+          "calls": 56,
+          "correct": 22,
+          "hit_pct": 39.29,
+          "share_pct": 20.66,
+          "other_calls": 215,
+          "without_group_hit_pct": 55.81
+        },
+        {
+          "group": "2021",
+          "calls": 21,
+          "correct": 9,
+          "hit_pct": 42.86,
+          "share_pct": 7.75,
+          "other_calls": 250,
+          "without_group_hit_pct": 53.2
+        },
+        {
+          "group": "2022",
+          "calls": 19,
+          "correct": 11,
+          "hit_pct": 57.89,
+          "share_pct": 7.01,
+          "other_calls": 252,
+          "without_group_hit_pct": 51.98
+        },
+        {
+          "group": "2023",
+          "calls": 7,
+          "correct": 1,
+          "hit_pct": 14.29,
+          "share_pct": 2.58,
+          "other_calls": 264,
+          "without_group_hit_pct": 53.41
+        },
+        {
+          "group": "2024",
+          "calls": 60,
+          "correct": 39,
+          "hit_pct": 65.0,
+          "share_pct": 22.14,
+          "other_calls": 211,
+          "without_group_hit_pct": 48.82
+        },
+        {
+          "group": "2025",
+          "calls": 76,
+          "correct": 41,
+          "hit_pct": 53.95,
+          "share_pct": 28.04,
+          "other_calls": 195,
+          "without_group_hit_pct": 51.79
+        },
+        {
+          "group": "2026",
+          "calls": 32,
+          "correct": 19,
+          "hit_pct": 59.38,
+          "share_pct": 11.81,
+          "other_calls": 239,
+          "without_group_hit_pct": 51.46
+        }
+      ],
+      "months": [
+        {
+          "group": "2020-01",
+          "calls": 4,
+          "correct": 3,
+          "hit_pct": 75.0,
+          "share_pct": 1.48,
+          "other_calls": 267,
+          "without_group_hit_pct": 52.06
+        },
+        {
+          "group": "2020-02",
+          "calls": 5,
+          "correct": 5,
+          "hit_pct": 100.0,
+          "share_pct": 1.85,
+          "other_calls": 266,
+          "without_group_hit_pct": 51.5
+        },
+        {
+          "group": "2020-03",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.42
+        },
+        {
+          "group": "2020-04",
+          "calls": 3,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 52.99
+        },
+        {
+          "group": "2020-05",
+          "calls": 9,
+          "correct": 4,
+          "hit_pct": 44.44,
+          "share_pct": 3.32,
+          "other_calls": 262,
+          "without_group_hit_pct": 52.67
+        },
+        {
+          "group": "2020-06",
+          "calls": 3,
+          "correct": 3,
+          "hit_pct": 100.0,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 51.87
+        },
+        {
+          "group": "2020-07",
+          "calls": 3,
+          "correct": 1,
+          "hit_pct": 33.33,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 52.61
+        },
+        {
+          "group": "2020-08",
+          "calls": 5,
+          "correct": 4,
+          "hit_pct": 80.0,
+          "share_pct": 1.85,
+          "other_calls": 266,
+          "without_group_hit_pct": 51.88
+        },
+        {
+          "group": "2020-09",
+          "calls": 7,
+          "correct": 1,
+          "hit_pct": 14.29,
+          "share_pct": 2.58,
+          "other_calls": 264,
+          "without_group_hit_pct": 53.41
+        },
+        {
+          "group": "2020-10",
+          "calls": 7,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 2.58,
+          "other_calls": 264,
+          "without_group_hit_pct": 53.79
+        },
+        {
+          "group": "2020-11",
+          "calls": 6,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 2.21,
+          "other_calls": 265,
+          "without_group_hit_pct": 53.58
+        },
+        {
+          "group": "2020-12",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.79
+        },
+        {
+          "group": "2021-01",
+          "calls": 3,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 52.99
+        },
+        {
+          "group": "2021-02",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.79
+        },
+        {
+          "group": "2021-03",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "2021-04",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "2021-05",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.22
+        },
+        {
+          "group": "2021-06",
+          "calls": 2,
+          "correct": 2,
+          "hit_pct": 100.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.04
+        },
+        {
+          "group": "2021-08",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.42
+        },
+        {
+          "group": "2021-09",
+          "calls": 6,
+          "correct": 4,
+          "hit_pct": 66.67,
+          "share_pct": 2.21,
+          "other_calls": 265,
+          "without_group_hit_pct": 52.08
+        },
+        {
+          "group": "2021-10",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.42
+        },
+        {
+          "group": "2021-12",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "2022-01",
+          "calls": 4,
+          "correct": 3,
+          "hit_pct": 75.0,
+          "share_pct": 1.48,
+          "other_calls": 267,
+          "without_group_hit_pct": 52.06
+        },
+        {
+          "group": "2022-05",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.42
+        },
+        {
+          "group": "2022-06",
+          "calls": 2,
+          "correct": 2,
+          "hit_pct": 100.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.04
+        },
+        {
+          "group": "2022-07",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.42
+        },
+        {
+          "group": "2022-08",
+          "calls": 3,
+          "correct": 1,
+          "hit_pct": 33.33,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 52.61
+        },
+        {
+          "group": "2022-09",
+          "calls": 6,
+          "correct": 3,
+          "hit_pct": 50.0,
+          "share_pct": 2.21,
+          "other_calls": 265,
+          "without_group_hit_pct": 52.45
+        },
+        {
+          "group": "2023-10",
+          "calls": 3,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 52.99
+        },
+        {
+          "group": "2023-11",
+          "calls": 4,
+          "correct": 1,
+          "hit_pct": 25.0,
+          "share_pct": 1.48,
+          "other_calls": 267,
+          "without_group_hit_pct": 52.81
+        },
+        {
+          "group": "2024-01",
+          "calls": 7,
+          "correct": 4,
+          "hit_pct": 57.14,
+          "share_pct": 2.58,
+          "other_calls": 264,
+          "without_group_hit_pct": 52.27
+        },
+        {
+          "group": "2024-02",
+          "calls": 3,
+          "correct": 1,
+          "hit_pct": 33.33,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 52.61
+        },
+        {
+          "group": "2024-03",
+          "calls": 6,
+          "correct": 3,
+          "hit_pct": 50.0,
+          "share_pct": 2.21,
+          "other_calls": 265,
+          "without_group_hit_pct": 52.45
+        },
+        {
+          "group": "2024-04",
+          "calls": 9,
+          "correct": 5,
+          "hit_pct": 55.56,
+          "share_pct": 3.32,
+          "other_calls": 262,
+          "without_group_hit_pct": 52.29
+        },
+        {
+          "group": "2024-05",
+          "calls": 3,
+          "correct": 2,
+          "hit_pct": 66.67,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 52.24
+        },
+        {
+          "group": "2024-06",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.42
+        },
+        {
+          "group": "2024-07",
+          "calls": 5,
+          "correct": 1,
+          "hit_pct": 20.0,
+          "share_pct": 1.85,
+          "other_calls": 266,
+          "without_group_hit_pct": 53.01
+        },
+        {
+          "group": "2024-08",
+          "calls": 3,
+          "correct": 3,
+          "hit_pct": 100.0,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 51.87
+        },
+        {
+          "group": "2024-09",
+          "calls": 5,
+          "correct": 3,
+          "hit_pct": 60.0,
+          "share_pct": 1.85,
+          "other_calls": 266,
+          "without_group_hit_pct": 52.26
+        },
+        {
+          "group": "2024-10",
+          "calls": 4,
+          "correct": 4,
+          "hit_pct": 100.0,
+          "share_pct": 1.48,
+          "other_calls": 267,
+          "without_group_hit_pct": 51.69
+        },
+        {
+          "group": "2024-11",
+          "calls": 6,
+          "correct": 5,
+          "hit_pct": 83.33,
+          "share_pct": 2.21,
+          "other_calls": 265,
+          "without_group_hit_pct": 51.7
+        },
+        {
+          "group": "2024-12",
+          "calls": 7,
+          "correct": 7,
+          "hit_pct": 100.0,
+          "share_pct": 2.58,
+          "other_calls": 264,
+          "without_group_hit_pct": 51.14
+        },
+        {
+          "group": "2025-01",
+          "calls": 3,
+          "correct": 3,
+          "hit_pct": 100.0,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 51.87
+        },
+        {
+          "group": "2025-02",
+          "calls": 6,
+          "correct": 5,
+          "hit_pct": 83.33,
+          "share_pct": 2.21,
+          "other_calls": 265,
+          "without_group_hit_pct": 51.7
+        },
+        {
+          "group": "2025-03",
+          "calls": 5,
+          "correct": 4,
+          "hit_pct": 80.0,
+          "share_pct": 1.85,
+          "other_calls": 266,
+          "without_group_hit_pct": 51.88
+        },
+        {
+          "group": "2025-04",
+          "calls": 6,
+          "correct": 2,
+          "hit_pct": 33.33,
+          "share_pct": 2.21,
+          "other_calls": 265,
+          "without_group_hit_pct": 52.83
+        },
+        {
+          "group": "2025-05",
+          "calls": 7,
+          "correct": 2,
+          "hit_pct": 28.57,
+          "share_pct": 2.58,
+          "other_calls": 264,
+          "without_group_hit_pct": 53.03
+        },
+        {
+          "group": "2025-06",
+          "calls": 10,
+          "correct": 3,
+          "hit_pct": 30.0,
+          "share_pct": 3.69,
+          "other_calls": 261,
+          "without_group_hit_pct": 53.26
+        },
+        {
+          "group": "2025-07",
+          "calls": 7,
+          "correct": 4,
+          "hit_pct": 57.14,
+          "share_pct": 2.58,
+          "other_calls": 264,
+          "without_group_hit_pct": 52.27
+        },
+        {
+          "group": "2025-08",
+          "calls": 7,
+          "correct": 2,
+          "hit_pct": 28.57,
+          "share_pct": 2.58,
+          "other_calls": 264,
+          "without_group_hit_pct": 53.03
+        },
+        {
+          "group": "2025-09",
+          "calls": 6,
+          "correct": 6,
+          "hit_pct": 100.0,
+          "share_pct": 2.21,
+          "other_calls": 265,
+          "without_group_hit_pct": 51.32
+        },
+        {
+          "group": "2025-10",
+          "calls": 5,
+          "correct": 4,
+          "hit_pct": 80.0,
+          "share_pct": 1.85,
+          "other_calls": 266,
+          "without_group_hit_pct": 51.88
+        },
+        {
+          "group": "2025-11",
+          "calls": 6,
+          "correct": 3,
+          "hit_pct": 50.0,
+          "share_pct": 2.21,
+          "other_calls": 265,
+          "without_group_hit_pct": 52.45
+        },
+        {
+          "group": "2025-12",
+          "calls": 8,
+          "correct": 3,
+          "hit_pct": 37.5,
+          "share_pct": 2.95,
+          "other_calls": 263,
+          "without_group_hit_pct": 52.85
+        },
+        {
+          "group": "2026-01",
+          "calls": 6,
+          "correct": 3,
+          "hit_pct": 50.0,
+          "share_pct": 2.21,
+          "other_calls": 265,
+          "without_group_hit_pct": 52.45
+        },
+        {
+          "group": "2026-02",
+          "calls": 3,
+          "correct": 3,
+          "hit_pct": 100.0,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 51.87
+        },
+        {
+          "group": "2026-03",
+          "calls": 2,
+          "correct": 2,
+          "hit_pct": 100.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.04
+        },
+        {
+          "group": "2026-04",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.42
+        },
+        {
+          "group": "2026-05",
+          "calls": 8,
+          "correct": 3,
+          "hit_pct": 37.5,
+          "share_pct": 2.95,
+          "other_calls": 263,
+          "without_group_hit_pct": 52.85
+        },
+        {
+          "group": "2026-06",
+          "calls": 6,
+          "correct": 2,
+          "hit_pct": 33.33,
+          "share_pct": 2.21,
+          "other_calls": 265,
+          "without_group_hit_pct": 52.83
+        },
+        {
+          "group": "2026-07",
+          "calls": 5,
+          "correct": 5,
+          "hit_pct": 100.0,
+          "share_pct": 1.85,
+          "other_calls": 266,
+          "without_group_hit_pct": 51.5
+        }
+      ],
+      "symbols": [
+        {
+          "group": "ADBE",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "AIG",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.42
+        },
+        {
+          "group": "BAX",
+          "calls": 4,
+          "correct": 2,
+          "hit_pct": 50.0,
+          "share_pct": 1.48,
+          "other_calls": 267,
+          "without_group_hit_pct": 52.43
+        },
+        {
+          "group": "BBY",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.22
+        },
+        {
+          "group": "BDX",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.22
+        },
+        {
+          "group": "BIIB",
+          "calls": 3,
+          "correct": 3,
+          "hit_pct": 100.0,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 51.87
+        },
+        {
+          "group": "CAG",
+          "calls": 7,
+          "correct": 4,
+          "hit_pct": 57.14,
+          "share_pct": 2.58,
+          "other_calls": 264,
+          "without_group_hit_pct": 52.27
+        },
+        {
+          "group": "CMCSA",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "COP",
+          "calls": 2,
+          "correct": 2,
+          "hit_pct": 100.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.04
+        },
+        {
+          "group": "CPB",
+          "calls": 7,
+          "correct": 4,
+          "hit_pct": 57.14,
+          "share_pct": 2.58,
+          "other_calls": 264,
+          "without_group_hit_pct": 52.27
+        },
+        {
+          "group": "CPRT",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.22
+        },
+        {
+          "group": "DGX",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "DOW",
+          "calls": 4,
+          "correct": 2,
+          "hit_pct": 50.0,
+          "share_pct": 1.48,
+          "other_calls": 267,
+          "without_group_hit_pct": 52.43
+        },
+        {
+          "group": "DVN",
+          "calls": 6,
+          "correct": 2,
+          "hit_pct": 33.33,
+          "share_pct": 2.21,
+          "other_calls": 265,
+          "without_group_hit_pct": 52.83
+        },
+        {
+          "group": "EXC",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "FANG",
+          "calls": 3,
+          "correct": 1,
+          "hit_pct": 33.33,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 52.61
+        },
+        {
+          "group": "FOXA",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.42
+        },
+        {
+          "group": "FRT",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "GE",
+          "calls": 4,
+          "correct": 2,
+          "hit_pct": 50.0,
+          "share_pct": 1.48,
+          "other_calls": 267,
+          "without_group_hit_pct": 52.43
+        },
+        {
+          "group": "GILD",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "HAL",
+          "calls": 3,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 52.99
+        },
+        {
+          "group": "HAS",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "HST",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.22
+        },
+        {
+          "group": "IBM",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.42
+        },
+        {
+          "group": "ILMN",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.22
+        },
+        {
+          "group": "INCY",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.22
+        },
+        {
+          "group": "INTC",
+          "calls": 14,
+          "correct": 10,
+          "hit_pct": 71.43,
+          "share_pct": 5.17,
+          "other_calls": 257,
+          "without_group_hit_pct": 51.36
+        },
+        {
+          "group": "IVZ",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "JCI",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "KHC",
+          "calls": 18,
+          "correct": 12,
+          "hit_pct": 66.67,
+          "share_pct": 6.64,
+          "other_calls": 253,
+          "without_group_hit_pct": 51.38
+        },
+        {
+          "group": "KMB",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.79
+        },
+        {
+          "group": "KMI",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.79
+        },
+        {
+          "group": "LUV",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "MO",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.42
+        },
+        {
+          "group": "MOS",
+          "calls": 11,
+          "correct": 3,
+          "hit_pct": 27.27,
+          "share_pct": 4.06,
+          "other_calls": 260,
+          "without_group_hit_pct": 53.46
+        },
+        {
+          "group": "MRNA",
+          "calls": 15,
+          "correct": 10,
+          "hit_pct": 66.67,
+          "share_pct": 5.54,
+          "other_calls": 256,
+          "without_group_hit_pct": 51.56
+        },
+        {
+          "group": "NCLH",
+          "calls": 7,
+          "correct": 4,
+          "hit_pct": 57.14,
+          "share_pct": 2.58,
+          "other_calls": 264,
+          "without_group_hit_pct": 52.27
+        },
+        {
+          "group": "NEM",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "NKE",
+          "calls": 5,
+          "correct": 4,
+          "hit_pct": 80.0,
+          "share_pct": 1.85,
+          "other_calls": 266,
+          "without_group_hit_pct": 51.88
+        },
+        {
+          "group": "NVAX",
+          "calls": 17,
+          "correct": 10,
+          "hit_pct": 58.82,
+          "share_pct": 6.27,
+          "other_calls": 254,
+          "without_group_hit_pct": 51.97
+        },
+        {
+          "group": "OXY",
+          "calls": 15,
+          "correct": 6,
+          "hit_pct": 40.0,
+          "share_pct": 5.54,
+          "other_calls": 256,
+          "without_group_hit_pct": 53.12
+        },
+        {
+          "group": "PARA",
+          "calls": 19,
+          "correct": 19,
+          "hit_pct": 100.0,
+          "share_pct": 7.01,
+          "other_calls": 252,
+          "without_group_hit_pct": 48.81
+        },
+        {
+          "group": "PPL",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.22
+        },
+        {
+          "group": "RHI",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "SJM",
+          "calls": 5,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.85,
+          "other_calls": 266,
+          "without_group_hit_pct": 53.38
+        },
+        {
+          "group": "SLB",
+          "calls": 3,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 52.99
+        },
+        {
+          "group": "SRE",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "STX",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "STZ",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "SWK",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "SWKS",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "T",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "TAP",
+          "calls": 4,
+          "correct": 1,
+          "hit_pct": 25.0,
+          "share_pct": 1.48,
+          "other_calls": 267,
+          "without_group_hit_pct": 52.81
+        },
+        {
+          "group": "TSN",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 0.74,
+          "other_calls": 269,
+          "without_group_hit_pct": 52.42
+        },
+        {
+          "group": "UPS",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.22
+        },
+        {
+          "group": "VFC",
+          "calls": 12,
+          "correct": 4,
+          "hit_pct": 33.33,
+          "share_pct": 4.43,
+          "other_calls": 259,
+          "without_group_hit_pct": 53.28
+        },
+        {
+          "group": "VTRS",
+          "calls": 3,
+          "correct": 1,
+          "hit_pct": 33.33,
+          "share_pct": 1.11,
+          "other_calls": 268,
+          "without_group_hit_pct": 52.61
+        },
+        {
+          "group": "WFC",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.22
+        },
+        {
+          "group": "WHR",
+          "calls": 13,
+          "correct": 9,
+          "hit_pct": 69.23,
+          "share_pct": 4.8,
+          "other_calls": 258,
+          "without_group_hit_pct": 51.55
+        },
+        {
+          "group": "WYNN",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 0.37,
+          "other_calls": 270,
+          "without_group_hit_pct": 52.59
+        },
+        {
+          "group": "XOM",
+          "calls": 7,
+          "correct": 3,
+          "hit_pct": 42.86,
+          "share_pct": 2.58,
+          "other_calls": 264,
+          "without_group_hit_pct": 52.65
+        },
+        {
+          "group": "XRAY",
+          "calls": 18,
+          "correct": 10,
+          "hit_pct": 55.56,
+          "share_pct": 6.64,
+          "other_calls": 253,
+          "without_group_hit_pct": 52.17
+        }
+      ],
+      "matched_original_report": true,
+      "received": 346,
+      "requested": 361,
+      "skipped": {
+        "missing_outcome": 1032,
+        "short_window": 109,
+        "insufficient_long_history": 350
+      }
+    },
+    "crypto": {
+      "selected_only": {
+        "n": 97,
+        "correct": 53,
+        "hit_pct": 54.64,
+        "months": 37,
+        "symbols": 14,
+        "bootstrap_90_pct_interval": [
+          43.62,
+          68.75
+        ],
+        "meets_51_pct_observed": true,
+        "lower_bound_above_51_pct": false,
+        "same_cases_always_up_pct": 54.64,
+        "same_cases_always_down_pct": 44.33
+      },
+      "years": [
+        {
+          "group": "2022",
+          "calls": 13,
+          "correct": 7,
+          "hit_pct": 53.85,
+          "share_pct": 13.4,
+          "other_calls": 84,
+          "without_group_hit_pct": 54.76
+        },
+        {
+          "group": "2023",
+          "calls": 26,
+          "correct": 13,
+          "hit_pct": 50.0,
+          "share_pct": 26.8,
+          "other_calls": 71,
+          "without_group_hit_pct": 56.34
+        },
+        {
+          "group": "2024",
+          "calls": 11,
+          "correct": 8,
+          "hit_pct": 72.73,
+          "share_pct": 11.34,
+          "other_calls": 86,
+          "without_group_hit_pct": 52.33
+        },
+        {
+          "group": "2025",
+          "calls": 26,
+          "correct": 15,
+          "hit_pct": 57.69,
+          "share_pct": 26.8,
+          "other_calls": 71,
+          "without_group_hit_pct": 53.52
+        },
+        {
+          "group": "2026",
+          "calls": 21,
+          "correct": 10,
+          "hit_pct": 47.62,
+          "share_pct": 21.65,
+          "other_calls": 76,
+          "without_group_hit_pct": 56.58
+        }
+      ],
+      "months": [
+        {
+          "group": "2022-06",
+          "calls": 3,
+          "correct": 1,
+          "hit_pct": 33.33,
+          "share_pct": 3.09,
+          "other_calls": 94,
+          "without_group_hit_pct": 55.32
+        },
+        {
+          "group": "2022-07",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 2.06,
+          "other_calls": 95,
+          "without_group_hit_pct": 54.74
+        },
+        {
+          "group": "2022-10",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 2.06,
+          "other_calls": 95,
+          "without_group_hit_pct": 54.74
+        },
+        {
+          "group": "2022-11",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 2.06,
+          "other_calls": 95,
+          "without_group_hit_pct": 54.74
+        },
+        {
+          "group": "2022-12",
+          "calls": 4,
+          "correct": 3,
+          "hit_pct": 75.0,
+          "share_pct": 4.12,
+          "other_calls": 93,
+          "without_group_hit_pct": 53.76
+        },
+        {
+          "group": "2023-01",
+          "calls": 2,
+          "correct": 2,
+          "hit_pct": 100.0,
+          "share_pct": 2.06,
+          "other_calls": 95,
+          "without_group_hit_pct": 53.68
+        },
+        {
+          "group": "2023-02",
+          "calls": 3,
+          "correct": 1,
+          "hit_pct": 33.33,
+          "share_pct": 3.09,
+          "other_calls": 94,
+          "without_group_hit_pct": 55.32
+        },
+        {
+          "group": "2023-03",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.03,
+          "other_calls": 96,
+          "without_group_hit_pct": 55.21
+        },
+        {
+          "group": "2023-04",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 1.03,
+          "other_calls": 96,
+          "without_group_hit_pct": 54.17
+        },
+        {
+          "group": "2023-05",
+          "calls": 3,
+          "correct": 2,
+          "hit_pct": 66.67,
+          "share_pct": 3.09,
+          "other_calls": 94,
+          "without_group_hit_pct": 54.26
+        },
+        {
+          "group": "2023-06",
+          "calls": 4,
+          "correct": 1,
+          "hit_pct": 25.0,
+          "share_pct": 4.12,
+          "other_calls": 93,
+          "without_group_hit_pct": 55.91
+        },
+        {
+          "group": "2023-07",
+          "calls": 4,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 4.12,
+          "other_calls": 93,
+          "without_group_hit_pct": 56.99
+        },
+        {
+          "group": "2023-08",
+          "calls": 4,
+          "correct": 2,
+          "hit_pct": 50.0,
+          "share_pct": 4.12,
+          "other_calls": 93,
+          "without_group_hit_pct": 54.84
+        },
+        {
+          "group": "2023-09",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 1.03,
+          "other_calls": 96,
+          "without_group_hit_pct": 54.17
+        },
+        {
+          "group": "2023-11",
+          "calls": 2,
+          "correct": 2,
+          "hit_pct": 100.0,
+          "share_pct": 2.06,
+          "other_calls": 95,
+          "without_group_hit_pct": 53.68
+        },
+        {
+          "group": "2023-12",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 1.03,
+          "other_calls": 96,
+          "without_group_hit_pct": 54.17
+        },
+        {
+          "group": "2024-02",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.03,
+          "other_calls": 96,
+          "without_group_hit_pct": 55.21
+        },
+        {
+          "group": "2024-03",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 1.03,
+          "other_calls": 96,
+          "without_group_hit_pct": 54.17
+        },
+        {
+          "group": "2024-08",
+          "calls": 3,
+          "correct": 1,
+          "hit_pct": 33.33,
+          "share_pct": 3.09,
+          "other_calls": 94,
+          "without_group_hit_pct": 55.32
+        },
+        {
+          "group": "2024-09",
+          "calls": 2,
+          "correct": 2,
+          "hit_pct": 100.0,
+          "share_pct": 2.06,
+          "other_calls": 95,
+          "without_group_hit_pct": 53.68
+        },
+        {
+          "group": "2024-10",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 1.03,
+          "other_calls": 96,
+          "without_group_hit_pct": 54.17
+        },
+        {
+          "group": "2024-11",
+          "calls": 3,
+          "correct": 3,
+          "hit_pct": 100.0,
+          "share_pct": 3.09,
+          "other_calls": 94,
+          "without_group_hit_pct": 53.19
+        },
+        {
+          "group": "2025-05",
+          "calls": 5,
+          "correct": 5,
+          "hit_pct": 100.0,
+          "share_pct": 5.15,
+          "other_calls": 92,
+          "without_group_hit_pct": 52.17
+        },
+        {
+          "group": "2025-06",
+          "calls": 3,
+          "correct": 3,
+          "hit_pct": 100.0,
+          "share_pct": 3.09,
+          "other_calls": 94,
+          "without_group_hit_pct": 53.19
+        },
+        {
+          "group": "2025-07",
+          "calls": 4,
+          "correct": 4,
+          "hit_pct": 100.0,
+          "share_pct": 4.12,
+          "other_calls": 93,
+          "without_group_hit_pct": 52.69
+        },
+        {
+          "group": "2025-08",
+          "calls": 3,
+          "correct": 1,
+          "hit_pct": 33.33,
+          "share_pct": 3.09,
+          "other_calls": 94,
+          "without_group_hit_pct": 55.32
+        },
+        {
+          "group": "2025-09",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.03,
+          "other_calls": 96,
+          "without_group_hit_pct": 55.21
+        },
+        {
+          "group": "2025-10",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.03,
+          "other_calls": 96,
+          "without_group_hit_pct": 55.21
+        },
+        {
+          "group": "2025-11",
+          "calls": 5,
+          "correct": 1,
+          "hit_pct": 20.0,
+          "share_pct": 5.15,
+          "other_calls": 92,
+          "without_group_hit_pct": 56.52
+        },
+        {
+          "group": "2025-12",
+          "calls": 4,
+          "correct": 1,
+          "hit_pct": 25.0,
+          "share_pct": 4.12,
+          "other_calls": 93,
+          "without_group_hit_pct": 55.91
+        },
+        {
+          "group": "2026-01",
+          "calls": 3,
+          "correct": 1,
+          "hit_pct": 33.33,
+          "share_pct": 3.09,
+          "other_calls": 94,
+          "without_group_hit_pct": 55.32
+        },
+        {
+          "group": "2026-02",
+          "calls": 3,
+          "correct": 1,
+          "hit_pct": 33.33,
+          "share_pct": 3.09,
+          "other_calls": 94,
+          "without_group_hit_pct": 55.32
+        },
+        {
+          "group": "2026-03",
+          "calls": 4,
+          "correct": 3,
+          "hit_pct": 75.0,
+          "share_pct": 4.12,
+          "other_calls": 93,
+          "without_group_hit_pct": 53.76
+        },
+        {
+          "group": "2026-04",
+          "calls": 2,
+          "correct": 1,
+          "hit_pct": 50.0,
+          "share_pct": 2.06,
+          "other_calls": 95,
+          "without_group_hit_pct": 54.74
+        },
+        {
+          "group": "2026-05",
+          "calls": 4,
+          "correct": 1,
+          "hit_pct": 25.0,
+          "share_pct": 4.12,
+          "other_calls": 93,
+          "without_group_hit_pct": 55.91
+        },
+        {
+          "group": "2026-06",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 2.06,
+          "other_calls": 95,
+          "without_group_hit_pct": 55.79
+        },
+        {
+          "group": "2026-07",
+          "calls": 3,
+          "correct": 3,
+          "hit_pct": 100.0,
+          "share_pct": 3.09,
+          "other_calls": 94,
+          "without_group_hit_pct": 53.19
+        }
+      ],
+      "symbols": [
+        {
+          "group": "ARB-USD",
+          "calls": 11,
+          "correct": 6,
+          "hit_pct": 54.55,
+          "share_pct": 11.34,
+          "other_calls": 86,
+          "without_group_hit_pct": 54.65
+        },
+        {
+          "group": "BNB-USD",
+          "calls": 14,
+          "correct": 6,
+          "hit_pct": 42.86,
+          "share_pct": 14.43,
+          "other_calls": 83,
+          "without_group_hit_pct": 56.63
+        },
+        {
+          "group": "BTC-USD",
+          "calls": 15,
+          "correct": 10,
+          "hit_pct": 66.67,
+          "share_pct": 15.46,
+          "other_calls": 82,
+          "without_group_hit_pct": 52.44
+        },
+        {
+          "group": "ETC-USD",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 1.03,
+          "other_calls": 96,
+          "without_group_hit_pct": 54.17
+        },
+        {
+          "group": "ETH-USD",
+          "calls": 7,
+          "correct": 3,
+          "hit_pct": 42.86,
+          "share_pct": 7.22,
+          "other_calls": 90,
+          "without_group_hit_pct": 55.56
+        },
+        {
+          "group": "FIL-USD",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.03,
+          "other_calls": 96,
+          "without_group_hit_pct": 55.21
+        },
+        {
+          "group": "LINK-USD",
+          "calls": 2,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 2.06,
+          "other_calls": 95,
+          "without_group_hit_pct": 55.79
+        },
+        {
+          "group": "LTC-USD",
+          "calls": 8,
+          "correct": 3,
+          "hit_pct": 37.5,
+          "share_pct": 8.25,
+          "other_calls": 89,
+          "without_group_hit_pct": 56.18
+        },
+        {
+          "group": "MKR-USD",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.03,
+          "other_calls": 96,
+          "without_group_hit_pct": 55.21
+        },
+        {
+          "group": "NEO-USD",
+          "calls": 1,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "share_pct": 1.03,
+          "other_calls": 96,
+          "without_group_hit_pct": 55.21
+        },
+        {
+          "group": "TRX-USD",
+          "calls": 14,
+          "correct": 11,
+          "hit_pct": 78.57,
+          "share_pct": 14.43,
+          "other_calls": 83,
+          "without_group_hit_pct": 50.6
+        },
+        {
+          "group": "XMR-USD",
+          "calls": 18,
+          "correct": 10,
+          "hit_pct": 55.56,
+          "share_pct": 18.56,
+          "other_calls": 79,
+          "without_group_hit_pct": 54.43
+        },
+        {
+          "group": "XRP-USD",
+          "calls": 1,
+          "correct": 1,
+          "hit_pct": 100.0,
+          "share_pct": 1.03,
+          "other_calls": 96,
+          "without_group_hit_pct": 54.17
+        },
+        {
+          "group": "ZEC-USD",
+          "calls": 3,
+          "correct": 2,
+          "hit_pct": 66.67,
+          "share_pct": 3.09,
+          "other_calls": 94,
+          "without_group_hit_pct": 54.26
+        }
+      ],
+      "matched_original_report": true,
+      "received": 37,
+      "requested": 43,
+      "skipped": {
+        "short_window": 89,
+        "insufficient_long_history": 393,
+        "missing_outcome": 111
+      }
+    }
+  }
+}

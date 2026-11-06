@@ -1,0 +1,426 @@
+{
+  "method": "Only existing app bullish labels may be selected. Compare local historical-regime score >=55%, 12-nearest historical chart-feature neighbors with >=55% positive outcomes, and their intersection. Neighbor rule requires 24 stock-local historical observations in the prior 60 months; local rule requires 24 completed outcomes and 6 regime examples. All historical exits must be strictly before the signal. Compare 2020-2026 first monthly close versus first close on or after three calendar months, within ten days; ties are incorrect. Chart window is 90 days and minimum 50 bars. Baseline and filters use the same eligible population but select different calls.",
+  "limitations": [
+    "Exploratory after repeated inspection; no independent or prospective holdout, and examining multiple candidates creates selection bias not reflected in intervals.",
+    "Outcomes overlap and stocks share shocks. Current listings omit most delistings; missing/pending outcomes are excluded and histories/corporate actions may be revised.",
+    "No trading costs, dividends or executable same-close entry assumed. No change to live trend classifier."
+  ],
+  "PSE": {
+    "test_n": 10303,
+    "app_bullish": {
+      "n": 1778,
+      "correct": 789,
+      "hit_pct": 44.38,
+      "coverage_pct": 17.26,
+      "months": 77,
+      "symbols": 217,
+      "bootstrap_90_pct_interval": [
+        40.22,
+        47.72
+      ],
+      "meets_51_pct_observed": false,
+      "lower_bound_above_51_pct": false,
+      "same_cases_always_up_pct": 44.38,
+      "same_cases_always_down_pct": 54.39
+    },
+    "local": {
+      "n": 223,
+      "correct": 117,
+      "hit_pct": 52.47,
+      "coverage_pct": 2.16,
+      "months": 34,
+      "symbols": 46,
+      "bootstrap_90_pct_interval": [
+        46.44,
+        60.09
+      ],
+      "meets_51_pct_observed": true,
+      "lower_bound_above_51_pct": false,
+      "same_cases_always_up_pct": 52.47,
+      "same_cases_always_down_pct": 46.64
+    },
+    "neighbor": {
+      "n": 263,
+      "correct": 128,
+      "hit_pct": 48.67,
+      "coverage_pct": 2.55,
+      "months": 41,
+      "symbols": 62,
+      "bootstrap_90_pct_interval": [
+        41.03,
+        55.77
+      ],
+      "meets_51_pct_observed": false,
+      "lower_bound_above_51_pct": false,
+      "same_cases_always_up_pct": 48.67,
+      "same_cases_always_down_pct": 50.57
+    },
+    "both": {
+      "n": 179,
+      "correct": 88,
+      "hit_pct": 49.16,
+      "coverage_pct": 1.74,
+      "months": 34,
+      "symbols": 39,
+      "bootstrap_90_pct_interval": [
+        40.56,
+        58.97
+      ],
+      "meets_51_pct_observed": false,
+      "lower_bound_above_51_pct": false,
+      "same_cases_always_up_pct": 49.16,
+      "same_cases_always_down_pct": 50.28
+    },
+    "folds": [
+      {
+        "year": 2020,
+        "app_bullish": {
+          "n": 63,
+          "correct": 42,
+          "hit_pct": 66.67,
+          "coverage_pct": 19.75,
+          "months": 10,
+          "symbols": 33,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": true,
+          "same_cases_always_up_pct": 66.67,
+          "same_cases_always_down_pct": 30.16
+        },
+        "local": {
+          "n": 0,
+          "correct": 0,
+          "hit_pct": null,
+          "coverage_pct": 0.0,
+          "months": 0,
+          "symbols": 0,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": null
+        },
+        "neighbor": {
+          "n": 0,
+          "correct": 0,
+          "hit_pct": null,
+          "coverage_pct": 0.0,
+          "months": 0,
+          "symbols": 0,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": null
+        },
+        "both": {
+          "n": 0,
+          "correct": 0,
+          "hit_pct": null,
+          "coverage_pct": 0.0,
+          "months": 0,
+          "symbols": 0,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": null
+        }
+      },
+      {
+        "year": 2021,
+        "app_bullish": {
+          "n": 204,
+          "correct": 93,
+          "hit_pct": 45.59,
+          "coverage_pct": 17.68,
+          "months": 12,
+          "symbols": 107,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 45.59,
+          "same_cases_always_down_pct": 53.92
+        },
+        "local": {
+          "n": 0,
+          "correct": 0,
+          "hit_pct": null,
+          "coverage_pct": 0.0,
+          "months": 0,
+          "symbols": 0,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": null
+        },
+        "neighbor": {
+          "n": 3,
+          "correct": 2,
+          "hit_pct": 66.67,
+          "coverage_pct": 0.26,
+          "months": 3,
+          "symbols": 1,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": true,
+          "same_cases_always_up_pct": 66.67,
+          "same_cases_always_down_pct": 33.33
+        },
+        "both": {
+          "n": 0,
+          "correct": 0,
+          "hit_pct": null,
+          "coverage_pct": 0.0,
+          "months": 0,
+          "symbols": 0,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": null
+        }
+      },
+      {
+        "year": 2022,
+        "app_bullish": {
+          "n": 180,
+          "correct": 59,
+          "hit_pct": 32.78,
+          "coverage_pct": 9.57,
+          "months": 12,
+          "symbols": 86,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 32.78,
+          "same_cases_always_down_pct": 66.67
+        },
+        "local": {
+          "n": 0,
+          "correct": 0,
+          "hit_pct": null,
+          "coverage_pct": 0.0,
+          "months": 0,
+          "symbols": 0,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": null
+        },
+        "neighbor": {
+          "n": 4,
+          "correct": 0,
+          "hit_pct": 0.0,
+          "coverage_pct": 0.21,
+          "months": 3,
+          "symbols": 2,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 0.0,
+          "same_cases_always_down_pct": 100.0
+        },
+        "both": {
+          "n": 0,
+          "correct": 0,
+          "hit_pct": null,
+          "coverage_pct": 0.0,
+          "months": 0,
+          "symbols": 0,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": null
+        }
+      },
+      {
+        "year": 2023,
+        "app_bullish": {
+          "n": 296,
+          "correct": 120,
+          "hit_pct": 40.54,
+          "coverage_pct": 16.41,
+          "months": 12,
+          "symbols": 115,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 40.54,
+          "same_cases_always_down_pct": 58.78
+        },
+        "local": {
+          "n": 3,
+          "correct": 1,
+          "hit_pct": 33.33,
+          "coverage_pct": 0.17,
+          "months": 3,
+          "symbols": 2,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 33.33,
+          "same_cases_always_down_pct": 66.67
+        },
+        "neighbor": {
+          "n": 4,
+          "correct": 2,
+          "hit_pct": 50.0,
+          "coverage_pct": 0.22,
+          "months": 4,
+          "symbols": 3,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 50.0,
+          "same_cases_always_down_pct": 50.0
+        },
+        "both": {
+          "n": 3,
+          "correct": 1,
+          "hit_pct": 33.33,
+          "coverage_pct": 0.17,
+          "months": 3,
+          "symbols": 2,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 33.33,
+          "same_cases_always_down_pct": 66.67
+        }
+      },
+      {
+        "year": 2024,
+        "app_bullish": {
+          "n": 446,
+          "correct": 197,
+          "hit_pct": 44.17,
+          "coverage_pct": 23.22,
+          "months": 12,
+          "symbols": 134,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 44.17,
+          "same_cases_always_down_pct": 54.93
+        },
+        "local": {
+          "n": 95,
+          "correct": 58,
+          "hit_pct": 61.05,
+          "coverage_pct": 4.95,
+          "months": 12,
+          "symbols": 27,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": true,
+          "same_cases_always_up_pct": 61.05,
+          "same_cases_always_down_pct": 37.89
+        },
+        "neighbor": {
+          "n": 113,
+          "correct": 64,
+          "hit_pct": 56.64,
+          "coverage_pct": 5.88,
+          "months": 12,
+          "symbols": 35,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": true,
+          "same_cases_always_up_pct": 56.64,
+          "same_cases_always_down_pct": 41.59
+        },
+        "both": {
+          "n": 85,
+          "correct": 49,
+          "hit_pct": 57.65,
+          "coverage_pct": 4.42,
+          "months": 12,
+          "symbols": 26,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": true,
+          "same_cases_always_up_pct": 57.65,
+          "same_cases_always_down_pct": 41.18
+        }
+      },
+      {
+        "year": 2025,
+        "app_bullish": {
+          "n": 375,
+          "correct": 190,
+          "hit_pct": 50.67,
+          "coverage_pct": 18.5,
+          "months": 12,
+          "symbols": 130,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 50.67,
+          "same_cases_always_down_pct": 47.73
+        },
+        "local": {
+          "n": 79,
+          "correct": 40,
+          "hit_pct": 50.63,
+          "coverage_pct": 3.9,
+          "months": 12,
+          "symbols": 28,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 50.63,
+          "same_cases_always_down_pct": 49.37
+        },
+        "neighbor": {
+          "n": 94,
+          "correct": 42,
+          "hit_pct": 44.68,
+          "coverage_pct": 4.64,
+          "months": 12,
+          "symbols": 40,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 44.68,
+          "same_cases_always_down_pct": 55.32
+        },
+        "both": {
+          "n": 63,
+          "correct": 28,
+          "hit_pct": 44.44,
+          "coverage_pct": 3.11,
+          "months": 12,
+          "symbols": 25,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 44.44,
+          "same_cases_always_down_pct": 55.56
+        }
+      },
+      {
+        "year": 2026,
+        "app_bullish": {
+          "n": 214,
+          "correct": 88,
+          "hit_pct": 41.12,
+          "coverage_pct": 17.88,
+          "months": 7,
+          "symbols": 101,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 41.12,
+          "same_cases_always_down_pct": 56.07
+        },
+        "local": {
+          "n": 46,
+          "correct": 18,
+          "hit_pct": 39.13,
+          "coverage_pct": 3.84,
+          "months": 7,
+          "symbols": 23,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 39.13,
+          "same_cases_always_down_pct": 58.7
+        },
+        "neighbor": {
+          "n": 45,
+          "correct": 18,
+          "hit_pct": 40.0,
+          "coverage_pct": 3.76,
+          "months": 7,
+          "symbols": 24,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 40.0,
+          "same_cases_always_down_pct": 60.0
+        },
+        "both": {
+          "n": 28,
+          "correct": 10,
+          "hit_pct": 35.71,
+          "coverage_pct": 2.34,
+          "months": 7,
+          "symbols": 14,
+          "bootstrap_90_pct_interval": null,
+          "meets_51_pct_observed": false,
+          "same_cases_always_up_pct": 35.71,
+          "same_cases_always_down_pct": 64.29
+        }
+      }
+    ],
+    "requested": 244,
+    "received": 244,
+    "skipped": {
+      "short_window": 7413,
+      "missing_outcome": 580
+    }
+  }
+}

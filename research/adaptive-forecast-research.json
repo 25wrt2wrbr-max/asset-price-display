@@ -1,0 +1,2606 @@
+{
+  "method": "Separate regularized models per market/direction use chart price features, 6/12-month historical returns and a lagged asset-local score trained only on already completed outcomes. Fit on at most eight preceding years, choose among five thresholds on a disjoint two-year validation period (>=52% and >=1 percentage point above validation baseline; minimum counts), and test each subsequent year. Replay previous and asset-local candidates on the identical eligible observations. Calendar-three-month close-to-close direction; ties are misses.",
+  "limitations": [
+    "Exploratory: previous experiments already inspected these years and development choices changed in response. This is not untouched out-of-sample or prospective evidence.",
+    "Overlapping signals and common shocks reduce effective sample size; approximate bootstrap intervals do not include model or threshold-selection uncertainty.",
+    "Current listings, mostly excluding delisted assets, create survivorship bias. Asset-local eligibility requires prior observed outcomes and additional six/twelve-month prices, excluding new and illiquid assets.",
+    "Yahoo crypto differs from Binance. The same-close signal may not be executable; no fees, taxes, slippage or dividends. Live, stale and intraday data have not been validated; models are not deployed."
+  ],
+  "markets": {
+    "currency": {
+      "test_n": 3121,
+      "adaptive": {
+        "n": 461,
+        "correct": 234,
+        "hit_pct": 50.76,
+        "coverage_pct": 14.77,
+        "months": 43,
+        "symbols": 42,
+        "bootstrap_90_pct_interval": [
+          38.95,
+          61.0
+        ],
+        "meets_51_pct_observed": false,
+        "lower_bound_above_51_pct": false,
+        "same_cases_always_up_pct": 49.24,
+        "same_cases_always_down_pct": 50.76
+      },
+      "asset_local_same_eligible": {
+        "n": 746,
+        "correct": 364,
+        "hit_pct": 48.79,
+        "coverage_pct": 23.9,
+        "months": 79,
+        "symbols": 35,
+        "bootstrap_90_pct_interval": [
+          43.33,
+          54.63
+        ],
+        "meets_51_pct_observed": false,
+        "lower_bound_above_51_pct": false,
+        "same_cases_always_up_pct": 51.07,
+        "same_cases_always_down_pct": 48.79
+      },
+      "prior_same_eligible": {
+        "n": 1131,
+        "correct": 556,
+        "hit_pct": 49.16,
+        "coverage_pct": 36.24,
+        "months": 42,
+        "symbols": 42,
+        "bootstrap_90_pct_interval": [
+          44.96,
+          53.25
+        ],
+        "meets_51_pct_observed": false,
+        "lower_bound_above_51_pct": false,
+        "same_cases_always_up_pct": 50.84,
+        "same_cases_always_down_pct": 49.16
+      },
+      "abstained": 2660,
+      "folds": [
+        {
+          "year": 2020,
+          "fit_n": 2270,
+          "validation_n": 812,
+          "test_n": 458,
+          "last_fit_exit": "2017-12-01",
+          "last_validation_exit": "2019-12-02",
+          "model": {
+            "direction": "bearish",
+            "means": [
+              0.031591233480176194,
+              -6.057922911838436e-06,
+              0.0013781140793935605,
+              0.005049259922253954,
+              0.006769263602236986,
+              0.5220783375413446,
+              0.009729557977819716,
+              0.500672197691985,
+              0.009697168944154429,
+              0.0211758375309076
+            ],
+            "scales": [
+              0.28980520218570466,
+              0.013116286481102359,
+              0.02759978357508068,
+              0.04994977784016948,
+              0.016655841275672958,
+              0.35862199736599115,
+              0.024687694457768968,
+              0.11986225003813034,
+              0.06749609539202697,
+              0.1012707633866559
+            ],
+            "bias": -0.14958192076124494,
+            "weights": [
+              0.0438331292140198,
+              -0.10962258826327081,
+              0.12069373968808907,
+              0.13673881376779207,
+              -0.012524270021140938,
+              -0.05515684285015482,
+              -0.008134704108851252,
+              -0.08525038079098402,
+              -0.12444086206901658,
+              -0.024240284627996916
+            ],
+            "fit_n": 2270
+          },
+          "selected": {
+            "quantile": 0.75,
+            "threshold": 0.48515654203444264,
+            "n": 203,
+            "months": 21,
+            "symbols": 39,
+            "hit_pct": 54.19,
+            "base_pct": 51.72,
+            "qualifies": true
+          },
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.35038240540121113,
+              "n": 812,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 51.72,
+              "base_pct": 51.72,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.4462150601388247,
+              "n": 609,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 52.71,
+              "base_pct": 51.72,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.4645520668202683,
+              "n": 406,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 53.69,
+              "base_pct": 51.72,
+              "qualifies": true
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.48515654203444264,
+              "n": 203,
+              "months": 21,
+              "symbols": 39,
+              "hit_pct": 54.19,
+              "base_pct": 51.72,
+              "qualifies": true
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.5057288308689187,
+              "n": 82,
+              "months": 20,
+              "symbols": 29,
+              "hit_pct": 53.66,
+              "base_pct": 51.72,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 113,
+            "correct": 87,
+            "hit_pct": 76.99,
+            "coverage_pct": 24.67,
+            "months": 12,
+            "symbols": 37,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 23.01,
+            "same_cases_always_down_pct": 76.99
+          },
+          "asset_local": {
+            "n": 124,
+            "correct": 47,
+            "hit_pct": 37.9,
+            "coverage_pct": 27.07,
+            "months": 12,
+            "symbols": 26,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 62.1,
+            "same_cases_always_down_pct": 37.9
+          },
+          "prior": {
+            "n": 452,
+            "correct": 235,
+            "hit_pct": 51.99,
+            "coverage_pct": 98.69,
+            "months": 12,
+            "symbols": 42,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 48.01,
+            "same_cases_always_down_pct": 51.99
+          }
+        },
+        {
+          "year": 2021,
+          "fit_n": 2742,
+          "validation_n": 806,
+          "test_n": 464,
+          "last_fit_exit": "2018-12-03",
+          "last_validation_exit": "2020-12-01",
+          "model": {
+            "direction": "bearish",
+            "means": [
+              0.0288832603938731,
+              -1.58654712880282e-05,
+              0.001412845326622811,
+              0.004602788300908331,
+              0.006416885288352215,
+              0.5211736990834933,
+              0.008985508452495876,
+              0.4976329409604143,
+              0.008603355567748563,
+              0.018493956028949873
+            ],
+            "scales": [
+              0.28992767043732187,
+              0.012693261810067576,
+              0.02680119931491013,
+              0.048273613271750664,
+              0.015191491735880828,
+              0.357180711868056,
+              0.02332873080980606,
+              0.11487365487526396,
+              0.06457387404890398,
+              0.0962105770491407
+            ],
+            "bias": -0.13592659157617332,
+            "weights": [
+              0.0434867889227339,
+              -0.11763857569607465,
+              0.10948507706296319,
+              0.13334357856371545,
+              -0.014573712790479233,
+              -0.045956448623206046,
+              -0.024646083232213862,
+              -0.07638892590034795,
+              -0.1177268895202039,
+              0.009575188127266036
+            ],
+            "fit_n": 2742
+          },
+          "selected": {
+            "quantile": 0.75,
+            "threshold": 0.4850586141464111,
+            "n": 202,
+            "months": 21,
+            "symbols": 41,
+            "hit_pct": 59.9,
+            "base_pct": 53.97,
+            "qualifies": true
+          },
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.2912896551608603,
+              "n": 806,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 53.97,
+              "base_pct": 53.97,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.44437190538833515,
+              "n": 605,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 56.36,
+              "base_pct": 53.97,
+              "qualifies": true
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.46595131539615753,
+              "n": 403,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 56.58,
+              "base_pct": 53.97,
+              "qualifies": true
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.4850586141464111,
+              "n": 202,
+              "months": 21,
+              "symbols": 41,
+              "hit_pct": 59.9,
+              "base_pct": 53.97,
+              "qualifies": true
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.510461971995285,
+              "n": 81,
+              "months": 20,
+              "symbols": 36,
+              "hit_pct": 60.49,
+              "base_pct": 53.97,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 113,
+            "correct": 54,
+            "hit_pct": 47.79,
+            "coverage_pct": 24.35,
+            "months": 12,
+            "symbols": 36,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 52.21,
+            "same_cases_always_down_pct": 47.79
+          },
+          "asset_local": {
+            "n": 121,
+            "correct": 61,
+            "hit_pct": 50.41,
+            "coverage_pct": 26.08,
+            "months": 12,
+            "symbols": 28,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 49.59,
+            "same_cases_always_down_pct": 50.41
+          },
+          "prior": {
+            "n": 464,
+            "correct": 219,
+            "hit_pct": 47.2,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 42,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 52.8,
+            "same_cases_always_down_pct": 47.2
+          }
+        },
+        {
+          "year": 2022,
+          "fit_n": 3201,
+          "validation_n": 810,
+          "test_n": 474,
+          "last_fit_exit": "2019-12-02",
+          "last_validation_exit": "2021-12-01",
+          "model": {
+            "direction": "bearish",
+            "means": [
+              0.0187141518275539,
+              -4.9875058521264e-06,
+              0.0010379514753901923,
+              0.003162349425096548,
+              0.006159018074836826,
+              0.5104902224377301,
+              0.008318732496053496,
+              0.49601035300092916,
+              0.00671320204921809,
+              0.015721489197268214
+            ],
+            "scales": [
+              0.28574405950812143,
+              0.012458299804763233,
+              0.026055283512310366,
+              0.04636148490390099,
+              0.014093257540987501,
+              0.3562681402290655,
+              0.0220253470444019,
+              0.11075992455292681,
+              0.06197104679933473,
+              0.09182436914917279
+            ],
+            "bias": -0.08362758296450541,
+            "weights": [
+              0.05687937020024301,
+              -0.07821378302720329,
+              0.09732815797992973,
+              0.10751255165630136,
+              -0.02486386113673825,
+              0.01018125881577654,
+              -0.03464001789552785,
+              -0.07451888565655779,
+              -0.07905054141348739,
+              -0.04455334915351382
+            ],
+            "fit_n": 3201
+          },
+          "selected": {
+            "quantile": 0.75,
+            "threshold": 0.5011197963664786,
+            "n": 203,
+            "months": 21,
+            "symbols": 41,
+            "hit_pct": 56.65,
+            "base_pct": 49.63,
+            "qualifies": true
+          },
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.3327508850472292,
+              "n": 810,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 49.63,
+              "base_pct": 49.63,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.45494831911031175,
+              "n": 608,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 51.64,
+              "base_pct": 49.63,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.4801993803308424,
+              "n": 405,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 52.59,
+              "base_pct": 49.63,
+              "qualifies": true
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.5011197963664786,
+              "n": 203,
+              "months": 21,
+              "symbols": 41,
+              "hit_pct": 56.65,
+              "base_pct": 49.63,
+              "qualifies": true
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.5252888456808062,
+              "n": 81,
+              "months": 15,
+              "symbols": 36,
+              "hit_pct": 62.96,
+              "base_pct": 49.63,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 155,
+            "correct": 62,
+            "hit_pct": 40.0,
+            "coverage_pct": 32.7,
+            "months": 12,
+            "symbols": 40,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 60.0,
+            "same_cases_always_down_pct": 40.0
+          },
+          "asset_local": {
+            "n": 121,
+            "correct": 53,
+            "hit_pct": 43.8,
+            "coverage_pct": 25.53,
+            "months": 12,
+            "symbols": 25,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 56.2,
+            "same_cases_always_down_pct": 43.8
+          },
+          "prior": {
+            "n": 209,
+            "correct": 96,
+            "hit_pct": 45.93,
+            "coverage_pct": 44.09,
+            "months": 12,
+            "symbols": 42,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 54.07,
+            "same_cases_always_down_pct": 45.93
+          }
+        },
+        {
+          "year": 2023,
+          "fit_n": 3397,
+          "validation_n": 814,
+          "test_n": 482,
+          "last_fit_exit": "2020-12-01",
+          "last_validation_exit": "2022-12-01",
+          "model": {
+            "direction": "bearish",
+            "means": [
+              0.018676714748307333,
+              9.704218282206154e-05,
+              0.0011275594634074645,
+              0.0035773148577056277,
+              0.0059344441499494804,
+              0.5109956975682732,
+              0.007142725163523267,
+              0.4913021547420525,
+              0.006809553439384575,
+              0.01352305222252463
+            ],
+            "scales": [
+              0.28760463008518117,
+              0.01284344638481427,
+              0.026268560223833753,
+              0.04758049517531519,
+              0.00987929599036824,
+              0.35467653072835276,
+              0.018305411837984318,
+              0.10614745533492828,
+              0.062329681607278954,
+              0.090065379830131
+            ],
+            "bias": -0.04173160525779736,
+            "weights": [
+              0.0812905695687578,
+              -0.10303450836340945,
+              0.0524315876565247,
+              0.14278308860035932,
+              -0.0353682551303903,
+              0.01747995713522476,
+              -0.025382865709154184,
+              -0.07979180324768145,
+              -0.04199319549798681,
+              -0.06550346994651048
+            ],
+            "fit_n": 3397
+          },
+          "selected": null,
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.3305595914118368,
+              "n": 814,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 43.49,
+              "base_pct": 43.49,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.46315644615718476,
+              "n": 611,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 41.08,
+              "base_pct": 43.49,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.49228426695693916,
+              "n": 407,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 35.87,
+              "base_pct": 43.49,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.5206557710079753,
+              "n": 204,
+              "months": 21,
+              "symbols": 40,
+              "hit_pct": 34.31,
+              "base_pct": 43.49,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.5459436328270738,
+              "n": 82,
+              "months": 17,
+              "symbols": 32,
+              "hit_pct": 30.49,
+              "base_pct": 43.49,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 88,
+            "correct": 55,
+            "hit_pct": 62.5,
+            "coverage_pct": 18.26,
+            "months": 12,
+            "symbols": 22,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 37.5,
+            "same_cases_always_down_pct": 62.5
+          },
+          "prior": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          }
+        },
+        {
+          "year": 2024,
+          "fit_n": 3482,
+          "validation_n": 835,
+          "test_n": 480,
+          "last_fit_exit": "2021-12-01",
+          "last_validation_exit": "2023-12-01",
+          "model": {
+            "direction": "bearish",
+            "means": [
+              0.011615479609419884,
+              9.552581329454166e-05,
+              0.0004058526907376126,
+              0.0018490436391499134,
+              0.005722324981719621,
+              0.5034187661979113,
+              0.006466582561793978,
+              0.48785064124827665,
+              0.004194003691097822,
+              0.00933400537703136
+            ],
+            "scales": [
+              0.28411827982646165,
+              0.012678904215369654,
+              0.025041145631651742,
+              0.04552202326107834,
+              0.009698943007347763,
+              0.3519494130948957,
+              0.01742428822429591,
+              0.09840981258839666,
+              0.0596170849439484,
+              0.08737627178815126
+            ],
+            "bias": -0.008309483718940613,
+            "weights": [
+              0.07978179125450457,
+              -0.08235584118260442,
+              0.06027636686028347,
+              0.14036996942718105,
+              -0.0019333009476959141,
+              0.007371096004647423,
+              -0.048361288969423696,
+              -0.07470375437986504,
+              -0.08919866875784085,
+              0.06833284480239118
+            ],
+            "fit_n": 3482
+          },
+          "selected": null,
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.3194205626144411,
+              "n": 835,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 44.55,
+              "base_pct": 44.55,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.4627232218903114,
+              "n": 627,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 41.79,
+              "base_pct": 44.55,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.5020822986769095,
+              "n": 418,
+              "months": 21,
+              "symbols": 41,
+              "hit_pct": 39.0,
+              "base_pct": 44.55,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.5434517619665153,
+              "n": 209,
+              "months": 21,
+              "symbols": 35,
+              "hit_pct": 38.76,
+              "base_pct": 44.55,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.5801487043872859,
+              "n": 84,
+              "months": 18,
+              "symbols": 25,
+              "hit_pct": 45.24,
+              "base_pct": 44.55,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 110,
+            "correct": 55,
+            "hit_pct": 50.0,
+            "coverage_pct": 22.92,
+            "months": 12,
+            "symbols": 19,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 50.0,
+            "same_cases_always_down_pct": 50.0
+          },
+          "prior": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          }
+        },
+        {
+          "year": 2025,
+          "fit_n": 3536,
+          "validation_n": 848,
+          "test_n": 480,
+          "last_fit_exit": "2022-12-01",
+          "last_validation_exit": "2024-12-02",
+          "model": {
+            "direction": "bearish",
+            "means": [
+              0.010814847285067876,
+              -4.660529586529904e-05,
+              0.0004123639201233537,
+              0.0015965212284257816,
+              0.005705373792739496,
+              0.5011900292763907,
+              0.005711065083163171,
+              0.48861629851273913,
+              0.0035736529176734807,
+              0.006496819337513866
+            ],
+            "scales": [
+              0.28024026269130403,
+              0.012799355236904982,
+              0.025284990630538257,
+              0.04554527562645723,
+              0.009436084919949649,
+              0.34599438460492493,
+              0.016203996583067592,
+              0.09201410453517504,
+              0.059805957823464755,
+              0.08611509705400915
+            ],
+            "bias": -0.0392264304449289,
+            "weights": [
+              0.062219204701433585,
+              -0.06711134936730308,
+              0.062333823489767334,
+              0.14314642955916912,
+              0.01593809740790719,
+              0.030532305019407246,
+              -0.06213869471775338,
+              -0.05511952871439322,
+              -0.09845734267826739,
+              -0.006453803498615121
+            ],
+            "fit_n": 3536
+          },
+          "selected": null,
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.2971129468357802,
+              "n": 848,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 45.17,
+              "base_pct": 45.17,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.4622016056932871,
+              "n": 636,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 47.17,
+              "base_pct": 45.17,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.4951341581399977,
+              "n": 424,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 50.0,
+              "base_pct": 45.17,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.5242931653252857,
+              "n": 212,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 50.47,
+              "base_pct": 45.17,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.5479599479497278,
+              "n": 85,
+              "months": 18,
+              "symbols": 30,
+              "hit_pct": 50.59,
+              "base_pct": 45.17,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 108,
+            "correct": 66,
+            "hit_pct": 61.11,
+            "coverage_pct": 22.5,
+            "months": 12,
+            "symbols": 19,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 38.89,
+            "same_cases_always_down_pct": 61.11
+          },
+          "prior": {
+            "n": 6,
+            "correct": 6,
+            "hit_pct": 100.0,
+            "coverage_pct": 1.25,
+            "months": 6,
+            "symbols": 1,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 0.0,
+            "same_cases_always_down_pct": 100.0
+          }
+        },
+        {
+          "year": 2026,
+          "fit_n": 3584,
+          "validation_n": 838,
+          "test_n": 283,
+          "last_fit_exit": "2023-12-01",
+          "last_validation_exit": "2025-12-01",
+          "model": {
+            "direction": "bearish",
+            "means": [
+              0.00804933035714284,
+              -5.368731503440256e-05,
+              0.00040050294064113113,
+              0.0010813946746452735,
+              0.005393579532278583,
+              0.4984580162145637,
+              0.004911613765407372,
+              0.48848921977155946,
+              0.002743214130074724,
+              0.006226140187830699
+            ],
+            "scales": [
+              0.2773222988879347,
+              0.012333380694507637,
+              0.024619909258764443,
+              0.04346743934914677,
+              0.00304261047116676,
+              0.34428522048796495,
+              0.01380818810663719,
+              0.08521531787483255,
+              0.055850673305433876,
+              0.07825135161482595
+            ],
+            "bias": -0.006960225115073388,
+            "weights": [
+              0.03753591977052187,
+              -0.0506642782945133,
+              0.043732845669267766,
+              0.123423282759799,
+              -0.0016640786558418602,
+              0.010347411393052921,
+              -0.0532210482649421,
+              -0.03312469307593006,
+              -0.02170607896673976,
+              0.05619674800540194
+            ],
+            "fit_n": 3584
+          },
+          "selected": {
+            "quantile": 0.75,
+            "threshold": 0.531973709459313,
+            "n": 210,
+            "months": 21,
+            "symbols": 35,
+            "hit_pct": 55.24,
+            "base_pct": 46.9,
+            "qualifies": true
+          },
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.33971737798440255,
+              "n": 838,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 46.9,
+              "base_pct": 46.9,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.4672934377384441,
+              "n": 629,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 46.1,
+              "base_pct": 46.9,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.4998841767011026,
+              "n": 419,
+              "months": 21,
+              "symbols": 42,
+              "hit_pct": 46.3,
+              "base_pct": 46.9,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.531973709459313,
+              "n": 210,
+              "months": 21,
+              "symbols": 35,
+              "hit_pct": 55.24,
+              "base_pct": 46.9,
+              "qualifies": true
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.5572588711997996,
+              "n": 84,
+              "months": 20,
+              "symbols": 29,
+              "hit_pct": 60.71,
+              "base_pct": 46.9,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 80,
+            "correct": 31,
+            "hit_pct": 38.75,
+            "coverage_pct": 28.27,
+            "months": 7,
+            "symbols": 22,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 61.25,
+            "same_cases_always_down_pct": 38.75
+          },
+          "asset_local": {
+            "n": 74,
+            "correct": 27,
+            "hit_pct": 36.49,
+            "coverage_pct": 26.15,
+            "months": 7,
+            "symbols": 18,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 62.16,
+            "same_cases_always_down_pct": 36.49
+          },
+          "prior": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          }
+        }
+      ],
+      "received": 42,
+      "requested": 42,
+      "skipped": {
+        "missing_outcome": 126
+      }
+    },
+    "us_equity": {
+      "test_n": 24987,
+      "adaptive": {
+        "n": 1341,
+        "correct": 556,
+        "hit_pct": 41.46,
+        "coverage_pct": 5.37,
+        "months": 12,
+        "symbols": 296,
+        "bootstrap_90_pct_interval": null,
+        "meets_51_pct_observed": false,
+        "same_cases_always_up_pct": 58.39,
+        "same_cases_always_down_pct": 41.46
+      },
+      "asset_local_same_eligible": {
+        "n": 936,
+        "correct": 420,
+        "hit_pct": 44.87,
+        "coverage_pct": 3.75,
+        "months": 79,
+        "symbols": 109,
+        "bootstrap_90_pct_interval": [
+          36.02,
+          51.0
+        ],
+        "meets_51_pct_observed": false,
+        "lower_bound_above_51_pct": false,
+        "same_cases_always_up_pct": 55.13,
+        "same_cases_always_down_pct": 44.87
+      },
+      "prior_same_eligible": {
+        "n": 3922,
+        "correct": 1629,
+        "hit_pct": 41.53,
+        "coverage_pct": 15.7,
+        "months": 12,
+        "symbols": 343,
+        "bootstrap_90_pct_interval": null,
+        "meets_51_pct_observed": false,
+        "same_cases_always_up_pct": 58.41,
+        "same_cases_always_down_pct": 41.53
+      },
+      "abstained": 23646,
+      "folds": [
+        {
+          "year": 2020,
+          "fit_n": 16939,
+          "validation_n": 6189,
+          "test_n": 3578,
+          "last_fit_exit": "2017-12-01",
+          "last_validation_exit": "2019-12-03",
+          "model": {
+            "direction": "bearish",
+            "means": [
+              0.158749554283016,
+              0.004942543170520736,
+              0.014174096755830704,
+              0.043324556098293575,
+              0.014252295697639509,
+              0.6558638973425123,
+              0.008149296680389474,
+              0.3529347290219693,
+              0.08050375270482434,
+              0.14233202307377324
+            ],
+            "scales": [
+              0.31236770200601266,
+              0.03307039622033254,
+              0.0699126798895595,
+              0.11952169665968737,
+              0.006826441212242529,
+              0.34354561140651846,
+              0.013346167956373367,
+              0.10784394282836421,
+              0.16608443933889497,
+              0.23321836975861224
+            ],
+            "bias": -0.6607898204486721,
+            "weights": [
+              0.02337583974573205,
+              0.004136862494182303,
+              0.03347999426787184,
+              0.013425780449005225,
+              0.02195389979331086,
+              0.05565470404215865,
+              0.0002832351167478798,
+              -0.037431969077755214,
+              0.023113377836316836,
+              -0.0663318647385725
+            ],
+            "fit_n": 16939
+          },
+          "selected": null,
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.256053670435595,
+              "n": 6189,
+              "months": 21,
+              "symbols": 333,
+              "hit_pct": 42.54,
+              "base_pct": 42.54,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.3192357950595332,
+              "n": 4642,
+              "months": 21,
+              "symbols": 333,
+              "hit_pct": 43.34,
+              "base_pct": 42.54,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.3413665792482841,
+              "n": 3095,
+              "months": 21,
+              "symbols": 333,
+              "hit_pct": 44.23,
+              "base_pct": 42.54,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.35741903894520005,
+              "n": 1548,
+              "months": 21,
+              "symbols": 324,
+              "hit_pct": 43.22,
+              "base_pct": 42.54,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.36959639770464164,
+              "n": 619,
+              "months": 21,
+              "symbols": 231,
+              "hit_pct": 40.39,
+              "base_pct": 42.54,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 141,
+            "correct": 46,
+            "hit_pct": 32.62,
+            "coverage_pct": 3.94,
+            "months": 12,
+            "symbols": 42,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 67.38,
+            "same_cases_always_down_pct": 32.62
+          },
+          "prior": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          }
+        },
+        {
+          "year": 2021,
+          "fit_n": 20472,
+          "validation_n": 6252,
+          "test_n": 3749,
+          "last_fit_exit": "2018-12-04",
+          "last_validation_exit": "2020-12-01",
+          "model": {
+            "direction": "bearish",
+            "means": [
+              0.1541680001953887,
+              0.004364421097941153,
+              0.013645547004460166,
+              0.04242859951890245,
+              0.01424908805670856,
+              0.6469584725492016,
+              0.007779384295774517,
+              0.35270486483357977,
+              0.07793015527023814,
+              0.14565992560342034
+            ],
+            "scales": [
+              0.31478941474166205,
+              0.03299530618796954,
+              0.06931112429245741,
+              0.11851932296113012,
+              0.0066165628847140385,
+              0.3458017089162941,
+              0.013107047761521468,
+              0.10542211095027659,
+              0.16445930015432456,
+              0.2316547583778719
+            ],
+            "bias": -0.5990007215427651,
+            "weights": [
+              0.02376332372326105,
+              -0.029648329344284723,
+              0.05346160592858492,
+              0.022937296162711895,
+              0.009345875433170342,
+              0.028456589516617867,
+              -0.0073159463200193585,
+              -0.013834186534596001,
+              0.004291204390945055,
+              -0.05273538494284076
+            ],
+            "fit_n": 20472
+          },
+          "selected": null,
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.2626791428916993,
+              "n": 6252,
+              "months": 21,
+              "symbols": 335,
+              "hit_pct": 37.22,
+              "base_pct": 37.22,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.341848349490183,
+              "n": 4689,
+              "months": 21,
+              "symbols": 335,
+              "hit_pct": 39.26,
+              "base_pct": 37.22,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.361690117294391,
+              "n": 3126,
+              "months": 21,
+              "symbols": 335,
+              "hit_pct": 37.72,
+              "base_pct": 37.22,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.3752531593638931,
+              "n": 1563,
+              "months": 21,
+              "symbols": 322,
+              "hit_pct": 36.21,
+              "base_pct": 37.22,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.38783966582729507,
+              "n": 626,
+              "months": 20,
+              "symbols": 237,
+              "hit_pct": 34.82,
+              "base_pct": 37.22,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 99,
+            "correct": 28,
+            "hit_pct": 28.28,
+            "coverage_pct": 2.64,
+            "months": 12,
+            "symbols": 33,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 71.72,
+            "same_cases_always_down_pct": 28.28
+          },
+          "prior": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          }
+        },
+        {
+          "year": 2022,
+          "fit_n": 24027,
+          "validation_n": 6389,
+          "test_n": 3707,
+          "last_fit_exit": "2019-12-03",
+          "last_validation_exit": "2021-12-01",
+          "model": {
+            "direction": "bearish",
+            "means": [
+              0.14564107462438078,
+              0.005419164232440797,
+              0.012356393851699794,
+              0.038724540124478964,
+              0.014590043373583814,
+              0.6415104919283495,
+              0.007376340589321771,
+              0.354245312815912,
+              0.07075420611121529,
+              0.13093226067058333
+            ],
+            "scales": [
+              0.3171941254878375,
+              0.03446254545454576,
+              0.0727824010835836,
+              0.12218639878333756,
+              0.006788805306528275,
+              0.34472374033012054,
+              0.012757308338871277,
+              0.10370467332619956,
+              0.16853015215101066,
+              0.23571290843091747
+            ],
+            "bias": -0.5771305161335024,
+            "weights": [
+              0.026760879268722747,
+              -0.06598463511972069,
+              0.05745026064400593,
+              0.02859093559947547,
+              0.015797471369495227,
+              0.03046942426402642,
+              -0.0007197430071298788,
+              0.010544222250495137,
+              0.0077016936479208774,
+              -0.04212597179258139
+            ],
+            "fit_n": 24027
+          },
+          "selected": null,
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.2579999788342414,
+              "n": 6389,
+              "months": 21,
+              "symbols": 335,
+              "hit_pct": 35.39,
+              "base_pct": 35.39,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.3459592773953139,
+              "n": 4792,
+              "months": 21,
+              "symbols": 335,
+              "hit_pct": 35.39,
+              "base_pct": 35.39,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.36543045718476225,
+              "n": 3195,
+              "months": 21,
+              "symbols": 335,
+              "hit_pct": 32.96,
+              "base_pct": 35.39,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.38286436216109737,
+              "n": 1598,
+              "months": 21,
+              "symbols": 326,
+              "hit_pct": 26.1,
+              "base_pct": 35.39,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.40145074121219954,
+              "n": 639,
+              "months": 20,
+              "symbols": 235,
+              "hit_pct": 19.56,
+              "base_pct": 35.39,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 90,
+            "correct": 43,
+            "hit_pct": 47.78,
+            "coverage_pct": 2.43,
+            "months": 12,
+            "symbols": 34,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 52.22,
+            "same_cases_always_down_pct": 47.78
+          },
+          "prior": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          }
+        },
+        {
+          "year": 2023,
+          "fit_n": 25755,
+          "validation_n": 6520,
+          "test_n": 3848,
+          "last_fit_exit": "2020-12-01",
+          "last_validation_exit": "2022-12-01",
+          "model": {
+            "direction": "bearish",
+            "means": [
+              0.13772338963308084,
+              0.004480093739208103,
+              0.010072789893407624,
+              0.03420236191148728,
+              0.016196668890719454,
+              0.6322190512118313,
+              0.006657347908491894,
+              0.3537520594531266,
+              0.05788115572035682,
+              0.12057954760426458
+            ],
+            "scales": [
+              0.3199260716650141,
+              0.03682307445715298,
+              0.08599326676479858,
+              0.1427420896076851,
+              0.009966682289598466,
+              0.34255762448551086,
+              0.012114014299868919,
+              0.10098458715615541,
+              0.18617681012958054,
+              0.2522323742337141
+            ],
+            "bias": -0.5453224166889764,
+            "weights": [
+              0.02570846788743182,
+              -0.08147821201393801,
+              0.06654856541620162,
+              0.0377195474511195,
+              -0.12505300603068095,
+              0.0005148630193013983,
+              -0.009873930673005208,
+              0.07285019429310419,
+              -0.008915233645412359,
+              0.007934944925621613
+            ],
+            "fit_n": 25755
+          },
+          "selected": null,
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.12026261364129168,
+              "n": 6520,
+              "months": 21,
+              "symbols": 339,
+              "hit_pct": 47.29,
+              "base_pct": 47.29,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.3426195558811877,
+              "n": 4890,
+              "months": 21,
+              "symbols": 337,
+              "hit_pct": 43.97,
+              "base_pct": 47.29,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.3686608697713463,
+              "n": 3260,
+              "months": 21,
+              "symbols": 336,
+              "hit_pct": 42.94,
+              "base_pct": 47.29,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.389994341923779,
+              "n": 1630,
+              "months": 21,
+              "symbols": 313,
+              "hit_pct": 41.96,
+              "base_pct": 47.29,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.4063478299035354,
+              "n": 652,
+              "months": 21,
+              "symbols": 227,
+              "hit_pct": 43.1,
+              "base_pct": 47.29,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 132,
+            "correct": 59,
+            "hit_pct": 44.7,
+            "coverage_pct": 3.43,
+            "months": 12,
+            "symbols": 52,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 55.3,
+            "same_cases_always_down_pct": 44.7
+          },
+          "prior": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          }
+        },
+        {
+          "year": 2024,
+          "fit_n": 26605,
+          "validation_n": 6585,
+          "test_n": 3922,
+          "last_fit_exit": "2021-12-01",
+          "last_validation_exit": "2023-12-01",
+          "model": {
+            "direction": "bearish",
+            "means": [
+              0.13112173651569253,
+              0.004233720037399413,
+              0.009233400824067584,
+              0.03595991243319131,
+              0.016798947185693257,
+              0.6221287523718834,
+              0.0058509943107902,
+              0.35542265516287613,
+              0.06760379522628389,
+              0.12554614392655009
+            ],
+            "scales": [
+              0.31951716830545973,
+              0.03750037979137424,
+              0.08753830886200882,
+              0.14528463066536573,
+              0.010004847278812254,
+              0.33981631319533134,
+              0.011345246990816998,
+              0.09854220086393499,
+              0.1947661333198157,
+              0.2731428471759657
+            ],
+            "bias": -0.5368845908228898,
+            "weights": [
+              0.02164082222058032,
+              -0.0491267873523453,
+              0.06286321987808177,
+              0.009505564703157969,
+              -0.16762591603771476,
+              0.01623751117843724,
+              0.011203848367007555,
+              0.07373768017190603,
+              -0.057388853470153045,
+              0.09653041468595398
+            ],
+            "fit_n": 26605
+          },
+          "selected": {
+            "quantile": 0.9,
+            "threshold": 0.4039842443122348,
+            "n": 659,
+            "months": 21,
+            "symbols": 218,
+            "hit_pct": 65.1,
+            "base_pct": 54.03,
+            "qualifies": true
+          },
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.10842833520260536,
+              "n": 6585,
+              "months": 21,
+              "symbols": 342,
+              "hit_pct": 54.03,
+              "base_pct": 54.03,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.324665573427677,
+              "n": 4939,
+              "months": 21,
+              "symbols": 341,
+              "hit_pct": 55.44,
+              "base_pct": 54.03,
+              "qualifies": true
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.3545013471510706,
+              "n": 3293,
+              "months": 21,
+              "symbols": 335,
+              "hit_pct": 57.85,
+              "base_pct": 54.03,
+              "qualifies": true
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.38255081995950074,
+              "n": 1647,
+              "months": 21,
+              "symbols": 308,
+              "hit_pct": 62.78,
+              "base_pct": 54.03,
+              "qualifies": true
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.4039842443122348,
+              "n": 659,
+              "months": 21,
+              "symbols": 218,
+              "hit_pct": 65.1,
+              "base_pct": 54.03,
+              "qualifies": true
+            }
+          ],
+          "adaptive": {
+            "n": 1341,
+            "correct": 556,
+            "hit_pct": 41.46,
+            "coverage_pct": 34.19,
+            "months": 12,
+            "symbols": 296,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 58.39,
+            "same_cases_always_down_pct": 41.46
+          },
+          "asset_local": {
+            "n": 172,
+            "correct": 83,
+            "hit_pct": 48.26,
+            "coverage_pct": 4.39,
+            "months": 12,
+            "symbols": 51,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 51.74,
+            "same_cases_always_down_pct": 48.26
+          },
+          "prior": {
+            "n": 3922,
+            "correct": 1629,
+            "hit_pct": 41.53,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 343,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 58.41,
+            "same_cases_always_down_pct": 41.53
+          }
+        },
+        {
+          "year": 2025,
+          "fit_n": 27284,
+          "validation_n": 6789,
+          "test_n": 3876,
+          "last_fit_exit": "2022-12-01",
+          "last_validation_exit": "2024-12-03",
+          "model": {
+            "direction": "bearish",
+            "means": [
+              0.10606477422665292,
+              0.0029270439778236405,
+              0.00526397367379924,
+              0.026379569284301213,
+              0.017643334459618694,
+              0.5955227152576484,
+              0.005134293103499638,
+              0.35879317971957597,
+              0.052001401142415485,
+              0.11037509639114479
+            ],
+            "scales": [
+              0.3249794586854037,
+              0.040340314675359125,
+              0.09101794148932767,
+              0.1512866655895894,
+              0.010089939903057404,
+              0.34165999951424336,
+              0.010558987106371973,
+              0.09659226397321216,
+              0.20481065263322817,
+              0.28287455234554626
+            ],
+            "bias": -0.388348766070835,
+            "weights": [
+              -0.012526865845493758,
+              -0.043889939889546536,
+              0.07006821128388242,
+              -0.009807333597747134,
+              -0.1361017242850161,
+              0.006842959180209545,
+              -0.0026077586204776753,
+              0.05065358941380266,
+              -0.0836800169907524,
+              0.09710884259340351
+            ],
+            "fit_n": 27284
+          },
+          "selected": null,
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.20049825662656615,
+              "n": 6789,
+              "months": 21,
+              "symbols": 342,
+              "hit_pct": 40.36,
+              "base_pct": 40.36,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.39223921142387763,
+              "n": 5092,
+              "months": 21,
+              "symbols": 341,
+              "hit_pct": 39.91,
+              "base_pct": 40.36,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.4139159141982662,
+              "n": 3395,
+              "months": 21,
+              "symbols": 341,
+              "hit_pct": 39.94,
+              "base_pct": 40.36,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.4299834161785094,
+              "n": 1698,
+              "months": 21,
+              "symbols": 320,
+              "hit_pct": 37.63,
+              "base_pct": 40.36,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.44177608330068346,
+              "n": 679,
+              "months": 21,
+              "symbols": 249,
+              "hit_pct": 33.73,
+              "base_pct": 40.36,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 186,
+            "correct": 86,
+            "hit_pct": 46.24,
+            "coverage_pct": 4.8,
+            "months": 12,
+            "symbols": 52,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 53.76,
+            "same_cases_always_down_pct": 46.24
+          },
+          "prior": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          }
+        },
+        {
+          "year": 2026,
+          "fit_n": 27871,
+          "validation_n": 6811,
+          "test_n": 2307,
+          "last_fit_exit": "2023-12-01",
+          "last_validation_exit": "2025-12-02",
+          "model": {
+            "direction": "bearish",
+            "means": [
+              0.10471734060492978,
+              0.004455780123174727,
+              0.006174746259856295,
+              0.02699653239277394,
+              0.0180896413800205,
+              0.5964342661145074,
+              0.0047078273233007,
+              0.3669348908707487,
+              0.04794102213363649,
+              0.0900477709160649
+            ],
+            "scales": [
+              0.324559860586484,
+              0.0410505433480943,
+              0.09238600145231217,
+              0.1531797279033749,
+              0.010113495360244532,
+              0.33947383534917913,
+              0.01005461083731077,
+              0.09422004748652293,
+              0.20938472888032858,
+              0.29599494564035705
+            ],
+            "bias": -0.38787377762517106,
+            "weights": [
+              0.006883216837650473,
+              -0.041910325530921944,
+              0.06765567333147025,
+              0.00028425440746838093,
+              -0.1368444198746602,
+              0.0017753723933189732,
+              -0.008244460233871428,
+              0.08036765117949665,
+              -0.0771475115038223,
+              0.09600618026676884
+            ],
+            "fit_n": 27871
+          },
+          "selected": null,
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.2056584386894064,
+              "n": 6811,
+              "months": 21,
+              "symbols": 343,
+              "hit_pct": 43.56,
+              "base_pct": 43.56,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.39670629271570296,
+              "n": 5109,
+              "months": 21,
+              "symbols": 342,
+              "hit_pct": 43.75,
+              "base_pct": 43.56,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.4200484075139981,
+              "n": 3406,
+              "months": 21,
+              "symbols": 334,
+              "hit_pct": 44.74,
+              "base_pct": 43.56,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.43989454771173664,
+              "n": 1703,
+              "months": 21,
+              "symbols": 304,
+              "hit_pct": 44.27,
+              "base_pct": 43.56,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.45457319286800696,
+              "n": 682,
+              "months": 21,
+              "symbols": 217,
+              "hit_pct": 41.06,
+              "base_pct": 43.56,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 116,
+            "correct": 75,
+            "hit_pct": 64.66,
+            "coverage_pct": 5.03,
+            "months": 7,
+            "symbols": 39,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 35.34,
+            "same_cases_always_down_pct": 64.66
+          },
+          "prior": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          }
+        }
+      ],
+      "received": 346,
+      "requested": 361,
+      "skipped": {
+        "missing_outcome": 1032,
+        "short_window": 109,
+        "insufficient_long_history": 350
+      }
+    },
+    "crypto": {
+      "test_n": 1585,
+      "adaptive": {
+        "n": 0,
+        "correct": 0,
+        "hit_pct": null,
+        "coverage_pct": 0.0,
+        "months": 0,
+        "symbols": 0,
+        "bootstrap_90_pct_interval": null,
+        "meets_51_pct_observed": null
+      },
+      "asset_local_same_eligible": {
+        "n": 491,
+        "correct": 223,
+        "hit_pct": 45.42,
+        "coverage_pct": 30.98,
+        "months": 77,
+        "symbols": 25,
+        "bootstrap_90_pct_interval": [
+          36.71,
+          56.32
+        ],
+        "meets_51_pct_observed": false,
+        "lower_bound_above_51_pct": false,
+        "same_cases_always_up_pct": 45.42,
+        "same_cases_always_down_pct": 54.38
+      },
+      "prior_same_eligible": {
+        "n": 391,
+        "correct": 135,
+        "hit_pct": 34.53,
+        "coverage_pct": 24.67,
+        "months": 24,
+        "symbols": 26,
+        "bootstrap_90_pct_interval": [
+          20.46,
+          42.57
+        ],
+        "meets_51_pct_observed": false,
+        "lower_bound_above_51_pct": false,
+        "same_cases_always_up_pct": 34.53,
+        "same_cases_always_down_pct": 65.47
+      },
+      "abstained": 1585,
+      "folds": [
+        {
+          "year": 2020,
+          "fit_n": 0,
+          "validation_n": 21,
+          "test_n": 21,
+          "last_fit_exit": null,
+          "last_validation_exit": "2019-12-01",
+          "model": null,
+          "selected": null,
+          "diagnostics": [],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 15,
+            "correct": 12,
+            "hit_pct": 80.0,
+            "coverage_pct": 71.43,
+            "months": 10,
+            "symbols": 2,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 80.0,
+            "same_cases_always_down_pct": 20.0
+          },
+          "prior": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          }
+        },
+        {
+          "year": 2021,
+          "fit_n": 4,
+          "validation_n": 34,
+          "test_n": 163,
+          "last_fit_exit": "2018-12-01",
+          "last_validation_exit": "2020-12-01",
+          "model": null,
+          "selected": null,
+          "diagnostics": [],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 111,
+            "correct": 45,
+            "hit_pct": 40.54,
+            "coverage_pct": 68.1,
+            "months": 12,
+            "symbols": 21,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 40.54,
+            "same_cases_always_down_pct": 59.46
+          },
+          "prior": {
+            "n": 161,
+            "correct": 63,
+            "hit_pct": 39.13,
+            "coverage_pct": 98.77,
+            "months": 12,
+            "symbols": 23,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 39.13,
+            "same_cases_always_down_pct": 60.87
+          }
+        },
+        {
+          "year": 2022,
+          "fit_n": 21,
+          "validation_n": 138,
+          "test_n": 230,
+          "last_fit_exit": "2019-12-01",
+          "last_validation_exit": "2021-12-01",
+          "model": null,
+          "selected": null,
+          "diagnostics": [],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 101,
+            "correct": 32,
+            "hit_pct": 31.68,
+            "coverage_pct": 43.91,
+            "months": 12,
+            "symbols": 21,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 31.68,
+            "same_cases_always_down_pct": 68.32
+          },
+          "prior": {
+            "n": 230,
+            "correct": 72,
+            "hit_pct": 31.3,
+            "coverage_pct": 100.0,
+            "months": 12,
+            "symbols": 26,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 31.3,
+            "same_cases_always_down_pct": 68.7
+          }
+        },
+        {
+          "year": 2023,
+          "fit_n": 42,
+          "validation_n": 328,
+          "test_n": 260,
+          "last_fit_exit": "2020-12-01",
+          "last_validation_exit": "2022-12-01",
+          "model": null,
+          "selected": null,
+          "diagnostics": [],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 77,
+            "correct": 40,
+            "hit_pct": 51.95,
+            "coverage_pct": 29.62,
+            "months": 12,
+            "symbols": 13,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 51.95,
+            "same_cases_always_down_pct": 48.05
+          },
+          "prior": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          }
+        },
+        {
+          "year": 2024,
+          "fit_n": 164,
+          "validation_n": 429,
+          "test_n": 344,
+          "last_fit_exit": "2021-12-01",
+          "last_validation_exit": "2023-12-01",
+          "model": null,
+          "selected": null,
+          "diagnostics": [],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 82,
+            "correct": 45,
+            "hit_pct": 54.88,
+            "coverage_pct": 23.84,
+            "months": 12,
+            "symbols": 15,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": true,
+            "same_cases_always_up_pct": 54.88,
+            "same_cases_always_down_pct": 45.12
+          },
+          "prior": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          }
+        },
+        {
+          "year": 2025,
+          "fit_n": 375,
+          "validation_n": 515,
+          "test_n": 325,
+          "last_fit_exit": "2022-12-01",
+          "last_validation_exit": "2024-12-01",
+          "model": {
+            "direction": "bullish",
+            "means": [
+              -0.030078933333333314,
+              0.040074539239271845,
+              -0.005838598596991074,
+              -0.008178379880303227,
+              0.06081811548896464,
+              0.39397857092416505,
+              0.0007011527038884147,
+              0.5961034519405262,
+              0.0806181282480474,
+              0.5540124602787463
+            ],
+            "scales": [
+              0.4259550931685117,
+              0.13395364572487198,
+              0.30459254553898885,
+              0.7089435311647022,
+              0.02684409340311731,
+              0.3502393529997928,
+              0.005369322390429967,
+              0.12102614024764988,
+              1.0294361354926704,
+              1.430860216321575
+            ],
+            "bias": -0.6336591323671391,
+            "weights": [
+              0.040562049053657005,
+              -0.33773825142244096,
+              -0.16787991246561046,
+              -0.18008195959039938,
+              0.19087978007322975,
+              0.09197315805642867,
+              0.06598709715423931,
+              0.050901134741550724,
+              0.21539176464414928,
+              -0.053156820564139506
+            ],
+            "fit_n": 375
+          },
+          "selected": null,
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.11486315434025167,
+              "n": 515,
+              "months": 21,
+              "symbols": 36,
+              "hit_pct": 49.9,
+              "base_pct": 49.9,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.29467351935219194,
+              "n": 387,
+              "months": 21,
+              "symbols": 36,
+              "hit_pct": 49.1,
+              "base_pct": 49.9,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.32406738713229266,
+              "n": 258,
+              "months": 21,
+              "symbols": 36,
+              "hit_pct": 46.12,
+              "base_pct": 49.9,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.34922335912855623,
+              "n": 129,
+              "months": 19,
+              "symbols": 34,
+              "hit_pct": 42.64,
+              "base_pct": 49.9,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.39205714208834985,
+              "n": 52,
+              "months": 16,
+              "symbols": 26,
+              "hit_pct": 38.46,
+              "base_pct": 49.9,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 68,
+            "correct": 33,
+            "hit_pct": 48.53,
+            "coverage_pct": 20.92,
+            "months": 12,
+            "symbols": 14,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 48.53,
+            "same_cases_always_down_pct": 50.0
+          },
+          "prior": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          }
+        },
+        {
+          "year": 2026,
+          "fit_n": 639,
+          "validation_n": 570,
+          "test_n": 242,
+          "last_fit_exit": "2023-12-01",
+          "last_validation_exit": "2025-12-01",
+          "model": {
+            "direction": "bullish",
+            "means": [
+              -0.05179467918622843,
+              0.031287136065159094,
+              0.018527981897581047,
+              -0.013948647570584935,
+              0.054337385444593114,
+              0.39503174828628684,
+              0.0012323426639808566,
+              0.5561408463621313,
+              -0.01778208158507248,
+              0.038029933649209605
+            ],
+            "scales": [
+              0.4022408940835047,
+              0.11574470746013861,
+              0.42608980622121495,
+              0.6462713968958126,
+              0.0443619290329634,
+              0.3424348452341329,
+              0.008660875793487366,
+              0.12327116444347998,
+              0.9045810232710554,
+              1.3786942971807343
+            ],
+            "bias": -0.409136124893085,
+            "weights": [
+              -0.025233602062159036,
+              -0.327579834873624,
+              -0.2560286501007446,
+              -0.11266869835144708,
+              0.05665722592944533,
+              0.015514840680058704,
+              0.20165940982174957,
+              -0.08872685936395244,
+              0.2977181460053982,
+              -0.172404590925898
+            ],
+            "fit_n": 639
+          },
+          "selected": null,
+          "diagnostics": [
+            {
+              "quantile": 0.0,
+              "threshold": 0.08112462720273186,
+              "n": 570,
+              "months": 21,
+              "symbols": 37,
+              "hit_pct": 44.91,
+              "base_pct": 44.91,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.25,
+              "threshold": 0.40053695847608306,
+              "n": 428,
+              "months": 21,
+              "symbols": 37,
+              "hit_pct": 46.73,
+              "base_pct": 44.91,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.5,
+              "threshold": 0.447841032241746,
+              "n": 285,
+              "months": 19,
+              "symbols": 36,
+              "hit_pct": 37.54,
+              "base_pct": 44.91,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.75,
+              "threshold": 0.4994813202864634,
+              "n": 143,
+              "months": 18,
+              "symbols": 33,
+              "hit_pct": 28.67,
+              "base_pct": 44.91,
+              "qualifies": false
+            },
+            {
+              "quantile": 0.9,
+              "threshold": 0.5522444513873216,
+              "n": 57,
+              "months": 16,
+              "symbols": 19,
+              "hit_pct": 28.07,
+              "base_pct": 44.91,
+              "qualifies": false
+            }
+          ],
+          "adaptive": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          },
+          "asset_local": {
+            "n": 37,
+            "correct": 16,
+            "hit_pct": 43.24,
+            "coverage_pct": 15.29,
+            "months": 7,
+            "symbols": 9,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": false,
+            "same_cases_always_up_pct": 43.24,
+            "same_cases_always_down_pct": 56.76
+          },
+          "prior": {
+            "n": 0,
+            "correct": 0,
+            "hit_pct": null,
+            "coverage_pct": 0.0,
+            "months": 0,
+            "symbols": 0,
+            "bootstrap_90_pct_interval": null,
+            "meets_51_pct_observed": null
+          }
+        }
+      ],
+      "received": 37,
+      "requested": 43,
+      "skipped": {
+        "short_window": 89,
+        "insufficient_long_history": 393,
+        "missing_outcome": 111
+      }
+    }
+  }
+}

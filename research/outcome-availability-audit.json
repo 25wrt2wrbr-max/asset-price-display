@@ -1,0 +1,2044 @@
+{
+  "as_of_utc_date": "2026-10-30",
+  "method": "Reconstruct monthly signals with valid three-month price windows and six/twelve-month references even if the three-month outcome is not yet observable. Recompute the selected local+peer+contrarian rule using only completed historical outcomes and prior-local-date peer data. Classify exit outcomes as observed, not yet due, within the ten-day exit grace, matured missing, or invalid exit. Report calls on unresolved cases without assigning correctness. Verify observed cases match the original builder. Counts cover signals from 2020 through the saved dataset's collection date; local-history eligibility remains required.",
+  "limitations": [
+    "Retrospective reconstruction and present-day selected universe do not recover delisted or uncollected assets, and are not point-in-time identity or split verification.",
+    "Saved data can contain gaps or stale histories. UTC collection date is used as the global as-of date; latest completed close and local day can differ by timezone. Some unresolved data may reflect vendor or corporate-action issues.",
+    "The gate and local historical features still depend on observable completed outcomes, so the audit exposes but does not remove outcome-selection bias. Peer prior local dates do not prove time-zone availability; Yahoo crypto is not Binance. Rules were selected after inspecting years; no future accuracy claim."
+  ],
+  "markets": {
+    "currency": {
+      "observed_reconstruction_matches": true,
+      "input_skipped": {},
+      "statuses": {
+        "observed": {
+          "input_valid": 3318,
+          "local_eligible": 3121,
+          "rule_calls": 113,
+          "observed_correct": 67
+        },
+        "not_due": {
+          "input_valid": 126,
+          "local_eligible": 121,
+          "rule_calls": 16
+        }
+      },
+      "monthly": {
+        "2020-01": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 42,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-02": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 39,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-03": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 38,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-04": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-05": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 34,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-06": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 31,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-07": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 38,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-08": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-09": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-10": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 32,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-11": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-12": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-01": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 42,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-02": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 39,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-03": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 39,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-04": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 39,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-05": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 35,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-06": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 42,
+            "rule_calls": 3,
+            "observed_correct": 2
+          }
+        },
+        "2021-07": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 39,
+            "rule_calls": 2,
+            "observed_correct": 0
+          }
+        },
+        "2021-08": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 3,
+            "observed_correct": 2
+          }
+        },
+        "2021-09": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 36,
+            "rule_calls": 5,
+            "observed_correct": 2
+          }
+        },
+        "2021-10": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 36,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-11": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 39,
+            "rule_calls": 5,
+            "observed_correct": 5
+          }
+        },
+        "2021-12": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 37,
+            "rule_calls": 1,
+            "observed_correct": 0
+          }
+        },
+        "2022-01": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 2,
+            "observed_correct": 0
+          }
+        },
+        "2022-02": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 39,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2022-03": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 37,
+            "rule_calls": 5,
+            "observed_correct": 2
+          }
+        },
+        "2022-04": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 38,
+            "rule_calls": 4,
+            "observed_correct": 2
+          }
+        },
+        "2022-05": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 3,
+            "observed_correct": 1
+          }
+        },
+        "2022-06": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 36,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2022-07": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-08": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 39,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-09": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-10": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 42,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-11": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-12": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 5,
+            "observed_correct": 2
+          }
+        },
+        "2023-01": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 4,
+            "observed_correct": 2
+          }
+        },
+        "2023-02": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 5,
+            "observed_correct": 4
+          }
+        },
+        "2023-03": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2023-04": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 38,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-05": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-06": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 42,
+            "rule_calls": 1,
+            "observed_correct": 0
+          }
+        },
+        "2023-07": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-08": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 38,
+            "rule_calls": 1,
+            "observed_correct": 1
+          }
+        },
+        "2023-09": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-10": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 1,
+            "observed_correct": 1
+          }
+        },
+        "2023-11": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 1,
+            "observed_correct": 1
+          }
+        },
+        "2023-12": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 5,
+            "observed_correct": 5
+          }
+        },
+        "2024-01": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 38,
+            "rule_calls": 5,
+            "observed_correct": 5
+          }
+        },
+        "2024-02": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 39,
+            "rule_calls": 1,
+            "observed_correct": 1
+          }
+        },
+        "2024-03": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2024-04": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2024-05": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 42,
+            "rule_calls": 4,
+            "observed_correct": 4
+          }
+        },
+        "2024-06": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 1,
+            "observed_correct": 1
+          }
+        },
+        "2024-07": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 2,
+            "observed_correct": 0
+          }
+        },
+        "2024-08": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 42,
+            "rule_calls": 3,
+            "observed_correct": 0
+          }
+        },
+        "2024-09": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 42,
+            "rule_calls": 6,
+            "observed_correct": 5
+          }
+        },
+        "2024-10": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 6,
+            "observed_correct": 5
+          }
+        },
+        "2024-11": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 38,
+            "rule_calls": 2,
+            "observed_correct": 2
+          }
+        },
+        "2024-12": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 36,
+            "rule_calls": 1,
+            "observed_correct": 0
+          }
+        },
+        "2025-01": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 1,
+            "observed_correct": 1
+          }
+        },
+        "2025-02": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 39,
+            "rule_calls": 2,
+            "observed_correct": 2
+          }
+        },
+        "2025-03": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 1,
+            "observed_correct": 1
+          }
+        },
+        "2025-04": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 37,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2025-05": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 39,
+            "rule_calls": 4,
+            "observed_correct": 1
+          }
+        },
+        "2025-06": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2025-07": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 42,
+            "rule_calls": 4,
+            "observed_correct": 2
+          }
+        },
+        "2025-08": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 37,
+            "rule_calls": 2,
+            "observed_correct": 0
+          }
+        },
+        "2025-09": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 42,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2025-10": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 42,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2025-11": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2025-12": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2026-01": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 39,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2026-02": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 39,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2026-03": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2026-04": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 42,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2026-05": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 42,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2026-06": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2026-07": {
+          "observed": {
+            "input_valid": 42,
+            "local_eligible": 40,
+            "rule_calls": 2,
+            "observed_correct": 0
+          }
+        },
+        "2026-08": {
+          "not_due": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 4
+          }
+        },
+        "2026-09": {
+          "not_due": {
+            "input_valid": 42,
+            "local_eligible": 39,
+            "rule_calls": 6
+          }
+        },
+        "2026-10": {
+          "not_due": {
+            "input_valid": 42,
+            "local_eligible": 41,
+            "rule_calls": 6
+          }
+        }
+      },
+      "received": 42,
+      "requested": 42,
+      "excluded": []
+    },
+    "us_equity": {
+      "observed_reconstruction_matches": true,
+      "input_skipped": {
+        "short_window": 9,
+        "insufficient_long_history": 37
+      },
+      "statuses": {
+        "observed": {
+          "input_valid": 26971,
+          "local_eligible": 24968,
+          "rule_calls": 252,
+          "observed_correct": 123
+        },
+        "not_due": {
+          "input_valid": 1026,
+          "local_eligible": 983,
+          "rule_calls": 24
+        }
+      },
+      "monthly": {
+        "2020-01": {
+          "observed": {
+            "input_valid": 336,
+            "local_eligible": 310,
+            "rule_calls": 4,
+            "observed_correct": 3
+          }
+        },
+        "2020-02": {
+          "observed": {
+            "input_valid": 336,
+            "local_eligible": 290,
+            "rule_calls": 5,
+            "observed_correct": 5
+          }
+        },
+        "2020-03": {
+          "observed": {
+            "input_valid": 336,
+            "local_eligible": 289,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2020-04": {
+          "observed": {
+            "input_valid": 338,
+            "local_eligible": 323,
+            "rule_calls": 3,
+            "observed_correct": 0
+          }
+        },
+        "2020-05": {
+          "observed": {
+            "input_valid": 338,
+            "local_eligible": 237,
+            "rule_calls": 9,
+            "observed_correct": 4
+          }
+        },
+        "2020-06": {
+          "observed": {
+            "input_valid": 339,
+            "local_eligible": 286,
+            "rule_calls": 3,
+            "observed_correct": 3
+          }
+        },
+        "2020-07": {
+          "observed": {
+            "input_valid": 340,
+            "local_eligible": 291,
+            "rule_calls": 3,
+            "observed_correct": 1
+          }
+        },
+        "2020-08": {
+          "observed": {
+            "input_valid": 340,
+            "local_eligible": 303,
+            "rule_calls": 5,
+            "observed_correct": 4
+          }
+        },
+        "2020-09": {
+          "observed": {
+            "input_valid": 340,
+            "local_eligible": 321,
+            "rule_calls": 7,
+            "observed_correct": 1
+          }
+        },
+        "2020-10": {
+          "observed": {
+            "input_valid": 340,
+            "local_eligible": 308,
+            "rule_calls": 7,
+            "observed_correct": 0
+          }
+        },
+        "2020-11": {
+          "observed": {
+            "input_valid": 340,
+            "local_eligible": 309,
+            "rule_calls": 6,
+            "observed_correct": 0
+          }
+        },
+        "2020-12": {
+          "observed": {
+            "input_valid": 340,
+            "local_eligible": 311,
+            "rule_calls": 2,
+            "observed_correct": 0
+          }
+        },
+        "2021-01": {
+          "observed": {
+            "input_valid": 340,
+            "local_eligible": 314,
+            "rule_calls": 3,
+            "observed_correct": 0
+          }
+        },
+        "2021-02": {
+          "observed": {
+            "input_valid": 340,
+            "local_eligible": 304,
+            "rule_calls": 2,
+            "observed_correct": 0
+          }
+        },
+        "2021-03": {
+          "observed": {
+            "input_valid": 340,
+            "local_eligible": 306,
+            "rule_calls": 1,
+            "observed_correct": 0
+          }
+        },
+        "2021-04": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 304,
+            "rule_calls": 1,
+            "observed_correct": 0
+          }
+        },
+        "2021-05": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 319,
+            "rule_calls": 1,
+            "observed_correct": 1
+          }
+        },
+        "2021-06": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 322,
+            "rule_calls": 2,
+            "observed_correct": 2
+          }
+        },
+        "2021-07": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 306,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-08": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 319,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2021-09": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 317,
+            "rule_calls": 6,
+            "observed_correct": 4
+          }
+        },
+        "2021-10": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 311,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2021-11": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 321,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-12": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 306,
+            "rule_calls": 1,
+            "observed_correct": 0
+          }
+        },
+        "2022-01": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 308,
+            "rule_calls": 4,
+            "observed_correct": 3
+          }
+        },
+        "2022-02": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 313,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-03": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 311,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-04": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 292,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-05": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 308,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2022-06": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 311,
+            "rule_calls": 2,
+            "observed_correct": 2
+          }
+        },
+        "2022-07": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 311,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2022-08": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 305,
+            "rule_calls": 3,
+            "observed_correct": 1
+          }
+        },
+        "2022-09": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 312,
+            "rule_calls": 6,
+            "observed_correct": 3
+          }
+        },
+        "2022-10": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 309,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-11": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 306,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-12": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 321,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-01": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 319,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-02": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 326,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-03": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 320,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-04": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 311,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-05": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 313,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-06": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 317,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-07": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 317,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-08": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 330,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-09": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 325,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-10": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 328,
+            "rule_calls": 3,
+            "observed_correct": 0
+          }
+        },
+        "2023-11": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 331,
+            "rule_calls": 4,
+            "observed_correct": 1
+          }
+        },
+        "2023-12": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 311,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2024-01": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 335,
+            "rule_calls": 7,
+            "observed_correct": 4
+          }
+        },
+        "2024-02": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 334,
+            "rule_calls": 3,
+            "observed_correct": 1
+          }
+        },
+        "2024-03": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 326,
+            "rule_calls": 6,
+            "observed_correct": 3
+          }
+        },
+        "2024-04": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 334,
+            "rule_calls": 9,
+            "observed_correct": 5
+          }
+        },
+        "2024-05": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 326,
+            "rule_calls": 3,
+            "observed_correct": 2
+          }
+        },
+        "2024-06": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 321,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2024-07": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 323,
+            "rule_calls": 5,
+            "observed_correct": 1
+          }
+        },
+        "2024-08": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 319,
+            "rule_calls": 3,
+            "observed_correct": 3
+          }
+        },
+        "2024-09": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 323,
+            "rule_calls": 5,
+            "observed_correct": 3
+          }
+        },
+        "2024-10": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 327,
+            "rule_calls": 4,
+            "observed_correct": 4
+          }
+        },
+        "2024-11": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 318,
+            "rule_calls": 5,
+            "observed_correct": 4
+          }
+        },
+        "2024-12": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 334,
+            "rule_calls": 6,
+            "observed_correct": 6
+          }
+        },
+        "2025-01": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 318,
+            "rule_calls": 3,
+            "observed_correct": 3
+          }
+        },
+        "2025-02": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 312,
+            "rule_calls": 6,
+            "observed_correct": 5
+          }
+        },
+        "2025-03": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 321,
+            "rule_calls": 4,
+            "observed_correct": 3
+          }
+        },
+        "2025-04": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 328,
+            "rule_calls": 5,
+            "observed_correct": 1
+          }
+        },
+        "2025-05": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 307,
+            "rule_calls": 6,
+            "observed_correct": 1
+          }
+        },
+        "2025-06": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 320,
+            "rule_calls": 9,
+            "observed_correct": 2
+          }
+        },
+        "2025-07": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 329,
+            "rule_calls": 6,
+            "observed_correct": 3
+          }
+        },
+        "2025-08": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 328,
+            "rule_calls": 6,
+            "observed_correct": 1
+          }
+        },
+        "2025-09": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 319,
+            "rule_calls": 5,
+            "observed_correct": 5
+          }
+        },
+        "2025-10": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 329,
+            "rule_calls": 4,
+            "observed_correct": 3
+          }
+        },
+        "2025-11": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 334,
+            "rule_calls": 5,
+            "observed_correct": 2
+          }
+        },
+        "2025-12": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 321,
+            "rule_calls": 7,
+            "observed_correct": 2
+          }
+        },
+        "2026-01": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 322,
+            "rule_calls": 5,
+            "observed_correct": 2
+          }
+        },
+        "2026-02": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 333,
+            "rule_calls": 2,
+            "observed_correct": 2
+          }
+        },
+        "2026-03": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 329,
+            "rule_calls": 1,
+            "observed_correct": 1
+          }
+        },
+        "2026-04": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 331,
+            "rule_calls": 1,
+            "observed_correct": 0
+          }
+        },
+        "2026-05": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 328,
+            "rule_calls": 7,
+            "observed_correct": 2
+          }
+        },
+        "2026-06": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 326,
+            "rule_calls": 5,
+            "observed_correct": 1
+          }
+        },
+        "2026-07": {
+          "observed": {
+            "input_valid": 342,
+            "local_eligible": 331,
+            "rule_calls": 4,
+            "observed_correct": 4
+          }
+        },
+        "2026-08": {
+          "not_due": {
+            "input_valid": 342,
+            "local_eligible": 323,
+            "rule_calls": 10
+          }
+        },
+        "2026-09": {
+          "not_due": {
+            "input_valid": 342,
+            "local_eligible": 327,
+            "rule_calls": 8
+          }
+        },
+        "2026-10": {
+          "not_due": {
+            "input_valid": 342,
+            "local_eligible": 333,
+            "rule_calls": 6
+          }
+        }
+      },
+      "received": 345,
+      "requested": 360,
+      "excluded": [
+        "PARA"
+      ]
+    },
+    "crypto": {
+      "observed_reconstruction_matches": true,
+      "input_skipped": {
+        "short_window": 27,
+        "insufficient_long_history": 122
+      },
+      "statuses": {
+        "observed": {
+          "input_valid": 2667,
+          "local_eligible": 1585,
+          "rule_calls": 97,
+          "observed_correct": 53
+        },
+        "not_due": {
+          "input_valid": 111,
+          "local_eligible": 97,
+          "rule_calls": 6
+        }
+      },
+      "monthly": {
+        "2020-01": {
+          "observed": {
+            "input_valid": 24,
+            "local_eligible": 2,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-02": {
+          "observed": {
+            "input_valid": 24,
+            "local_eligible": 2,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-03": {
+          "observed": {
+            "input_valid": 24,
+            "local_eligible": 1,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-04": {
+          "observed": {
+            "input_valid": 25,
+            "local_eligible": 1,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-05": {
+          "observed": {
+            "input_valid": 25,
+            "local_eligible": 2,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-06": {
+          "observed": {
+            "input_valid": 25,
+            "local_eligible": 2,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-07": {
+          "observed": {
+            "input_valid": 26,
+            "local_eligible": 2,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-08": {
+          "observed": {
+            "input_valid": 26,
+            "local_eligible": 2,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-09": {
+          "observed": {
+            "input_valid": 26,
+            "local_eligible": 2,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-10": {
+          "observed": {
+            "input_valid": 27,
+            "local_eligible": 2,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-11": {
+          "observed": {
+            "input_valid": 27,
+            "local_eligible": 1,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2020-12": {
+          "observed": {
+            "input_valid": 27,
+            "local_eligible": 2,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-01": {
+          "observed": {
+            "input_valid": 27,
+            "local_eligible": 2,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-02": {
+          "observed": {
+            "input_valid": 27,
+            "local_eligible": 1,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-03": {
+          "observed": {
+            "input_valid": 27,
+            "local_eligible": 11,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-04": {
+          "observed": {
+            "input_valid": 27,
+            "local_eligible": 21,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-05": {
+          "observed": {
+            "input_valid": 28,
+            "local_eligible": 18,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-06": {
+          "observed": {
+            "input_valid": 28,
+            "local_eligible": 16,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-07": {
+          "observed": {
+            "input_valid": 28,
+            "local_eligible": 21,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-08": {
+          "observed": {
+            "input_valid": 28,
+            "local_eligible": 5,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-09": {
+          "observed": {
+            "input_valid": 30,
+            "local_eligible": 22,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-10": {
+          "observed": {
+            "input_valid": 32,
+            "local_eligible": 16,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-11": {
+          "observed": {
+            "input_valid": 34,
+            "local_eligible": 15,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2021-12": {
+          "observed": {
+            "input_valid": 34,
+            "local_eligible": 15,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-01": {
+          "observed": {
+            "input_valid": 34,
+            "local_eligible": 15,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-02": {
+          "observed": {
+            "input_valid": 34,
+            "local_eligible": 22,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-03": {
+          "observed": {
+            "input_valid": 34,
+            "local_eligible": 21,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-04": {
+          "observed": {
+            "input_valid": 34,
+            "local_eligible": 17,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-05": {
+          "observed": {
+            "input_valid": 35,
+            "local_eligible": 22,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-06": {
+          "observed": {
+            "input_valid": 36,
+            "local_eligible": 18,
+            "rule_calls": 3,
+            "observed_correct": 1
+          }
+        },
+        "2022-07": {
+          "observed": {
+            "input_valid": 36,
+            "local_eligible": 23,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2022-08": {
+          "observed": {
+            "input_valid": 36,
+            "local_eligible": 11,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-09": {
+          "observed": {
+            "input_valid": 36,
+            "local_eligible": 16,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2022-10": {
+          "observed": {
+            "input_valid": 36,
+            "local_eligible": 24,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2022-11": {
+          "observed": {
+            "input_valid": 36,
+            "local_eligible": 16,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2022-12": {
+          "observed": {
+            "input_valid": 36,
+            "local_eligible": 25,
+            "rule_calls": 4,
+            "observed_correct": 3
+          }
+        },
+        "2023-01": {
+          "observed": {
+            "input_valid": 36,
+            "local_eligible": 24,
+            "rule_calls": 2,
+            "observed_correct": 2
+          }
+        },
+        "2023-02": {
+          "observed": {
+            "input_valid": 36,
+            "local_eligible": 22,
+            "rule_calls": 3,
+            "observed_correct": 1
+          }
+        },
+        "2023-03": {
+          "observed": {
+            "input_valid": 36,
+            "local_eligible": 19,
+            "rule_calls": 1,
+            "observed_correct": 0
+          }
+        },
+        "2023-04": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 17,
+            "rule_calls": 1,
+            "observed_correct": 1
+          }
+        },
+        "2023-05": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 21,
+            "rule_calls": 3,
+            "observed_correct": 2
+          }
+        },
+        "2023-06": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 24,
+            "rule_calls": 4,
+            "observed_correct": 1
+          }
+        },
+        "2023-07": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 23,
+            "rule_calls": 4,
+            "observed_correct": 0
+          }
+        },
+        "2023-08": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 22,
+            "rule_calls": 4,
+            "observed_correct": 2
+          }
+        },
+        "2023-09": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 27,
+            "rule_calls": 1,
+            "observed_correct": 1
+          }
+        },
+        "2023-10": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 24,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2023-11": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 25,
+            "rule_calls": 2,
+            "observed_correct": 2
+          }
+        },
+        "2023-12": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 12,
+            "rule_calls": 1,
+            "observed_correct": 1
+          }
+        },
+        "2024-01": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 28,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2024-02": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 26,
+            "rule_calls": 1,
+            "observed_correct": 0
+          }
+        },
+        "2024-03": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 31,
+            "rule_calls": 1,
+            "observed_correct": 1
+          }
+        },
+        "2024-04": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 15,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2024-05": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 27,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2024-06": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 30,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2024-07": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 32,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2024-08": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 32,
+            "rule_calls": 3,
+            "observed_correct": 1
+          }
+        },
+        "2024-09": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 34,
+            "rule_calls": 2,
+            "observed_correct": 2
+          }
+        },
+        "2024-10": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 29,
+            "rule_calls": 1,
+            "observed_correct": 1
+          }
+        },
+        "2024-11": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 27,
+            "rule_calls": 3,
+            "observed_correct": 3
+          }
+        },
+        "2024-12": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 33,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2025-01": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 12,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2025-02": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 29,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2025-03": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 34,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2025-04": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 30,
+            "rule_calls": 0,
+            "observed_correct": 0
+          }
+        },
+        "2025-05": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 28,
+            "rule_calls": 5,
+            "observed_correct": 5
+          }
+        },
+        "2025-06": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 16,
+            "rule_calls": 3,
+            "observed_correct": 3
+          }
+        },
+        "2025-07": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 34,
+            "rule_calls": 4,
+            "observed_correct": 4
+          }
+        },
+        "2025-08": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 26,
+            "rule_calls": 3,
+            "observed_correct": 1
+          }
+        },
+        "2025-09": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 17,
+            "rule_calls": 1,
+            "observed_correct": 0
+          }
+        },
+        "2025-10": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 28,
+            "rule_calls": 1,
+            "observed_correct": 0
+          }
+        },
+        "2025-11": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 36,
+            "rule_calls": 5,
+            "observed_correct": 1
+          }
+        },
+        "2025-12": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 35,
+            "rule_calls": 4,
+            "observed_correct": 1
+          }
+        },
+        "2026-01": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 37,
+            "rule_calls": 3,
+            "observed_correct": 1
+          }
+        },
+        "2026-02": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 36,
+            "rule_calls": 3,
+            "observed_correct": 1
+          }
+        },
+        "2026-03": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 36,
+            "rule_calls": 4,
+            "observed_correct": 3
+          }
+        },
+        "2026-04": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 37,
+            "rule_calls": 2,
+            "observed_correct": 1
+          }
+        },
+        "2026-05": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 33,
+            "rule_calls": 4,
+            "observed_correct": 1
+          }
+        },
+        "2026-06": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 28,
+            "rule_calls": 2,
+            "observed_correct": 0
+          }
+        },
+        "2026-07": {
+          "observed": {
+            "input_valid": 37,
+            "local_eligible": 35,
+            "rule_calls": 3,
+            "observed_correct": 3
+          }
+        },
+        "2026-08": {
+          "not_due": {
+            "input_valid": 37,
+            "local_eligible": 36,
+            "rule_calls": 4
+          }
+        },
+        "2026-09": {
+          "not_due": {
+            "input_valid": 37,
+            "local_eligible": 26,
+            "rule_calls": 2
+          }
+        },
+        "2026-10": {
+          "not_due": {
+            "input_valid": 37,
+            "local_eligible": 35,
+            "rule_calls": 0
+          }
+        }
+      },
+      "received": 37,
+      "requested": 43,
+      "excluded": []
+    }
+  }
+}

@@ -1,0 +1,3227 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asset price display — last 3 months</title>
+<style>
+  /* ---------------------------------------------------------------
+     Tokens. Light and dark are each *selected* steps, not an
+     automatic flip. Values from the dataviz reference palette.
+     --------------------------------------------------------------- */
+  :root {
+    color-scheme: light;
+    --page:            #f9f9f7;
+    --surface-1:       #fcfcfb;
+    --text-primary:    #0b0b0b;
+    --text-secondary:  #52514e;
+    --text-muted:      #898781;
+    --gridline:        #e1e0d9;
+    --axis:            #c3c2b7;
+    --border:          rgba(11, 11, 11, 0.10);
+    --series-1:        #2a78d6;   /* slot 1, blue */
+    --delta-up:        #006300;
+    --delta-down:      #c02f2f;   /* one step darker than the palette's red:
+                                     the bullish/bearish pill tints its own
+                                     background 11%, and #d03b3b fell to 4.0:1
+                                     against that tint at 13.5px. This clears
+                                     AA on the tint (4.7:1) and on the bare
+                                     surface (5.6:1). */
+    --focus-ring:      #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page:           #0d0d0d;
+      --surface-1:      #1a1a19;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --axis:           #383835;
+      --border:         rgba(255, 255, 255, 0.10);
+      --series-1:       #3987e5;
+      --delta-up:       #0ca30c;
+      --delta-down:     #e66767;
+      --focus-ring:     #3987e5;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page:           #0d0d0d;
+    --surface-1:      #1a1a19;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --axis:           #383835;
+    --border:         rgba(255, 255, 255, 0.10);
+    --series-1:       #3987e5;
+    --delta-up:       #0ca30c;
+    --delta-down:     #e66767;
+    --focus-ring:     #3987e5;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    padding: 40px 24px 64px;
+    background: var(--page);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 1240, not 1180: the rail widened to fit asset names (see `.layout`), and the
+     extra 60px goes to the page so the chart card does not pay for all of it. */
+  .wrap { max-width: 1240px; margin: 0 auto; }
+
+  /* ---- layout: search row across the top, then chart card + watchlist rail.
+     The rail lives on the card's row, so their top borders line up. ---- */
+  .layout {
+    display: grid;
+    /* The rail is 396px on a full-width page — wide enough for the fund codes
+       (`FUND:BPI-INFRA`) and the names under them. `clamp` gives some of it back
+       before the layout stacks at 1000px, so the chart card never has to pay the
+       whole 396: at a 1020px viewport the rail is 340 and the chart keeps ~590. */
+    grid-template-columns: minmax(0, 1fr) clamp(340px, 32%, 396px);
+    grid-template-areas:
+      "search search"
+      "status status"
+      "main   rail";
+    column-gap: 24px;
+    align-items: start;
+  }
+  .search-row { grid-area: search; }
+  .status { grid-area: status; }
+  main.card { grid-area: main; }
+  .rail { grid-area: rail; position: sticky; top: 20px; }
+
+  /* ---- header ---- */
+  header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; margin-bottom: 28px;
+  }
+  h1 { margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
+  .sub { margin: 3px 0 0; color: var(--text-secondary); font-size: 13.5px; }
+
+  button, input { font: inherit; color: inherit; }
+
+  .ghost-btn {
+    background: var(--surface-1); color: var(--text-secondary);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 13px; font-size: 13px; cursor: pointer;
+    white-space: nowrap;
+  }
+  .ghost-btn:hover { color: var(--text-primary); border-color: var(--axis); }
+
+  /* ---- search row (one row, above everything it scopes) ---- */
+  .search-row { display: flex; gap: 10px; margin-bottom: 8px; }
+  .combo { position: relative; flex: 1 1 auto; min-width: 0; }
+
+  #symbol {
+    width: 100%;
+    padding: 13px 15px;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 15.5px;
+  }
+  #symbol::placeholder { color: var(--text-muted); }
+  #symbol:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; border-color: var(--focus-ring); }
+
+  .go {
+    padding: 13px 22px; border: 0; border-radius: 10px; cursor: pointer;
+    background: var(--series-1); color: #fff; font-weight: 600; font-size: 14.5px;
+  }
+  .go:hover { filter: brightness(1.08); }
+  .go:disabled { opacity: 0.55; cursor: default; filter: none; }
+
+  /* ---- suggestions ---- */
+  .suggestions {
+    position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; right: 0;
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 10px; padding: 5px; margin: 0; list-style: none;
+    max-height: 320px; overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.13);
+  }
+  .suggestions[hidden] { display: none; }
+  .suggestions li {
+    display: flex; align-items: baseline; gap: 10px;
+    padding: 9px 11px; border-radius: 7px; cursor: pointer;
+  }
+  .suggestions li[aria-selected="true"] { background: color-mix(in srgb, var(--series-1) 12%, transparent); }
+  .suggestions li:hover { background: color-mix(in srgb, var(--text-primary) 6%, transparent); }
+  .sug-sym { font-weight: 600; font-size: 13.5px; min-width: 78px; }
+  .sug-name { color: var(--text-secondary); font-size: 13px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sug-exch { color: var(--text-muted); font-size: 11.5px; white-space: nowrap; max-width: 40%; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---- watchlist rail ---- */
+  /* The box keeps a tall minimum height so it reads as a full rail beside the
+     chart card even when only one or two symbols are saved; the list scrolls
+     once the rows pass the cap. Total stays under the viewport, because the
+     rail is sticky -- a box taller than the screen would have its foot cut off. */
+  .watch {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 14px 12px;
+    min-height: 56vh;
+  }
+  .watch-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+  .watch-head h2 { margin: 0; font-size: 14.5px; font-weight: 600; }
+  .watch-count { color: var(--text-muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+  .watch-list { list-style: none; margin: 0; padding: 0; max-height: 60vh; overflow-y: auto; }
+  .watch-item {
+    display: flex; align-items: center; gap: 8px;
+    border-radius: 9px; padding: 2px 2px 2px 0;
+  }
+  .watch-item:hover { background: color-mix(in srgb, var(--text-primary) 5%, transparent); }
+  .watch-item.is-active { background: color-mix(in srgb, var(--series-1) 12%, transparent); }
+
+  /* ---- reordering ----
+     Only the grip is draggable, so clicking anywhere else on the row still
+     charts the symbol. touch-action: none keeps a touch drag from scrolling
+     the rail instead. */
+  .watch-grip {
+    flex: none; cursor: grab; touch-action: none;
+    background: none; border: 0; border-radius: 7px;
+    color: var(--text-muted); font-size: 13px; line-height: 1;
+    padding: 8px 5px; opacity: 0; transition: opacity 0.12s ease;
+  }
+  .watch-item:hover .watch-grip,
+  .watch-item.is-active .watch-grip { opacity: 1; }
+  .watch-grip:focus-visible { opacity: 1; outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+  .watch-grip:hover { color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 8%, transparent); }
+  /* No hover to reveal it on a touchscreen, so it is always visible there. */
+  @media (hover: none) { .watch-grip { opacity: 1; } }
+
+  /* Rows reflow live under the pointer, so the lift is shadow + tint only. */
+  .watch-item.is-dragging {
+    background: color-mix(in srgb, var(--series-1) 14%, transparent);
+    box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+  }
+  .watch-item.is-dragging .watch-grip { cursor: grabbing; opacity: 1; }
+  .watch-list.is-reordering { user-select: none; }
+
+  .watch-pick {
+    flex: 1 1 auto; min-width: 0; text-align: left; cursor: pointer;
+    background: none; border: 0; border-radius: 9px; padding: 8px 9px;
+    display: flex; flex-direction: column; gap: 1px;
+  }
+  .watch-pick:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -1px; }
+  .watch-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  /* Symbol and its verdict travel together on the left, so the price stays
+     flush right even when the pill appears. In the rail the pill is the fixed
+     part and the symbol is what gives way when a ticker is long. */
+  .watch-id { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .watch-sym {
+    font-weight: 600; font-size: 13.5px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .watch-price {
+    flex: none; font-size: 13px; font-variant-numeric: tabular-nums;
+    color: var(--text-primary); white-space: nowrap;
+  }
+  /* The row's verdict, in the same three words the chart badge uses -- the
+     quote *is* the chart payload, so the two cannot disagree. Colored like the
+     badge, but also spelt out, because a rail of dots would need a key. */
+  .watch-trend {
+    flex: none; white-space: nowrap;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.02em;
+    padding: 1px 6px; border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--text-secondary) 35%, transparent);
+    color: var(--text-secondary);
+    background: color-mix(in srgb, var(--text-secondary) 8%, transparent);
+  }
+  .watch-trend.bullish {
+    color: var(--delta-up); border-color: color-mix(in srgb, var(--delta-up) 40%, transparent);
+    background: color-mix(in srgb, var(--delta-up) 10%, transparent);
+  }
+  .watch-trend.bearish {
+    color: var(--delta-down); border-color: color-mix(in srgb, var(--delta-down) 40%, transparent);
+    background: color-mix(in srgb, var(--delta-down) 10%, transparent);
+  }
+  .watch-sub { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .watch-name { color: var(--text-muted); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .watch-chg { font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-secondary); white-space: nowrap; }
+  .watch-chg.up { color: var(--delta-up); }
+  .watch-chg.down { color: var(--delta-down); }
+
+  .remove-btn {
+    flex: none; cursor: pointer; background: none; border: 0; border-radius: 7px;
+    color: var(--text-muted); font-size: 15px; line-height: 1;
+    padding: 6px 8px; opacity: 0; transition: opacity 0.12s ease;
+  }
+  .watch-item:hover .remove-btn,
+  .watch-item.is-active .remove-btn { opacity: 1; }
+  .remove-btn:focus-visible { opacity: 1; outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+  .remove-btn:hover { color: var(--delta-down); background: color-mix(in srgb, var(--delta-down) 12%, transparent); }
+
+  .watch-empty { color: var(--text-muted); font-size: 12.5px; padding: 10px 2px; line-height: 1.5; }
+  .watch-hint { color: var(--text-muted); font-size: 11.5px; margin: 10px 2px 2px; }
+
+  /* Stacked below 1000px, not 900: the rail is now 396px, and a 318px one at 900
+     still left the chart card too narrow once the rail took its share. Below this
+     point the rail moves under the chart and gets the full width, which is where
+     its names read best anyway. */
+  @media (max-width: 1000px) {
+    .layout {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas: "search" "status" "main" "rail";
+    }
+    .rail { position: static; }
+    .watch { min-height: 0; }   /* stacked: no dead space under a short list */
+    .watch-list { max-height: none; }
+  }
+
+  /* ---- status ---- */
+  .status { min-height: 22px; font-size: 13px; color: var(--text-secondary); margin-bottom: 18px; }
+  .status.error { color: var(--delta-down); }
+
+  /* ---- chart card ---- */
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px 24px 18px;
+  }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+  .asset-name { font-size: 16.5px; font-weight: 600; margin: 0; }
+  .asset-meta { color: var(--text-secondary); font-size: 13px; margin: 2px 0 0; }
+
+  /* ---- add-to-watchlist toggle ----
+     Acts on the charted payload, never on typed text, so the only ticker it can
+     add is the canonical one the server returned. */
+  .card-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .watch-toggle {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 14px 6px 12px;
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    color: var(--text-secondary); font-size: 13px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+  }
+  .watch-toggle:hover { color: var(--text-primary); border-color: var(--axis); }
+  .watch-toggle:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+  /* inline-flex would otherwise beat the attribute — same trap .trend[hidden] documents */
+  .watch-toggle[hidden] { display: none; }
+  /* Watched: tint + filled star say so; the accessible name never moves. */
+  .watch-toggle[aria-pressed="true"] {
+    border-color: color-mix(in srgb, var(--series-1) 40%, transparent);
+    background: color-mix(in srgb, var(--series-1) 11%, transparent);
+    color: var(--text-primary);
+  }
+  .watch-glyph { font-size: 13px; line-height: 1; }
+
+  /* ---- trend badge: the 3-month verdict ----
+     Status colour rides the arrow glyph and the tint; the words stay in
+     normal ink and the glyph is not aria-hidden from the label, so the call
+     never depends on colour alone. */
+  .trend {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--border); border-radius: 999px;
+    padding: 6px 13px 6px 11px;
+    background: color-mix(in srgb, var(--text-primary) 4%, transparent);
+    white-space: nowrap;
+  }
+  .trend[hidden] { display: none; }
+  .trend-glyph { font-size: 12px; line-height: 1; }
+  .trend-label { font-size: 13.5px; font-weight: 600; letter-spacing: 0.01em; }
+  .trend-score {
+    font-size: 12px; color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    padding-left: 8px; border-left: 1px solid var(--border);
+  }
+  .trend-note { color: var(--text-muted); font-size: 11.5px; margin: 10px 0 0; }
+  .trend-note[hidden] { display: none; }
+
+  .trend.bullish { border-color: color-mix(in srgb, var(--delta-up) 40%, transparent);
+                   background: color-mix(in srgb, var(--delta-up) 11%, transparent); }
+  .trend.bullish .trend-glyph, .trend.bullish .trend-label { color: var(--delta-up); }
+  .trend.bearish { border-color: color-mix(in srgb, var(--delta-down) 40%, transparent);
+                   background: color-mix(in srgb, var(--delta-down) 11%, transparent); }
+  .trend.bearish .trend-glyph, .trend.bearish .trend-label { color: var(--delta-down); }
+  .trend.neutral .trend-glyph, .trend.neutral .trend-label { color: var(--text-secondary); }
+
+  /* hero figure: >=48px, same sans, proportional figures, no tabular-nums */
+  .hero { font-size: 48px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; margin: 16px 0 0; }
+  .hero-delta { display: flex; align-items: center; flex-wrap: wrap; gap: 7px;
+                margin-top: 6px; font-size: 14.5px; color: var(--text-secondary); }
+  .delta-val { font-weight: 600; color: var(--text-secondary); }
+  .delta-val.up { color: var(--delta-up); }
+  .delta-val.down { color: var(--delta-down); }
+
+  /* ---- minimum investment ----
+     A stat readout, not a second hero: the chart's headline number is the price,
+     so this is a label and a value at body scale rather than another 48px figure
+     competing with it. It sits here for the PSE only, which is the only market
+     with a board lot, and it is absent from the DOM entirely for every other
+     symbol rather than sitting empty under the price. */
+  .min-invest { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .min-invest[hidden] { display: none; }
+  .min-invest .stat-label { color: var(--text-secondary); font-size: 13.5px; }
+  /* Proportional figures, like the hero: one standalone value, not a column. */
+  .min-invest .stat-value { font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
+  .min-invest .stat-note { color: var(--text-muted); font-size: 11.5px; }
+
+  /* ---- table view toggle ---- */
+  .toggle-row { display: flex; justify-content: flex-end; margin-top: 4px; }
+  .toggle-row .ghost-btn { padding: 5px 11px; font-size: 12.5px; }
+
+  /* ---- chart ---- */
+  .plot { position: relative; margin-top: 10px; }
+  .plot svg { display: block; width: 100%; height: auto; touch-action: none; }
+  .plot svg:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 3px; border-radius: 8px; }
+
+  .plot.is-stale { opacity: 0.45; }   /* refetch keeps the frame, no skeleton */
+
+  .grid-line { stroke: var(--gridline); stroke-width: 1; }
+  .axis-line { stroke: var(--axis); stroke-width: 1; }
+  .tick-text { fill: var(--text-muted); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+  .axis-title { fill: var(--text-muted); font-size: 11px; letter-spacing: 0.02em; }
+  .series-line { fill: none; stroke: var(--series-1); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .series-area { fill: var(--series-1); opacity: 0.10; }
+  .end-dot { fill: var(--series-1); stroke: var(--surface-1); stroke-width: 2; pointer-events: none; }
+  .end-label { fill: var(--text-secondary); font-size: 13px; font-weight: 600; pointer-events: none; }
+  .crosshair { stroke: var(--axis); stroke-width: 1; }
+  .hover-dot { fill: var(--series-1); stroke: var(--surface-1); stroke-width: 2; }
+
+  .empty-plot { display: grid; place-items: center; height: 260px; color: var(--text-muted); font-size: 14px; }
+
+  /* ---- tooltip ---- */
+  .tooltip {
+    position: absolute; z-index: 20; pointer-events: none;
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 9px; padding: 9px 12px;
+    box-shadow: 0 6px 22px rgba(0,0,0,0.16);
+    font-size: 13px; white-space: nowrap;
+    transform: translate(-50%, calc(-100% - 16px));
+  }
+  .tooltip[hidden] { display: none; }
+  .tt-date { color: var(--text-secondary); font-size: 12px; margin-bottom: 3px; }
+  .tt-row { display: flex; align-items: center; gap: 8px; }
+  .tt-key { width: 14px; height: 2px; border-radius: 1px; background: var(--series-1); flex: none; }
+  /* value leads, label follows */
+  .tt-value { font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+  .tt-label { color: var(--text-secondary); font-size: 12px; }
+
+  /* ---- data table ---- */
+  .table-wrap { margin-top: 6px; max-height: 340px; overflow: auto; border: 1px solid var(--border); border-radius: 10px; }
+  .table-wrap[hidden] { display: none; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  caption { text-align: left; padding: 10px 12px; color: var(--text-secondary); font-size: 12.5px; }
+  th, td { padding: 7px 12px; text-align: right; border-bottom: 1px solid var(--gridline); font-variant-numeric: tabular-nums; }
+  th:first-child, td:first-child { text-align: left; font-variant-numeric: normal; }
+  thead th { position: sticky; top: 0; background: var(--surface-1); color: var(--text-secondary); font-weight: 600; z-index: 1; }
+  tbody tr:last-child td { border-bottom: 0; }
+
+  /* Most-traded tables. Two cards side by side, each scrollable on its own so a
+     long name in one does not stretch the other. */
+  .leaders { margin-top: 34px; }
+  .leaders-head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .leaders-head h2 { font-size: 17px; margin: 0; }
+  .leaders-note { color: var(--text-secondary); font-size: 12.5px; }
+  .leaders-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 12px; }
+
+  /* A column, so the table below can take whatever height the card is given and
+     pass it down to its rows. See `.leaders table` for why that matters. */
+  .card { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-1); overflow: hidden; }
+  .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 11px 13px 9px; }
+  .card-head h3 { font-size: 14.5px; margin: 0; }
+  .card-sub { color: var(--text-secondary); font-size: 12px; }
+  .card-error { padding: 0 13px 13px; color: var(--text-secondary); font-size: 12.5px; }
+
+  /* The ranking is the row order, so the number is decoration; the ticker and
+     the name are the identity, and the figures stay right-aligned and tabular. */
+  /* No max-height: all ten rows are the point of the card, and a scrollbar
+     inside the card hides half the ranking behind a drag. `overflow` stays
+     `auto` so a long instrument name can still scroll sideways. */
+  .leaders .table-wrap { flex: 1; margin: 0; max-height: none; border: 0; border-radius: 0; border-top: 1px solid var(--gridline); }
+  /* The two cards are stretched to one height, and the PSE table is the taller
+     one: five columns of figures with a wrapped instrument name make its rows
+     taller than the four-column US rows. Left alone, the US table kept its own
+     natural height and the leftover space pooled below its last row as blank
+     card. Filling the wrap and letting the table be as tall as the wrap hands
+     that space to the rows instead, so each US cell grows and the two tables end
+     on the same line. Both stay `auto` -- the space is divided between the rows,
+     not padded onto a fixed minimum, so a cell is taller only by what is spare.
+     A scrollbar cannot appear: the table is never taller than the wrap holding
+     it, and the wrap is only as tall as the card. */
+  /* The two cards are read side by side, so their tables share one column grid:
+     a rank, a ticker or a figure sits at the same x in both. `fixed` is what
+     makes that hold. Sizing each table from its own contents instead lets the
+     one with a column fewer spread the difference over the rest, which is what
+     left the US rows so much air between the symbol and the figures. */
+  .leaders table { table-layout: fixed; height: 100%; }
+  .leaders td, .leaders th { padding: 6px 9px; white-space: nowrap; }
+  /* A figure cannot wrap, so the columns holding one keep a width of their own;
+     the symbol column takes whatever is left, and both tables land on the same
+     widths that way. Sized for the longest content either market has -- the US
+     turnover runs to thirteen digits, its price to seven. */
+  .leaders td:nth-child(1), .leaders th:nth-child(1) { width: 34px; }
+  .leaders td:nth-child(3), .leaders th:nth-child(3) { width: 136px; }
+  .leaders td:nth-child(4), .leaders th:nth-child(4) { width: 76px; }
+  /* The minimum investment. Only the PSE has a board lot; the other market's
+     table has no fifth column to put here, and its price figures are the last
+     thing in the row rather than being trailed by a track of empty space. */
+  .leaders td:nth-child(5), .leaders th:nth-child(5) { width: 112px; }
+  /* Figures stay unbroken, but a long instrument name may wrap: holding it on
+     one line would need a wider column than the four others leave over. */
+  .leaders td:nth-child(2), .leaders th:nth-child(2) { white-space: normal; }
+  .rank { color: var(--text-secondary); font-size: 12px; }
+  /* The ticker is the keyboard-reachable control; the row's own click is a
+     mouse convenience, so focus lands on a real button, not a role on a <tr>. */
+  .tick-btn { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: inherit; cursor: pointer; }
+  .tick-btn:hover { text-decoration: underline; }
+  .tick-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: 3px; }
+  .tick-sub { display: block; color: var(--text-secondary); font-size: 11.5px; font-weight: 400; }
+  .alt { display: block; color: var(--text-secondary); font-size: 11.5px; }
+
+  /* Rows load the chart, so they read as interactive: pointer, hover, focus. */
+  .leaders tbody tr { cursor: pointer; }
+  .leaders tbody tr:hover { background: var(--gridline); }
+  .leaders tbody tr:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+
+  @media (max-width: 900px) {
+    .leaders-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* ---- bullish table ----
+     Not a `.leaders-grid` card: it is one wide table of every bullish PSE name,
+     and there were 82 of them on the last sweep. Two columns of forty rows each
+     would make the reader choose a column before they can scan the list, so the
+     card spans the page and the rows are dense instead of tall. */
+  /* The wrap keeps the base `.table-wrap` border and radius and only lifts the
+     height cap: `.leaders .table-wrap` clears all four for the cards that fill
+     their height, and none of that applies here. */
+  /* It also stops taking the full column. The column widths below add up to
+     720px -- a little over half the 1180px `.wrap` -- and the card is pinned to
+     that so the border closes on the rows instead of around a 1180px box with
+     the columns scaled up to fill it and a hole on either side. Stated as a
+     length rather than `fit-content`: a fixed-layout table's `max-content` is
+     not the sum of its columns, so `fit-content` on the card resolved to the
+     whole column and solved nothing. The 770px is the 720px of columns plus the
+     inset the base `.card` gives its contents -- 24px of padding on each side
+     and a 1px border each side, both counted inside the width by
+     `box-sizing: border-box` -- so what is left for the table is the 720px the
+     columns want. `margin-inline: auto` centres it in the section, and
+     `max-width: 100%` is the floor for a narrow viewport, where the card stops
+     shrinking and the columns scale proportionally inside it rather than the
+     table overflowing. */
+  .bullish .card { width: 770px; max-width: 100%; margin-inline: auto; }
+  .bullish .table-wrap { max-height: none; }
+  /* `100%` of a card that is now exactly as wide as the columns themselves, so
+     the stated widths below are the widths the columns render at, and no
+     `100%` stretching the table into the 1180px column it used to fill. The
+     sticky `thead` the base rule sets up still works: the wrap never scrolls
+     sideways at any width, only down. */
+  .bullish table { table-layout: fixed; width: 100%; }
+  /* Left-aligned, unlike the figure tables: the rows here are ranked by their
+     order, not read across against the same figure in the row above, so no
+     column needs its contents flush right. Left is also what removes the void
+     the user saw between the rank and the symbol -- the base `text-align: right`
+     pushed the ticker to the far edge of the widest column in the table. The
+     figures keep the tabular numerals the base rule gives them. */
+  .bullish td, .bullish th { padding: 5px 9px; white-space: nowrap; text-align: left; }
+  /* Sized for a two-digit rank, "2026-09-28" and a run of a few bars, plus the
+     two money columns: a PSE price reaching five digits with centavos, and a
+     minimum investment that can run to eight figures (a ₱2,500 name in the
+     1,000-share bracket is ₱2,500,000.00). Same reasoning as `.leaders table`:
+     a column holding something unbreakable gets a width of its own. Here every
+     column does, including the symbol column -- see that rule for why. */
+  .bullish td:nth-child(1), .bullish th:nth-child(1) { width: 34px; }
+  .bullish td:nth-child(3), .bullish th:nth-child(3) { width: 118px; }
+  .bullish td:nth-child(4), .bullish th:nth-child(4) { width: 62px; }
+  .bullish td:nth-child(5), .bullish th:nth-child(5) { width: 108px; }
+  /* The one column whose heading is wider than anything it holds, so it is
+     sized for the words: "Min. investment" held on one line is what keeps the
+     rows as short as this dense a table wants them. */
+  .bullish td:nth-child(6), .bullish th:nth-child(6) { width: 122px; }
+  /* The symbol cell stacks a ticker over an instrument name, so it is the one
+     cell allowed to wrap -- holding a long name on one line would need a wider
+     column than the five others leave over. Its width is stated like the rest
+     rather than left to absorb the remainder: the remainder is what the table
+     was told to stretch into, and with no width of its own the column would
+     take the 1180px back. At 276px the longest PSE name wraps to a second line
+     and everything shorter stays on one. */
+  .bullish td:nth-child(2), .bullish th:nth-child(2) { width: 276px; white-space: normal; }
+  /* `.rank` would colour the leading column the same muted grey as a leaderboard
+     rank, which reads as decoration; the bar number of the row's own sort is
+     not decoration, so it keeps full contrast. */
+  .bullish .rank { font-size: 12px; }
+  .since { font-variant-numeric: tabular-nums; }
+  /* A run that began on the latest bar is the newest thing in the table -- and
+     the reason the sort order is worth having -- so it is marked rather than
+     left to be spotted by comparing dates. */
+  .fresh { color: var(--delta-up); font-weight: 600; }
+
+  /* ---- bullish crypto table ----
+     Same single-wide-card shape as the Philippine bullish table, one section
+     shorter than it: five columns -- rank, symbol, traded, price, 24-hour
+     change -- so the pinned width is what those columns ask for, 598px of
+     columns plus the 50px of padding and border the base `.card` insets its
+     contents by (same arithmetic as `.bullish .card` above). The traded
+     column takes the leaderboards' own 136px, since it holds the same kind of
+     figure -- a turnover that reaches ten figures. */
+  .cryptobull .card { width: 648px; max-width: 100%; margin-inline: auto; }
+  .cryptobull .table-wrap { max-height: none; }
+  .cryptobull table { table-layout: fixed; width: 100%; }
+  .cryptobull td, .cryptobull th { padding: 5px 9px; white-space: nowrap; text-align: left; }
+  .cryptobull td:nth-child(1), .cryptobull th:nth-child(1) { width: 34px; }
+  .cryptobull td:nth-child(3), .cryptobull th:nth-child(3) { width: 136px; }
+  .cryptobull td:nth-child(4), .cryptobull th:nth-child(4) { width: 108px; }
+  .cryptobull td:nth-child(5), .cryptobull th:nth-child(5) { width: 84px; }
+  /* The symbol cell stacks the coin name over its rank line, so it is the one
+     cell allowed to wrap, stated like the rest rather than left to absorb the
+     remainder -- the same rule the bullish table's symbol column follows. */
+  .cryptobull td:nth-child(2), .cryptobull th:nth-child(2) { width: 236px; white-space: normal; }
+  .cryptobull .rank { font-size: 12px; }
+  /* The 24-hour change is signed and coloured like every other delta on the
+     page -- the watchlist rail's classes, applied to this table's cells. */
+  .cryptobull .chg { font-variant-numeric: tabular-nums; }
+  .cryptobull .chg.up { color: var(--delta-up); }
+  .cryptobull .chg.down { color: var(--delta-down); }
+
+  /* ---- recently bullish table ----
+     One table that spans four markets: US stocks, Philippine stocks, crypto
+     and the Philippine government bond yields, each row carrying the day its
+     current run began, newest turn first. Seven columns -- market, asset,
+     direction, since, run, price, volume -- so the pinned width is what those
+     columns ask for: 118 + 250 + 132 + 118 + 62 + 112 + 118 = 910px of
+     columns plus the 50px of padding and border the base `.card` insets its
+     contents by (the same arithmetic as `.bullish .card` above), which is
+     960px. */
+  .recent .card { width: 960px; max-width: 100%; margin-inline: auto; }
+  .recent .table-wrap { max-height: none; }
+  .recent table { table-layout: fixed; width: 100%; }
+  .recent td, .recent th { padding: 5px 9px; white-space: nowrap; text-align: left; }
+  .recent td:nth-child(1), .recent th:nth-child(1) { width: 118px; }
+  .recent td:nth-child(2), .recent th:nth-child(2) { width: 250px; white-space: normal; }
+  .recent td:nth-child(3), .recent th:nth-child(3) { width: 132px; }
+  .recent td:nth-child(4), .recent th:nth-child(4) { width: 118px; }
+  .recent td:nth-child(5), .recent th:nth-child(5) { width: 62px; }
+  .recent td:nth-child(6), .recent th:nth-child(6) { width: 112px; }
+  .recent td:nth-child(7), .recent th:nth-child(7) { width: 118px; }
+  /* The volume heading is longer than the figures beneath it ("₱3.19T"),
+     so it is the one heading allowed to wrap rather than widening the
+     column for a line the cells never need. */
+  .recent th:nth-child(7) { white-space: normal; }
+  .recent .vol { font-variant-numeric: tabular-nums; }
+  .recent .rank { font-size: 12px; }
+  .recent .since { font-variant-numeric: tabular-nums; }
+  /* A run that began on the latest bar is the newest thing in the table --
+     the reason the sort order is worth having -- so it is marked. */
+  .recent .fresh { color: var(--delta-up); font-weight: 600; }
+  /* The market column names where the row came from, and the names are
+     different lengths ("Philippine bond" against "Crypto"), so the column is
+     muted rather than given a colour of its own: it is a label, not a
+     reading. */
+  .recent .market { color: var(--text-muted); font-size: 12.5px; }
+  /* The direction column carries the badge's own glyph and word, so a reader
+     who knows the other tables can read this one without being told what
+     "bullish" means here. */
+  .recent .dir { font-weight: 600; }
+  .recent .dir.bullish { color: var(--delta-up); }
+  .recent .dir.bearish { color: var(--delta-down); }
+  .recent .dir.neutral { color: var(--text-muted); }
+  /* The direction is inferred from the yield, not a bond-price chart. */
+  .recent .dir.yield { color: var(--text); font-weight: 600; }
+  /* A row the page cannot chart is not clickable, and says so on hover
+     rather than pretending. */
+  .recent tr.no-chart { cursor: default; }
+  .recent tr.no-chart:hover { background: none; }
+  /* A price that is old enough to be worth flagging: the reading was served
+     from a stored copy because the source could not answer. */
+  .recent .stale { color: var(--text-muted); font-size: 11.5px; }
+  /* Leaning bullish: same card and column widths as the recent table. The
+     progress bar shows how much of the bullish entry bar the window meets. */
+  .leaning .num { font-variant-numeric: tabular-nums; }
+  .leaning .meter { display: flex; align-items: center; gap: 7px; }
+  .leaning .meter-bar { flex: 1; height: 6px; border-radius: 3px;
+                        background: var(--border, rgba(127,127,127,.25)); overflow: hidden; }
+  .leaning .meter-fill { display: block; height: 100%; background: var(--delta-up); opacity: .7; }
+
+  footer { margin-top: 22px; color: var(--text-muted); font-size: 12.5px; }
+  footer code { font-size: 12px; }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Asset price display</h1>
+      <p class="sub">Type any ticker, crypto pair, currency pair, index, ETF or fund — the last three months of daily closes.</p>
+    </div>
+    <button class="ghost-btn" id="theme" type="button" aria-pressed="false">Dark mode</button>
+  </header>
+
+  <div class="layout">
+    <form class="search-row" id="form" role="search" autocomplete="off">
+        <div class="combo">
+          <input id="symbol" name="symbol" type="text" spellcheck="false"
+                 placeholder="e.g. AAPL, BTC-USD, PSE:TEL, EURUSD=X, ^GSPC, SPY, ZB"
+                 aria-label="Asset symbol or name"
+                 aria-autocomplete="list" aria-expanded="false" aria-controls="suggestions">
+          <ul class="suggestions" id="suggestions" role="listbox" aria-label="Matching assets" hidden></ul>
+        </div>
+        <button class="go" id="go" type="submit">Show chart</button>
+      </form>
+
+      <p class="status" id="status" role="status" aria-live="polite"></p>
+
+      <main class="card">
+        <div class="card-head">
+          <div>
+            <h2 class="asset-name" id="assetName">—</h2>
+            <p class="asset-meta" id="assetMeta">Enter a symbol above to load its price history.</p>
+          </div>
+          <div class="card-actions">
+            <!-- Acts on the charted asset, not on typed text: the payload's own
+                 `symbol` is the only ticker this can ever add. -->
+            <button class="watch-toggle" id="watchToggle" type="button"
+                    aria-pressed="false" hidden
+                    aria-label="Add or remove the charted asset from the watchlist">
+              <span class="watch-glyph" id="watchGlyph" aria-hidden="true">☆</span><span id="watchToggleLabel">Add to watchlist</span>
+            </button>
+            <span class="trend" id="trendBadge" hidden>
+              <span class="trend-glyph" id="trendGlyph" aria-hidden="true"></span>
+              <span class="trend-label" id="trendLabel"></span>
+              <span class="trend-score" id="trendScore"></span>
+            </span>
+          </div>
+        </div>
+
+        <p class="hero" id="hero" hidden>—</p>
+        <p class="hero-delta" id="heroDelta" hidden></p>
+        <!-- The smallest cheque that buys the stock. PSE only: the board lot is
+             the exchange's own rule, so nothing else has a minimum investment to
+             report and the readout is left out of the DOM for those symbols. -->
+        <p class="min-invest" id="minInvest" hidden>
+          <span class="stat-label">Min. investment</span>
+          <span class="stat-value" id="minInvestValue">—</span>
+          <span class="stat-note" id="minInvestNote"></span>
+        </p>
+        <p class="trend-note" id="trendNote" hidden></p>
+        <p class="trend-note" id="outlookNote" hidden></p>
+
+        <div class="toggle-row">
+          <button class="ghost-btn" id="tableToggle" type="button" aria-pressed="false" hidden>Table view</button>
+        </div>
+
+        <div class="plot" id="plot">
+          <div class="empty-plot" id="emptyPlot">No data yet</div>
+        </div>
+
+        <div class="table-wrap" id="tableWrap" hidden></div>
+    </main>
+
+    <aside class="rail" aria-labelledby="watchHeading">
+      <section class="watch">
+        <div class="watch-head">
+          <h2 id="watchHeading">Watchlist</h2>
+          <span class="watch-count" id="watchCount"></span>
+        </div>
+
+        <ul class="watch-list" id="watchList" aria-label="Watchlist"></ul>
+        <p class="watch-hint" id="watchHint"></p>
+      </section>
+    </aside>
+  </div>
+
+  <section class="leaders recent" aria-labelledby="recentHeading">
+    <div class="leaders-head">
+      <h2 id="recentHeading">Recently bullish assets</h2>
+      <p class="leaders-note" id="recentNote"></p>
+    </div>
+    <div id="recentGrid"></div>
+  </section>
+
+  <section class="leaders recent leaning" aria-labelledby="leaningHeading">
+    <div class="leaders-head">
+      <h2 id="leaningHeading">Leaning bullish — not confirmed</h2>
+      <p class="leaders-note" id="leaningNote"></p>
+    </div>
+    <div id="leaningGrid"></div>
+  </section>
+
+  <section class="leaders" aria-labelledby="leadersHeading">
+    <div class="leaders-head">
+      <h2 id="leadersHeading">Most traded today</h2>
+      <p class="leaders-note" id="leadersNote"></p>
+    </div>
+    <div class="leaders-grid" id="leadersGrid"></div>
+  </section>
+
+  <section class="leaders cryptobull" aria-labelledby="cryptoHeading">
+    <div class="leaders-head">
+      <h2 id="cryptoHeading">Most traded crypto — 24 hours</h2>
+      <p class="leaders-note" id="cryptobullNote"></p>
+    </div>
+    <div id="cryptobullGrid"></div>
+  </section>
+
+  <section class="leaders bullish" aria-labelledby="bullishHeading">
+    <div class="leaders-head">
+      <h2 id="bullishHeading">Bullish Philippine stocks</h2>
+      <p class="leaders-note">Past price trend only—not a forecast or a promise of three months of gains. Borderline calls can change quickly.</p>
+      <p class="leaders-note" id="bullishNote"></p>
+    </div>
+    <div id="bullishGrid"></div>
+  </section>
+
+  <footer>
+    Daily closes, last three months, via Yahoo Finance — except Philippine
+    listings, which come from TradingView, and dollar-less currency crosses,
+    whose history comes from ECB reference rates. The Philippine government bond
+    yields in the table above also come from TradingView. Prices are 15 minutes
+    delayed and for information only — not investment advice. Data is fetched
+    through a local <code>moli</code>-backed proxy (<code>server.py</code>).
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ------------------------------------------------------------------ *
+ * Config
+ * ------------------------------------------------------------------ */
+const RANGE = "3mo";
+const INTERVAL = "1d";
+/* The watchlist row names its move by this span ("Three-month change"), so the
+   label is derived from the one window every chart here draws rather than
+   repeating the words in a second place. */
+const SPAN_WORDS = {
+  "1d": "One-day", "5d": "Five-day", "1mo": "One-month", "3mo": "Three-month",
+  "6mo": "Six-month", "ytd": "Year-to-date", "1y": "One-year",
+  "2y": "Two-year", "5y": "Five-year", "10y": "Ten-year",
+};
+const PLOT_W = 980, PLOT_H = 420;
+const M = { top: 26, right: 104, bottom: 36, left: 66 };
+const IW = PLOT_W - M.left - M.right;
+const IH = PLOT_H - M.top - M.bottom;
+const NS = "http://www.w3.org/2000/svg";
+
+const state = {
+  data: null,
+  activeIndex: null,   // crosshair position
+  loading: false,
+  suggestions: [],
+  sugIndex: -1,
+  watch: [],           // [{symbol, name}] — the saved list, in display order
+  watchQuotes: {},     // symbol -> {data} | {error} | {loading:true}
+  watchActive: null,   // symbol currently shown in the chart
+  chartSymbol: null,   // the symbol the plot is showing, for the refresh timer
+  chartSeq: 0,         // guards a late answer from overwriting a newer one
+  chartLoadedAt: 0,    // when the chart on screen was last answered
+};
+
+const el = {
+  form: document.getElementById("form"),
+  input: document.getElementById("symbol"),
+  go: document.getElementById("go"),
+  status: document.getElementById("status"),
+  suggestions: document.getElementById("suggestions"),
+  assetName: document.getElementById("assetName"),
+  assetMeta: document.getElementById("assetMeta"),
+  hero: document.getElementById("hero"),
+  heroDelta: document.getElementById("heroDelta"),
+  minInvest: document.getElementById("minInvest"),
+  minInvestValue: document.getElementById("minInvestValue"),
+  minInvestNote: document.getElementById("minInvestNote"),
+  trendBadge: document.getElementById("trendBadge"),
+  trendGlyph: document.getElementById("trendGlyph"),
+  trendLabel: document.getElementById("trendLabel"),
+  trendScore: document.getElementById("trendScore"),
+  trendNote: document.getElementById("trendNote"),
+  plot: document.getElementById("plot"),
+  emptyPlot: document.getElementById("emptyPlot"),
+  tableWrap: document.getElementById("tableWrap"),
+  tableToggle: document.getElementById("tableToggle"),
+  theme: document.getElementById("theme"),
+  watchToggle: document.getElementById("watchToggle"),
+  watchGlyph: document.getElementById("watchGlyph"),
+  watchToggleLabel: document.getElementById("watchToggleLabel"),
+  watchList: document.getElementById("watchList"),
+  watchCount: document.getElementById("watchCount"),
+  watchHint: document.getElementById("watchHint"),
+  leadersGrid: document.getElementById("leadersGrid"),
+  leadersNote: document.getElementById("leadersNote"),
+  cryptobullGrid: document.getElementById("cryptobullGrid"),
+  cryptobullNote: document.getElementById("cryptobullNote"),
+  bullishGrid: document.getElementById("bullishGrid"),
+  bullishNote: document.getElementById("bullishNote"),
+  recentGrid: document.getElementById("recentGrid"),
+  recentNote: document.getElementById("recentNote"),
+  leaningGrid: document.getElementById("leaningGrid"),
+  leaningNote: document.getElementById("leaningNote"),
+};
+
+/* ------------------------------------------------------------------ *
+ * Formatting
+ * ------------------------------------------------------------------ */
+const nf = (digits, opts = {}) =>
+  new Intl.NumberFormat(undefined, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+    ...opts,
+  });
+
+function digitsFor(data) {
+  const hint = Number(data && data.priceHint);
+  return Number.isFinite(hint) ? Math.min(Math.max(hint, 0), 8) : 2;
+}
+
+/* Indices like ^GSPC or ^TNX are not dollar amounts, so no currency symbol. */
+function showsCurrency(data) {
+  return Boolean(data.currency) && !String(data.symbol).startsWith("^");
+}
+
+function formatPrice(value, data) {
+  if (!Number.isFinite(value)) return "—";
+  const digits = digitsFor(data);
+  // A yield is a percentage, not an amount of money: it carries its unit in
+  // `unit` rather than in `currency`, so no currency symbol is invented and
+  // the number reads as the rate it is (6.234%).
+  if (data && data.unit === "%") return nf(digits).format(value) + "%";
+  if (showsCurrency(data)) {
+    try {
+      return nf(digits, { style: "currency", currency: data.currency }).format(value);
+    } catch { /* unknown currency code — fall through to a plain number */ }
+  }
+  return nf(digits).format(value);
+}
+
+function formatDelta(value, data) {
+  const digits = digitsFor(data);
+  return (value >= 0 ? "+" : "−") + formatPrice(Math.abs(value), data).replace(/^[-−]/, "");
+}
+
+/* What a point on the chart *is*, in words. The server decides it
+   (`lastBarBasis`) because the answer needs the exchange's own session clock --
+   only the newest bar can be anything but a settled close, and which of the
+   other three it is depends on the time of day the chart was read. This end
+   only spells the answer out, the same way it spells out a trend label. */
+const BASIS_WORDS = {
+  live: "live",
+  pre: "pre-market",
+  after: "after-hours",
+};
+
+function basisWord(basis, data) {
+  if (BASIS_WORDS[basis]) return BASIS_WORDS[basis];
+  // A fund has no session and no exchange: its one value a business day is a
+  // net asset value the manager strikes, and calling that a "close" would name
+  // a trade that never happened.
+  return data && data.fundSeries ? "NAV" : "close";
+}
+
+/* Axis ticks are rounded numbers, so drop trailing zeros (300, 302.5, 305).
+   Below $1 the fraction cap is useless -- it prints a PEPE tick of $0.0000035
+   as "0" -- so micro ticks keep three significant digits instead. */
+const axisFmt = new Intl.NumberFormat(undefined, { maximumFractionDigits: 4 });
+const axisFmtMicro = new Intl.NumberFormat(undefined, { maximumSignificantDigits: 3 });
+const axisTickFmt = (tick) =>
+  Math.abs(tick) >= 1 ? axisFmt.format(tick) : axisFmtMicro.format(tick);
+
+const dayFmt = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+const fullFmt = new Intl.DateTimeFormat(undefined, { year: "numeric", month: "short", day: "numeric" });
+const toDate = (ts) => new Date(ts * 1000);
+
+/* When a payload was last retrieved live. A fresh answer only needs a clock
+ * time ("Checked 3:14pm" — it was just now); a disk fallback can be days old,
+ * so it names the date as well, and "today at 9:41pm" beats "Oct 3, 2026" for
+ * a copy from this afternoon. `ts` is the server's `fetchedAt` epoch second. */
+function retrievedAt(ts) {
+  const d = new Date(ts * 1000);
+  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return d.toDateString() === new Date().toDateString()
+    ? "today at " + time
+    : fullFmt.format(d) + " at " + time;
+}
+
+/* ------------------------------------------------------------------ *
+ * Data access
+ * ------------------------------------------------------------------ */
+async function requestJSON(url, signal) {
+  const res = await fetch(url, { signal });
+  let payload = null;
+  try { payload = await res.json(); } catch { /* non-JSON body */ }
+  if (!res.ok) {
+    throw new Error((payload && payload.error) || `Request failed (HTTP ${res.status})`);
+  }
+  return payload;
+}
+
+/* `requestJSON` can only ask; the watchlist declaration is the one thing this
+   page *tells* the server, so it needs a body and a POST. Same parse-and-throw
+   rules as its sibling. */
+async function postJSON(url, value) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(value),
+  });
+  let payload = null;
+  try { payload = await res.json(); } catch { /* non-JSON body */ }
+  if (!res.ok) {
+    throw new Error((payload && payload.error) || `Request failed (HTTP ${res.status})`);
+  }
+  return payload;
+}
+
+async function loadChart(symbol, { quiet = false } = {}) {
+  const wanted = symbol.trim();
+  if (!wanted) return;
+  const seq = ++state.chartSeq;
+
+  // Refetch keeps the frame: hold the previous render at reduced opacity.
+  // A background refresh is not an action the reader took, so it does not dim
+  // the plot, does not say "Loading", and does not disable the button.
+  if (state.data && !quiet) el.plot.classList.add("is-stale");
+  if (!quiet) {
+    setStatus("Loading " + wanted + "…");
+    setBusy(true);
+  }
+
+  try {
+    const data = await requestJSON(
+      `/api/chart?symbol=${encodeURIComponent(wanted)}&range=${RANGE}&interval=${INTERVAL}`
+    );
+    // A slow answer that a newer request has already replaced must not land:
+    // the reader asked for something else while this was in flight.
+    if (seq !== state.chartSeq) return;
+    state.data = data;
+    state.chartSymbol = data.symbol;   // what the refresh clock re-asks for
+    state.chartLoadedAt = Date.now();  // and when it last got an answer
+    state.activeIndex = null;
+    // Highlight the matching watchlist row. Compare on the *returned* symbol, so
+    // a lowercase "aapl" still lights up the saved "AAPL" row.
+    const key = String(data.symbol).toUpperCase();
+    state.watchActive = state.watch.some((it) => it.symbol.toUpperCase() === key)
+      ? data.symbol : null;
+    // Keyed on the symbol as *asked for*, so an entry still filed under a raw
+    // ticker is found; the payload then canonicalises it.
+    setWatchQuote(wanted, quoteSummary(data), data);  // selecting an asset refreshes its quote
+    renderAll();
+    drawWatchList();                            // repaint the active-row highlight
+    // A disk fallback arrives over a successful HTTP response — the server
+    // answered, it just could not reach the source. Name the outage in the
+    // status line (not styled as an error: the chart *did* load) so the reader
+    // knows the bars they see stopped arriving at `fetchedAt`.
+    if (data.cached && data.fetchedAt) {
+      setStatus(`Source unreachable — showing data last retrieved ${retrievedAt(data.fetchedAt)}.`);
+    } else if (!quiet) {
+      setStatus("");
+    }
+  } catch (err) {
+    // A background refresh that failed changed nothing on screen, so it stays
+    // quiet: it must not overwrite a message the reader is reading, and the
+    // bars in front of them are still the ones that last loaded.
+    if (!quiet || !state.data) setStatus(err.message, true);
+  } finally {
+    // Only the newest non-quiet request owns the busy state: a background
+    // refresh never set it, and a superseded load hands it to its successor.
+    if (!quiet && seq === state.chartSeq) {
+      setBusy(false);
+      el.plot.classList.remove("is-stale");
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Suggestions
+ * ------------------------------------------------------------------ */
+let sugTimer = null;
+let sugAbort = null;
+
+function scheduleSuggest() {
+  clearTimeout(sugTimer);
+  const q = el.input.value.trim();
+  if (q.length < 2) return closeSuggestions();
+  sugTimer = setTimeout(() => fetchSuggestions(q), 260);
+}
+
+async function fetchSuggestions(q) {
+  if (sugAbort) sugAbort.abort();
+  sugAbort = new AbortController();
+  try {
+    const data = await requestJSON(`/api/search?q=${encodeURIComponent(q)}`, sugAbort.signal);
+    if (el.input.value.trim() !== q) return;   // input moved on
+    state.suggestions = data.results || [];
+    state.sugIndex = -1;
+    drawSuggestions();
+  } catch (err) {
+    if (err.name !== "AbortError") closeSuggestions();
+  }
+}
+
+function drawSuggestions() {
+  const list = el.suggestions;
+  list.textContent = "";                 // untrusted labels -> no innerHTML
+  if (!state.suggestions.length) return closeSuggestions();
+
+  state.suggestions.forEach((item, i) => {
+    const li = document.createElement("li");
+    li.setAttribute("role", "option");
+    li.id = "sug-" + i;
+    li.setAttribute("aria-selected", i === state.sugIndex ? "true" : "false");
+
+    const sym = document.createElement("span");
+    sym.className = "sug-sym";
+    sym.textContent = item.symbol;
+
+    const name = document.createElement("span");
+    name.className = "sug-name";
+    name.textContent = item.name;
+
+    const exch = document.createElement("span");
+    exch.className = "sug-exch";
+    exch.textContent = item.exchange;
+
+    li.append(sym, name, exch);
+    li.addEventListener("pointerdown", (ev) => { ev.preventDefault(); chooseSuggestion(i); });
+    list.append(li);
+  });
+
+  list.hidden = false;
+  el.input.setAttribute("aria-expanded", "true");
+}
+
+function closeSuggestions() {
+  el.suggestions.hidden = true;
+  el.suggestions.textContent = "";
+  el.input.setAttribute("aria-expanded", "false");
+  state.suggestions = [];
+  state.sugIndex = -1;
+}
+
+function moveSuggestion(step) {
+  if (!state.suggestions.length) return;
+  // Cycle through -1 (nothing picked) .. n-1, so arrowing past the end clears it.
+  const size = state.suggestions.length + 1;
+  state.sugIndex = ((state.sugIndex + 1 + step) % size + size) % size - 1;
+  [...el.suggestions.children].forEach((li, i) =>
+    li.setAttribute("aria-selected", i === state.sugIndex ? "true" : "false"));
+  const active = el.suggestions.children[state.sugIndex];
+  if (active) active.scrollIntoView({ block: "nearest" });
+  el.input.setAttribute("aria-activedescendant",
+    state.sugIndex >= 0 ? "sug-" + state.sugIndex : "");
+}
+
+function chooseSuggestion(i) {
+  const item = state.suggestions[i];
+  if (!item) return;
+  el.input.value = item.symbol;
+  closeSuggestions();
+  loadChart(item.symbol);
+}
+
+/* ------------------------------------------------------------------ *
+ * Render
+ * ------------------------------------------------------------------ */
+function setStatus(msg, isError = false) {
+  el.status.textContent = msg || "";
+  el.status.classList.toggle("error", Boolean(isError));
+}
+
+function setBusy(busy) {
+  state.loading = busy;
+  el.go.disabled = busy;
+  el.go.textContent = busy ? "Loading…" : "Show chart";
+}
+
+function renderAll() {
+  const d = state.data;
+  if (!d) return;
+  closeSuggestions();
+
+  el.assetName.textContent = d.name;
+  const bits = [d.symbol, d.exchange, d.type ? d.type.toLowerCase() : ""].filter(Boolean);
+  // Crypto rows carry the coin's market-cap rank, which is what tells the coin
+  // you meant from a same-ticker collision, and always name the source, so a
+  // symbol rerouted away from Yahoo is never mistaken for Yahoo's answer.
+  if (Number.isFinite(d.coinRank)) bits.splice(2, 0, `rank ${d.coinRank}`);
+  if (d.source) bits.push(`via ${d.source}`);
+  // The newest bar is not always a closing price: it can be the price trading
+  // now or the last extended-hours print. Name which, so the hero figure is
+  // never read as a settled close it is not. A payload from before this field
+  // existed still says what it could (`extendedLastBar`); once the server has
+  // spoken, its word is the only one -- "close" needs no note, and the fold
+  // having *run* is not the same as the bar carrying an after-hours price.
+  const basisNote = {
+    live: "last bar is a live price",
+    pre: "last bar is a pre-market price",
+    after: "last bar is the after-hours price",
+  }[d.lastBarBasis];
+  if (basisNote) bits.push(basisNote);
+  else if (!d.lastBarBasis && d.extendedLastBar) bits.push("last bar includes after-hours");
+  // A disk fallback is the same shape as a live answer with a date attached:
+  // the chart draws, and the meta line says when the bars were really fetched.
+  if (d.cached && d.fetchedAt) bits.push("last retrieved " + retrievedAt(d.fetchedAt));
+  el.assetMeta.textContent = bits.join(" · ");
+
+  const pts = d.points;
+  const last = pts[pts.length - 1];
+  // The first bar the plot draws: the other end of the window the badge and
+  // every table row are judged on.
+  const first = pts.length > 1 ? pts[0] : null;
+
+  // hero figure — proportional figures, never tabular-nums at display size
+  el.hero.hidden = false;
+  el.hero.textContent = formatPrice(last.c, d);
+
+  // The delta is the *window's* move -- the first drawn close to the latest --
+  // not the last session's. It is the same pair the watchlist row and the
+  // recent table measure, so the headline figure and the rows cannot disagree
+  // about the three months. The label names the starting bar, because a bare
+  // "+4.12%" beside a price otherwise reads as today.
+  if (first && first.c !== 0) {
+    const diff = last.c - first.c;
+    const pct = (diff / first.c) * 100;
+    const up = diff >= 0;
+    const from = dayFmt.format(toDate(first.t));
+    // A yield is a rate in percent, so its change is a move in percentage
+    // points, not a percentage of money -- "+0.583%" would read as a relative
+    // change of an already-relative figure. The number is the plotted line's
+    // move (the yield), while the badge reads a bond price; the trend note says
+    // why a rising yield is bearish.
+    const isYield = Boolean(d.yieldSeries || d.unit === "%");
+    el.heroDelta.hidden = false;
+    el.heroDelta.textContent = "";
+    el.heroDelta.title = isYield
+      ? `${SPAN_WORDS[RANGE] || "Window"} move in the plotted yield, ${from} to the latest bar`
+      : `${SPAN_WORDS[RANGE] || "Window"} change, ${from} to the latest close`;
+
+    const glyph = document.createElement("span");
+    glyph.setAttribute("aria-hidden", "true");
+    glyph.textContent = up ? "▲" : "▼";
+
+    const val = document.createElement("span");
+    val.className = "delta-val " + (up ? "up" : "down");
+    const amount = isYield
+      ? `${up ? "+" : "−"}${nf(digitsFor(d)).format(Math.abs(diff))} pt`
+      : formatDelta(diff, d);
+    val.textContent = `${amount} (${up ? "+" : "−"}${Math.abs(pct).toFixed(2)}%)`;
+
+    const label = document.createElement("span");
+    const words = SPAN_WORDS[RANGE];
+    label.textContent =
+      `${isYield ? "yield move" : words ? words.toLowerCase() + " move" : "window move"}, since ${from}`;
+
+    el.heroDelta.append(glyph, val, label);
+  } else {
+    el.heroDelta.hidden = true;
+  }
+
+  drawMinInvest();
+  drawTrend();
+  drawChart();
+  drawTable();
+}
+
+/* ---- minimum investment ----
+   The PSE board lot times the latest close: what it costs to buy the smallest
+   order the exchange allows. Both figures are the server's, computed from the
+   same board-lot table the leaderboards' "Min. investment" column uses, so the
+   two cannot disagree. A payload without them -- every non-PSE symbol, since the
+   board lot is a PSE rule -- hides the readout rather than showing a zero.
+
+   The lot belongs in the note, not the headline: the cheque is what a reader is
+   asking for. It is worth spelling out because a minimum investment of
+   PHP 114,000.00 reads as a mistake until you can see it is 1,000 shares. */
+function drawMinInvest() {
+  const d = state.data;
+  const figs = d && [d.minInvestment, d.boardLot];
+  const usable = figs && figs.every((v) => Number.isFinite(v) && v > 0);
+  el.minInvest.hidden = !usable;
+  if (!usable) return;
+
+  el.minInvestValue.textContent = leaderMoney(d.minInvestment, d.currency);
+  el.minInvestNote.textContent =
+    `${nf(0).format(d.boardLot)}-share board lot at ${formatPrice(d.marketPrice, d)}`;
+}
+
+/* ---- trend badge ----
+   The classifier runs server-side (see trend.py) and ships with the chart
+   payload, so the call is scored on the same bars that are drawn. A missing
+   or unscoreable series simply hides the badge. */
+const TREND_GLYPH = { bullish: "▲", bearish: "▼", neutral: "◆" };
+const TREND_WORD = { bullish: "Bullish", bearish: "Bearish", neutral: "Neutral" };
+
+/* Component keys in the order they are weighted, with readable names. Every
+   bar the chart draws is scored; a component that cannot be measured is
+   missing and filtered out. */
+const TREND_PARTS = [
+  ["momentum", "momentum"],
+  ["trend", "trend"],
+  ["efficiency", "efficiency"],
+  ["range", "range"],
+];
+
+function drawTrend() {
+  const t = state.data && state.data.trend;
+  const badge = el.trendBadge;
+
+  if (!t || !TREND_GLYPH[t.label]) {
+    badge.hidden = true;
+    el.trendNote.hidden = true;
+    document.getElementById("outlookNote").hidden = true;
+    return;
+  }
+
+  badge.className = "trend " + t.label;
+  el.trendGlyph.textContent = TREND_GLYPH[t.label];
+  // A neutral window in a side's hold band says which way it leans; the
+  // label itself stays Neutral (trend.py's `lean`, never a second verdict).
+  const leanWord = t.label === "neutral" && TREND_WORD[t.lean]
+    ? ` · leaning ${t.lean}` : "";
+  el.trendLabel.textContent = TREND_WORD[t.label] + leanWord;
+  el.trendScore.textContent = (t.score >= 0 ? "+" : "−") + Math.abs(t.score).toFixed(3);
+  badge.hidden = false;
+
+  // Name the horizon and the inputs, so the verdict is auditable rather than
+  // a number the reader has to trust.
+  const parts = TREND_PARTS
+    .filter(([key]) => t.components && Number.isFinite(t.components[key]))
+    .map(([key, name]) => `${name} ${t.components[key] >= 0 ? "+" : "−"}${Math.abs(t.components[key]).toFixed(2)}`);
+  const fit = t.components && Number.isFinite(t.components.r2)
+    ? ` · fit R² ${t.components.r2.toFixed(2)}` : "";
+  // The evidence behind the call, in words: a label needs the drift to clear
+  // t 1.96 and holds while it stays above t 1.0 (see trend.py).
+  const sig = Number.isFinite(t.significance)
+    ? (Math.abs(t.significance) >= 99 ? "every bar moved the same way"
+       : `drift t ${t.significance >= 0 ? "+" : "−"}${Math.abs(t.significance).toFixed(2)}`)
+    : "";
+  const progressPct = Number.isFinite(t.progress) ? Math.round(t.progress * 100) : null;
+  const evidence = t.label === "neutral"
+    ? "Neutral means the window does not show a trend that random movement would rarely produce. " +
+      (t.lean && progressPct !== null
+        ? `It leans ${t.lean}: inside the band that keeps a ${t.lean} label, ${progressPct}% of the way to earning one — not confirmed. `
+        : "")
+    : t.held
+      ? `This ${TREND_WORD[t.label].toLowerCase()} trend has weakened but is holding: it stays until the drift falls below the hold band. `
+      : "";
+  const liveNote = state.data.lastBarBasis && state.data.lastBarBasis !== "close"
+    ? "The verdict includes the newest price and updates as it moves. " : "";
+  // A bond chart needs one extra sentence, or the plot contradicts the badge
+  // at a glance: the line is the yield, and the label is its bond-price
+  // reading. The classifier's own call rides along as `yieldTrend`, so the
+  // reader can see which of the two they are looking at.
+  const raw = state.data.yieldTrend;
+  const yieldNote = state.data.yieldSeries
+    ? "This line plots the yield in percent" +
+      (raw && TREND_WORD[raw.label]
+        ? `; the classifier reads the yield itself as ${TREND_WORD[raw.label].toLowerCase()}` : "") +
+      ". The badge reads it as a bond price, so a rising yield is Bearish and a falling yield is Bullish. "
+    : "";
+  // A fund's line is a net asset value, struck once a business day by its
+  // manager -- not a traded price. Saying so keeps the hero figure and the
+  // window's move from reading as an exchange quote.
+  const fundNote = state.data.fundSeries
+    ? "This line plots the fund's net asset value per unit (NAVPU), set once a business day; "
+      + "there is no volume and no intraday price. "
+    : "";
+  el.trendNote.textContent = yieldNote + fundNote +
+    `Past-${state.data.yieldSeries ? "yield" : "price"} trend over all ${t.bars} bars drawn; not a prediction or guarantee for the next three months. ` +
+    evidence + liveNote +
+    (parts.length ? `Signals: ${parts.join(", ")}${fit}${sig ? " · " + sig : ""}. Score strength is not a probability.` : "");
+  el.trendNote.hidden = !el.trendNote.textContent;
+  const outlook = document.getElementById("outlookNote");
+  const c = state.data.longTermContext;
+  outlook.hidden = !c;
+  if (c) {
+    if (c.status !== "available") {
+      outlook.textContent = `Longer-term context unavailable: ${c.reason}. No three-month forecast.`;
+    } else {
+      const comparisons = c.comparisons.map(x =>
+        `${x.months}-month ${x.returnPct >= 0 ? "+" : "−"}${Math.abs(x.returnPct).toFixed(2)}%`).join(" · ");
+      outlook.textContent = `Completed prices as of ${c.asOf}: ${comparisons}. ` +
+        (c.confirmed ? "Both comparisons are positive. " : "Longer-term confirmation is mixed or absent. ") +
+        "In a PSE historical holdout, bullish signals with both comparisons positive finished higher after three months in 47.9% of cases; 6.3% remained bullish throughout. Overlapping cases, surviving listings only; costs excluded. Not a forecast or guarantee.";
+    }
+  }
+}
+
+/* ---- SVG scaffolding ---- */
+function svgEl(name, attrs = {}) {
+  const node = document.createElementNS(NS, name);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  return node;
+}
+
+/* Round tick values to clean numbers. */
+function niceTicks(min, max, count) {
+  const span = max - min;
+  if (!(span > 0)) return [min];
+  const raw = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  const step = (norm <= 1 ? 1 : norm <= 2 ? 2 : norm <= 2.5 ? 2.5 : norm <= 5 ? 5 : 10) * mag;
+  const out = [];
+  for (let v = Math.ceil(min / step) * step; v <= max + step * 1e-6; v += step) out.push(v);
+  return out;
+}
+
+function drawChart() {
+  const d = state.data;
+  const pts = d.points;
+  const n = pts.length;
+
+  el.plot.textContent = "";
+  el.plot.classList.remove("is-stale");
+
+  const closes = pts.map((p) => p.c);
+  let lo = Math.min(...closes);
+  let hi = Math.max(...closes);
+  if (hi === lo) {                       // flat series still needs a band
+    const pad = Math.abs(lo || 1) * 0.01;
+    lo -= pad; hi += pad;
+  }
+  const pad = (hi - lo) * 0.06;
+  lo -= pad; hi += pad;
+
+  const yOf = (v) => M.top + IH - ((v - lo) / (hi - lo)) * IH;
+  const xOf = (i) => M.left + (n === 1 ? IW / 2 : (i / (n - 1)) * IW);
+
+  const svg = svgEl("svg", {
+    viewBox: `0 0 ${PLOT_W} ${PLOT_H}`,
+    role: "img",
+    tabindex: "0",
+    "aria-label": `${d.name} (${d.symbol}) daily closing ` +
+                  (d.yieldSeries ? "yield in percent" : "price") +
+                  ", last three months. Use the table view for exact values.",
+  });
+
+  // --- gridlines + y ticks (hairline, solid, recessive) ---
+  for (const tick of niceTicks(lo, hi, 5)) {
+    const y = yOf(tick);
+    if (y < M.top - 1 || y > M.top + IH + 1) continue;
+    svg.append(svgEl("line", { class: "grid-line", x1: M.left, x2: M.left + IW, y1: y, y2: y }));
+    const label = svgEl("text", {
+      class: "tick-text", x: M.left - 10, y, "text-anchor": "end", "dominant-baseline": "middle",
+    });
+    label.textContent = axisTickFmt(tick);   // clean numbers, no trailing zeros
+    svg.append(label);
+  }
+
+  // --- x ticks: five evenly spaced dates, always ending on the last point ---
+  const tickCount = 5;
+  const idxSet = new Set();
+  for (let k = 0; k < tickCount; k++) {
+    idxSet.add(Math.round((k / (tickCount - 1)) * (n - 1)));
+  }
+  idxSet.add(n - 1);
+  for (const i of [...idxSet].sort((a, b) => a - b)) {
+    const x = xOf(i);
+    const anchor = i === 0 ? "start" : i === n - 1 ? "end" : "middle";
+    const label = svgEl("text", {
+      class: "tick-text", x, y: M.top + IH + 20, "text-anchor": anchor,
+    });
+    label.textContent = dayFmt.format(toDate(pts[i].t));
+    svg.append(label);
+  }
+
+  // --- baseline ---
+  svg.append(svgEl("line", {
+    class: "axis-line", x1: M.left, x2: M.left + IW, y1: M.top + IH, y2: M.top + IH,
+  }));
+
+  // --- axis titles ---
+  const yTitle = svgEl("text", { class: "axis-title", x: M.left - 10, y: M.top - 12, "text-anchor": "end" });
+  // A bond chart's axis is a rate, not a price, and saying so is the only
+  // place on the plot that names the unit: the line is the yield in percent.
+  yTitle.textContent = d.yieldSeries
+    ? "YIELD %"
+    : showsCurrency(d) ? String(d.currency).toUpperCase() : "PRICE";
+  svg.append(yTitle);
+
+  // --- geometry ---
+  const coords = pts.map((p, i) => ({ x: xOf(i), y: yOf(p.c), point: p }));
+  const linePath = coords.map((c, i) => `${i ? "L" : "M"}${c.x.toFixed(2)} ${c.y.toFixed(2)}`).join(" ");
+
+  // area wash at ~10% under the line (single series -> no legend needed)
+  svg.append(svgEl("path", {
+    class: "series-area",
+    d: `${linePath} L ${coords[coords.length - 1].x.toFixed(2)} ${M.top + IH} ` +
+       `L ${coords[0].x.toFixed(2)} ${M.top + IH} Z`,
+  }));
+  svg.append(svgEl("path", { class: "series-line", d: linePath }));
+
+  // --- end marker + a single direct label (the endpoint) ---
+  const lastC = coords[coords.length - 1];
+  svg.append(svgEl("circle", { class: "end-dot", cx: lastC.x, cy: lastC.y, r: 4.5 }));
+
+  // --- hover layer: crosshair, dot, tooltip, keyboard focus target ---
+  const crosshair = svgEl("line", {
+    class: "crosshair", y1: M.top, y2: M.top + IH, x1: 0, x2: 0, visibility: "hidden",
+  });
+  const hoverDot = svgEl("circle", { class: "hover-dot", r: 4.5, cx: 0, cy: 0, visibility: "hidden" });
+  svg.append(crosshair, hoverDot);
+
+  // one transparent target spanning the plot so the pointer only has to be close
+  const capture = svgEl("rect", {
+    x: M.left, y: M.top, width: IW, height: IH, fill: "transparent", style: "cursor:crosshair",
+  });
+  svg.append(capture);
+
+  el.plot.append(svg);
+
+  const tooltip = document.createElement("div");
+  tooltip.className = "tooltip";
+  tooltip.hidden = true;
+  el.plot.append(tooltip);
+
+  // endpoint label lives in the SVG so it tracks the plot's own scale
+  const endLabel = svgEl("text", {
+    class: "end-label", x: lastC.x + 14, y: lastC.y, "dominant-baseline": "middle",
+  });
+  endLabel.textContent = formatPrice(lastC.point.c, d);
+  svg.append(endLabel);
+
+  /* ---- interaction ---- */
+  const indexFromEvent = (ev) => {
+    const box = svg.getBoundingClientRect();
+    const mx = ((ev.clientX - box.left) / box.width) * PLOT_W;
+    const ratio = (mx - M.left) / IW;
+    return Math.max(0, Math.min(n - 1, Math.round(ratio * (n - 1))));
+  };
+
+  const showAt = (i) => {
+    const c = coords[i];
+    state.activeIndex = i;
+
+    crosshair.setAttribute("x1", c.x);
+    crosshair.setAttribute("x2", c.x);
+    crosshair.setAttribute("visibility", "visible");
+    hoverDot.setAttribute("cx", c.x);
+    hoverDot.setAttribute("cy", c.y);
+    hoverDot.setAttribute("visibility", "visible");
+
+    tooltip.textContent = "";
+    const dateLine = document.createElement("div");
+    dateLine.className = "tt-date";
+    dateLine.textContent = fullFmt.format(toDate(c.point.t));
+
+    const row = document.createElement("div");
+    row.className = "tt-row";
+    const key = document.createElement("span");
+    key.className = "tt-key";
+    const value = document.createElement("span");
+    value.className = "tt-value";
+    value.textContent = formatPrice(c.point.c, d);   // value leads
+    const label = document.createElement("span");
+    label.className = "tt-label";
+    // Every bar but the newest is the session's own close. The newest may not
+    // be -- it can be the price trading now or the last extended-hours print --
+    // and `lastBarBasis` is the server's call on which, so a post-market print
+    // never reads as the official close.
+    label.textContent = i === n - 1 ? basisWord(d.lastBarBasis, d) : basisWord(null, d);
+    row.append(key, value, label);
+
+    tooltip.append(dateLine, row);
+    tooltip.hidden = false;
+
+    const box = svg.getBoundingClientRect();
+    const scale = box.width / PLOT_W;
+    let left = c.x * scale;
+    const halfTip = tooltip.offsetWidth / 2;
+    left = Math.max(halfTip + 4, Math.min(box.width - halfTip - 4, left));
+    tooltip.style.left = left + "px";
+    tooltip.style.top = (c.y * (box.height / PLOT_H)) + "px";
+  };
+
+  const clear = () => {
+    state.activeIndex = null;
+    crosshair.setAttribute("visibility", "hidden");
+    hoverDot.setAttribute("visibility", "hidden");
+    tooltip.hidden = true;
+  };
+
+  capture.addEventListener("pointermove", (ev) => showAt(indexFromEvent(ev)));
+  capture.addEventListener("pointerleave", clear);
+  svg.addEventListener("blur", clear);
+
+  // keyboard: the same readout as hover, reachable without a pointer
+  svg.addEventListener("keydown", (ev) => {
+    const cur = state.activeIndex === null ? n - 1 : state.activeIndex;
+    let next = null;
+    if (ev.key === "ArrowRight") next = Math.min(n - 1, cur + 1);
+    else if (ev.key === "ArrowLeft") next = Math.max(0, cur - 1);
+    else if (ev.key === "Home") next = 0;
+    else if (ev.key === "End") next = n - 1;
+    else if (ev.key === "Escape") { clear(); return; }
+    if (next === null) return;
+    ev.preventDefault();
+    showAt(next);
+  });
+}
+
+/* ---- table view: the WCAG-clean twin of the chart ---- */
+function drawTable() {
+  const d = state.data;
+  const pts = d.points;
+
+  el.tableWrap.textContent = "";
+  const table = document.createElement("table");
+
+  const caption = document.createElement("caption");
+  // The newest row can be a price that has not settled (live, or the last
+  // extended-hours print). Say so here too: the table is the keyboard- and
+  // screen-reader-clean twin of the chart, and its "Close" heading would
+  // otherwise be the only thing that column ever said.
+  const basis = BASIS_WORDS[d.lastBarBasis];
+  caption.textContent = `${d.name} (${d.symbol}) — daily closes, last three months.` +
+    (basis
+      ? ` The newest row is ${basis === "after-hours" ? "an" : "a"} ${basis} price, not a settled close.`
+      : "");
+  table.append(caption);
+
+  const thead = document.createElement("thead");
+  const hrow = document.createElement("tr");
+  for (const heading of ["Date", "Close", "Change"]) {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.textContent = heading;
+    hrow.append(th);
+  }
+  thead.append(hrow);
+  table.append(thead);
+
+  const tbody = document.createElement("tbody");
+  pts.forEach((p, i) => {
+    const tr = document.createElement("tr");
+    const date = document.createElement("td");
+    date.textContent = fullFmt.format(toDate(p.t));
+
+    const close = document.createElement("td");
+    close.textContent = formatPrice(p.c, d);
+    // The newest row is the point the chart's tooltip labels: when that figure
+    // is live or an extended-hours print, the cell says so on hover instead of
+    // passing under a "Close" heading it does not answer to.
+    if (i === pts.length - 1 && BASIS_WORDS[d.lastBarBasis]) {
+      close.title = basisWord(d.lastBarBasis, d);
+    }
+
+    const change = document.createElement("td");
+    change.textContent = i === 0 ? "—" : formatDelta(p.c - pts[i - 1].c, d);
+
+    tr.append(date, close, change);
+    tbody.append(tr);
+  });
+  table.append(tbody);
+
+  el.tableWrap.append(table);
+}
+
+/* ------------------------------------------------------------------ *
+ * Watchlist
+ *
+ * The list is a set of symbols the user curates. Picking one is just a
+ * chart load (same code path as the search box); the rail additionally
+ * shows each saved symbol's last close, so the list is worth glancing at
+ * without selecting anything. Persisted to localStorage, best-effort.
+ * ------------------------------------------------------------------ */
+const WATCH_KEY = "apd-watchlist";
+
+/* The page only ever draws daily closes over three months, so a watchlist
+   quote is the same `/api/chart` payload the main chart uses.
+
+   The percentage a row carries is the *window's* move -- the first close the
+   chart draws to the latest -- not the day's. A row and the chart a click opens
+   are then the same verdict about the same bars, which is the rule the recent
+   table already follows, and the chart's own hero delta now measures the same
+   pair, so the headline figure and the row cannot disagree about the three
+   months. */
+function quoteSummary(data) {
+  const pts = data.points;
+  const last = pts[pts.length - 1];
+  const first = pts.length > 1 ? pts[0] : null;
+  const diff = first ? last.c - first.c : null;
+  // A zero first close has no percentage to report, but still has a direction.
+  const pct = first && first.c !== 0 ? (diff / first.c) * 100 : null;
+  const from = first ? dayFmt.format(toDate(first.t)) : "";
+  return {
+    data,
+    price: last.c,
+    diff,
+    pct,
+    up: diff === null ? null : diff >= 0,
+    moveTitle: from
+      ? `${SPAN_WORDS[RANGE] || "Window"} change, ${from} to the latest close`
+      : "Change over the charted window",
+  };
+}
+
+function loadWatch() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(WATCH_KEY) || "[]");
+    if (!Array.isArray(raw)) return;
+    state.watch = raw
+      .filter((it) => it && typeof it.symbol === "string" && it.symbol.trim())
+      .map((it) => ({ symbol: it.symbol.trim(), name: String(it.name || it.symbol).trim() }));
+  } catch { state.watch = []; }
+}
+
+function saveWatch() {
+  try { localStorage.setItem(WATCH_KEY, JSON.stringify(state.watch)); } catch {}
+  declareWatch();
+}
+
+/* Hand the server the list it must keep warm. Up to this page existing, the
+   warmer only knew about *listed* symbols — what a source published — and the
+   reader's own rows were invisible to it, so a reconnect refetched everything
+   except the watchlist. The declaration is a *delivery*, not a transaction:
+   fire-and-forget, swallow every failure (the next `saveWatch`, the next page
+   load, or the next reconnect's health poll re-sends it), and it never touches
+   the UI. An offline declaration is not a lost list — localStorage is still the
+   durable one, and the union on the server is only there to warm rows. */
+function declareWatch() {
+  postJSON("/api/watch", state.watch).catch(() => {});
+}
+
+/* The single writer of `state.watchQuotes`, and the only place a saved symbol
+   may change. Entry and quote key therefore cannot drift apart: when the server
+   canonicalises a spelling (asked for `jup`, returned `JUP-USD`) the quote moves
+   with the symbol and the change is persisted.
+
+   `payload` is the chart response, or `{ error }` / `{ loading: true }` while
+   there is nothing to learn from yet. Its `symbol` and `name` are what let a row
+   saved under a raw ticker — by the older add box, which stored no metadata —
+   settle into the same identity the chart draws.
+
+   A quote is only stored for a symbol already on the list, so charting a random
+   asset does not leak an entry into the map. */
+function setWatchQuote(symbol, entry, payload) {
+  // Both spellings are tried: a legacy entry filed under a raw ticker (`jup`)
+  // has to be found by the canonical symbol the server returned (`JUP-USD`),
+  // and an entry already canonical has to be found by the raw one it was
+  // requested with. One lookup cannot do both, and both paths occur.
+  const item = watchEntry(symbol) || watchEntry(payload && payload.symbol);
+  if (!item) return;
+
+  // Capture the old spelling *before* overwriting it — drag state and the
+  // active-row highlight are keyed on the symbol as it was.
+  const was = item.symbol;
+  const canonical = payload && payload.symbol ? String(payload.symbol).trim() : was;
+  const realName = payload && payload.name ? String(payload.name).trim() : "";
+  let changed = false;
+
+  if (canonical && canonical.toUpperCase() !== was.toUpperCase()) {
+    item.symbol = canonical;
+    if (dragSymbol === was) dragSymbol = canonical;
+    if (state.watchActive === was) state.watchActive = canonical;
+    delete state.watchQuotes[was];
+    changed = true;
+  } else if (canonical && canonical !== was) {
+    item.symbol = canonical;   // same ticker, server's casing
+    changed = true;
+  }
+
+  // A stored name that is just the ticker was never metadata — adopt the real
+  // one so a canonicalised row does not read "JUP-USD / jup".
+  if (realName && (item.name === was || item.name.toUpperCase() === item.symbol.toUpperCase())) {
+    item.name = realName;
+    changed = true;
+  }
+
+  if (changed) saveWatch();
+  state.watchQuotes[item.symbol] = entry;
+}
+
+function isWatched(symbol) {
+  return watchEntry(symbol) !== null;
+}
+
+/* The saved entry for a symbol, under any casing, or null. */
+function watchEntry(symbol) {
+  const key = String(symbol || "").trim().toUpperCase();
+  if (!key) return null;
+  return state.watch.find((it) => it.symbol.toUpperCase() === key) || null;
+}
+
+function addToWatch(symbol, name) {
+  const sym = symbol.trim();
+  if (!sym) return;
+  const key = sym.toUpperCase();
+  const existing = state.watch.find((it) => it.symbol.toUpperCase() === key);
+  if (existing) { setStatus(`${existing.symbol} is already on the watchlist.`); return; }
+  // No length cap: the list is the reader's own and grows as far as they want.
+  // The only bound left is the one that was never a product decision -- the
+  // server's request-body ceiling, which is about not buffering junk.
+  state.watch.push({ symbol: sym, name: (name || sym).trim() });
+  saveWatch();
+  drawWatchList();
+  fetchWatchQuote(sym);
+  setStatus(`Added ${sym} to the watchlist.`);
+}
+
+function removeFromWatch(symbol) {
+  const key = symbol.toUpperCase();
+  state.watch = state.watch.filter((it) => it.symbol.toUpperCase() !== key);
+  // Delete every spelling: a quote may have been stored before the symbol was
+  // canonicalised, and an exact-key delete would leave it behind.
+  Object.keys(state.watchQuotes).forEach((stored) => {
+    if (stored.toUpperCase() === key) delete state.watchQuotes[stored];
+  });
+  if (state.watchActive && state.watchActive.toUpperCase() === key) state.watchActive = null;
+  saveWatch();
+  drawWatchList();
+}
+
+/* Quote fetches are independent of the main chart request, so one bad symbol
+   never blocks the list — each row resolves on its own. */
+async function fetchWatchQuote(symbol) {
+  if (!isWatched(symbol)) return;
+  setWatchQuote(symbol, { loading: true });
+  drawWatchList();
+  try {
+    const data = await requestJSON(
+      `/api/chart?symbol=${encodeURIComponent(symbol)}&range=${RANGE}&interval=${INTERVAL}`
+    );
+    if (!isWatched(symbol)) return;               // removed while in flight
+    setWatchQuote(symbol, quoteSummary(data), data);  // may re-key the entry and its quote
+  } catch (err) {
+    if (!isWatched(symbol)) return;
+    setWatchQuote(symbol, { error: err.message });
+  }
+  drawWatchList();
+}
+
+function refreshWatchQuotes() {
+  state.watch.forEach((it) => fetchWatchQuote(it.symbol));
+}
+
+/* ---- staying current without being asked ----
+   The server now keeps the declared list warm on its own: on a reconnect edge
+   it refetches every union symbol, whether or not a page is open. This poll is
+   how an *open* page learns that happened — `/api/health`'s `reconnections`
+   counter is the server's own edge count, and when it moves, the fresh copies
+   are already on the server (or arriving within seconds), so the page's job is
+   only to re-read them: refresh the rows, and redraw the chart if one of them
+   is what the chart is showing.
+
+   The poll also re-declares the list, which is what makes a symbol added
+   *during* an outage known to the server again once the wire returns: the
+   save-time declaration failed while offline, and nothing else re-sends it.
+   Every 30s while visible costs one memo read server-side — `/api/health` is
+   a static answer and `/api/watch` a list swap plus a small disk write. */
+const HEALTH_POLL = 30 * 1000;
+const WATCH_TTL = 300 * 1000;   // rows re-sync on the leaderboards' cadence
+
+let healthEdges = null;   // last `reconnections` value seen; null until first poll
+
+async function pollHealth() {
+  let payload;
+  try {
+    payload = await requestJSON("/api/health");
+  } catch { return; }              // server unreachable: nothing to learn
+  const edges = payload.reconnections;
+  if (typeof edges !== "number") return;   // older server: no counter to watch
+  declareWatch();
+  // First poll only files the baseline; the page has already fetched at load.
+  // *Any* move refreshes: upward is a reconnect edge, to a smaller number is a
+  // server restart, and both mean the copy behind each row just changed.
+  if (healthEdges === null) { healthEdges = edges; return; }
+  if (edges === healthEdges) return;
+  healthEdges = edges;
+  refreshWatchQuotes();
+  if (state.watchActive) loadChart(state.watchActive);
+}
+
+/* Kept current like the tables above: visible-only, so a background tab costs
+   the upstream nothing. Rows re-read every five minutes, and the reconnect
+   counter is polled far faster — the latency budget on the user's own list. */
+setInterval(() => { if (!document.hidden) refreshWatchQuotes(); }, WATCH_TTL);
+setInterval(() => { if (!document.hidden) pollHealth(); }, HEALTH_POLL);
+
+/* ---- reordering ----
+   The user's order is the list's own order: `state.watch` is the only thing
+   persisted, so a drag or a keyboard nudge is just a move within it followed by
+   a save and a repaint. Both entries keep their quote, so a reorder never
+   re-fetches anything. */
+
+function moveWatch(from, to) {
+  if (from === to) return false;
+  const n = state.watch.length;
+  if (from < 0 || from >= n || to < 0 || to >= n) return false;
+  const [item] = state.watch.splice(from, 1);
+  state.watch.splice(to, 0, item);
+  saveWatch();
+  drawWatchList();   // full repaint: row contents are unchanged, only the order
+  return true;
+}
+
+function reorderWatch(symbol, to) {
+  const from = state.watch.findIndex((it) => it.symbol === symbol);
+  if (from < 0) return false;
+  const moved = moveWatch(from, to);
+  if (moved) {
+    setStatus(`${symbol} moved to position ${to + 1} of ${state.watch.length}.`);
+  }
+  return moved;
+}
+
+/* Move one row during a live drag, without a full repaint: the row under the
+   pointer must stay alive for the rest of the gesture. Returns the new index. */
+function shiftWatchRow(list, dragIndex, targetIndex) {
+  if (dragIndex === targetIndex) return dragIndex;
+  const item = state.watch[dragIndex];
+  state.watch.splice(dragIndex, 1);
+  state.watch.splice(targetIndex, 0, item);
+  const nodes = [...list.children];
+  const before = nodes[targetIndex < dragIndex ? targetIndex : targetIndex + 1];
+  list.insertBefore(nodes[dragIndex], before || null);
+  return targetIndex;
+}
+
+/* Pointer drag, native HTML5 flavour, with one wrinkle: a drag has no DOM
+   event of its own to listen to, so the handlers live on the grips, which every
+   repaint throws away. `dragRepaint` fixes that -- a quote arriving mid-drag
+   repaints the list and then re-derives the drag from state, so the gesture
+   survives instead of silently dying with its grip.
+
+   The list order is mutated as rows reflow, so there is no separate commit:
+   `dragFrom` only remembers where the row started. dragend then either keeps
+   the change or puts it back, and "did a drop land on the rail?" is what
+   decides -- a drop fires `drop` on the list, a cancelled drag (Escape, or
+   releasing outside the window) does not. */
+let dragSymbol = null;   // symbol being dragged, null when idle
+let dragFrom = -1;       // where it was lifted from, for a cancel
+let dragDropped = false; // did the gesture end in a drop on the rail?
+
+function endDrag() {
+  dragSymbol = null;
+  dragFrom = -1;
+  dragDropped = false;
+  el.watchList.classList.remove("is-reordering");
+  el.watchList.querySelectorAll(".is-dragging").forEach((li) => li.classList.remove("is-dragging"));
+}
+
+/* Called by every drawWatchList(). Re-marks the dragged row in the new DOM,
+   or -- if the symbol is gone, e.g. removed mid-drag -- ends the drag. */
+function dragRepaint() {
+  if (dragSymbol === null) return;
+  const index = state.watch.findIndex((it) => it.symbol === dragSymbol);
+  const row = el.watchList.children[index];
+  if (!row) return endDrag();
+  row.classList.add("is-dragging");
+  el.watchList.classList.add("is-reordering");
+}
+
+function finishDrag() {
+  if (dragSymbol === null) return;
+  const symbol = dragSymbol;
+  const from = dragFrom;
+  const dropped = dragDropped;
+  endDrag();
+
+  if (!dropped) {
+    // Cancelled: rows reflowed live purely as preview, so put the order back.
+    const at = state.watch.findIndex((it) => it.symbol === symbol);
+    if (at >= 0 && at !== from) {
+      const [item] = state.watch.splice(at, 1);
+      state.watch.splice(from, 0, item);
+      drawWatchList();
+      setStatus("Reorder cancelled.");
+    }
+    return;
+  }
+
+  const to = state.watch.findIndex((it) => it.symbol === symbol);
+  if (to === from || to < 0) return;       // nothing moved: nothing to say
+  saveWatch();
+  setStatus(`${symbol} moved to position ${to + 1} of ${state.watch.length}.`);
+}
+
+/* Focus and the DOM order are rebuilt by every repaint, so a keyboard nudge
+   restores both by hand: move the row it acted on, then put focus back. */
+function nudgeWatch(symbol, step) {
+  const from = state.watch.findIndex((it) => it.symbol === symbol);
+  if (from < 0) return;
+  const to = Math.max(0, Math.min(state.watch.length - 1, from + step));
+  if (!reorderWatch(symbol, to)) return;
+  const row = el.watchList.children[to];
+  const grip = row && row.querySelector(".watch-grip");
+  if (grip) grip.focus();
+}
+
+function drawWatchList() {
+  const list = el.watchList;
+  list.textContent = "";                    // untrusted labels -> no innerHTML
+  el.watchCount.textContent = state.watch.length ? `${state.watch.length}` : "";
+
+  if (!state.watch.length) {
+    const empty = document.createElement("li");
+    empty.className = "watch-empty";
+    empty.textContent = "Nothing saved yet. Chart a symbol, then press Add to watchlist.";
+    list.append(empty);
+    el.watchHint.textContent = "";
+    syncWatchToggle();
+    return;
+  }
+
+  // One clause explains the pill, and only once a pill is on screen -- an
+  // empty list of tags needs no key.
+  const anyVerdict = state.watch.some((it) => {
+    const q = state.watchQuotes[it.symbol];
+    return q && q.data && q.data.trend && TREND_WORD[q.data.trend.label];
+  });
+  el.watchHint.textContent = (
+    state.watch.length > 1
+      ? "Click a symbol to chart it. Drag the grip — or focus it and press ↑/↓ — to reorder."
+      : "Click a symbol to chart its last three months."
+  ) + (anyVerdict ? " Each tag is that row's three-month verdict." : "");
+
+  state.watch.forEach((item) => {
+    const quote = state.watchQuotes[item.symbol];
+    const active = state.watchActive
+      && state.watchActive.toUpperCase() === item.symbol.toUpperCase();
+
+    // The row's verdict. `quote.data` is the very payload the chart draws, so
+    // this label is the chart's own badge, not a second opinion about the
+    // symbol. A missing or unscoreable series shows no pill rather than
+    // inventing a neutral one -- a missing fetch is not a verdict.
+    const trend = quote && quote.data && quote.data.trend ? quote.data.trend : null;
+    const verdict = trend && TREND_WORD[trend.label] ? trend.label : null;
+    const verdictScore = verdict && Number.isFinite(trend.score)
+      ? ` (score ${trend.score >= 0 ? "+" : "−"}${Math.abs(trend.score).toFixed(2)})`
+      : "";
+
+    const li = document.createElement("li");
+    li.className = "watch-item" + (active ? " is-active" : "");
+
+    const pick = document.createElement("button");
+    pick.type = "button";
+    pick.className = "watch-pick";
+    pick.setAttribute("aria-label",
+      `Chart ${item.name} (${item.symbol})` + (verdict ? `, trend ${TREND_WORD[verdict]}` : ""));
+    if (active) pick.setAttribute("aria-current", "true");
+
+    const top = document.createElement("span");
+    top.className = "watch-top";
+    const id = document.createElement("span");
+    id.className = "watch-id";
+    const sym = document.createElement("span");
+    sym.className = "watch-sym";
+    sym.textContent = item.symbol;
+    id.append(sym);
+    if (verdict) {
+      const tag = document.createElement("span");
+      tag.className = "watch-trend " + verdict;
+      tag.textContent = TREND_WORD[verdict];
+      tag.title = `${SPAN_WORDS[RANGE] || "Window"} trend${verdictScore}: the same ` +
+        `classifier the chart's badge uses, scored on the same bars.`;
+      id.append(tag);
+    }
+
+    const price = document.createElement("span");
+    price.className = "watch-price";
+    if (quote && quote.data) {
+      price.textContent = formatPrice(quote.price, quote.data);
+      // A disk fallback's price is true of `fetchedAt`, not of now; the row
+      // keeps its single-line shape and puts the date where hovering finds it.
+      if (quote.data.cached && quote.data.fetchedAt) {
+        price.title = "Last retrieved " + retrievedAt(quote.data.fetchedAt);
+      }
+    } else if (quote && quote.loading) {
+      price.textContent = "…";
+    } else {
+      price.textContent = "";               // error -> the sub-line carries it
+    }
+    top.append(id, price);
+
+    const sub = document.createElement("span");
+    sub.className = "watch-sub";
+    const name = document.createElement("span");
+    name.className = "watch-name";
+    name.textContent = item.name;
+
+    const chg = document.createElement("span");
+    if (quote && quote.data && Number.isFinite(quote.pct)) {
+      const up = quote.up;
+      chg.className = "watch-chg " + (up ? "up" : "down");
+      // The tooltip says which move this is and which bar it starts from: a
+      // bare "-9.34%" beside a price reads as today's move until told otherwise.
+      chg.setAttribute("title", quote.moveTitle || "Change over the charted window");
+      // Glyph carries the direction, so this never depends on color alone.
+      chg.textContent =
+        `${up ? "▲" : "▼"} ${up ? "+" : "−"}${Math.abs(quote.pct).toFixed(2)}%`;
+    } else if (quote && quote.error) {
+      chg.className = "watch-chg";
+      chg.textContent = "unavailable";
+      chg.title = quote.error;
+    } else {
+      chg.className = "watch-chg";
+      chg.textContent = "";
+    }
+    sub.append(name, chg);
+
+    pick.append(top, sub);
+    pick.addEventListener("click", () => loadChart(item.symbol));
+
+    // The grip is the only draggable part, so the rest of the row keeps its
+    // click-to-chart. Arrow keys on a focused grip move the row instead.
+    const grip = document.createElement("button");
+    grip.type = "button";
+    grip.className = "watch-grip";
+    grip.textContent = "⠿";
+    grip.draggable = true;
+    grip.title = "Drag to reorder";
+    grip.setAttribute("aria-label",
+      `Reorder ${item.symbol}. Drag, or press arrow up or down to move it.`);
+    grip.addEventListener("dragstart", (ev) => {
+      dragSymbol = item.symbol;
+      dragFrom = state.watch.findIndex((it) => it.symbol === item.symbol);
+      ev.dataTransfer.effectAllowed = "move";
+      // Some browsers cancel a drag that carries no payload.
+      ev.dataTransfer.setData("text/plain", item.symbol);
+      li.classList.add("is-dragging");
+      list.classList.add("is-reordering");
+    });
+    grip.addEventListener("dragend", finishDrag);
+    grip.addEventListener("keydown", (ev) => {
+      let step = 0;
+      if (ev.key === "ArrowUp") step = -1;
+      else if (ev.key === "ArrowDown") step = 1;
+      else if (ev.key === "Home") step = -state.watch.length;   // clamped to 0
+      else if (ev.key === "End") step = state.watch.length;     // clamped to last
+      else return;
+      ev.preventDefault();   // else the rail scrolls instead of the row moving
+      nudgeWatch(item.symbol, step);
+    });
+
+    const remove = document.createElement("button");
+    remove.type = "button";
+    remove.className = "remove-btn";
+    remove.textContent = "×";
+    remove.setAttribute("aria-label", `Remove ${item.symbol} from watchlist`);
+    remove.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      removeFromWatch(item.symbol);
+      setStatus(`Removed ${item.symbol} from the watchlist.`);
+    });
+
+    li.append(grip, pick, remove);
+    list.append(li);
+  });
+
+  syncWatchToggle();
+  dragRepaint();   // a drag outlives the rows it started on
+}
+
+/* The charted asset is the only thing the toggle can add, so it mirrors
+   state.data — there is no typed text to mistype. Called at the end of
+   drawWatchList, which every mutation repaints through. */
+function syncWatchToggle() {
+  const btn = el.watchToggle;
+  const d = state.data;
+  btn.hidden = !d;
+  if (!d) return;
+  const on = isWatched(d.symbol);
+  btn.setAttribute("aria-pressed", on ? "true" : "false");
+  el.watchGlyph.textContent = on ? "\u2605" : "\u2606";
+  el.watchToggleLabel.textContent = on ? "On watchlist" : "Add to watchlist";
+}
+
+
+/* ------------------------------------------------------------------ *
+ * Wiring
+ * ------------------------------------------------------------------ */
+el.form.addEventListener("submit", (ev) => {
+  ev.preventDefault();
+  if (state.sugIndex >= 0) return chooseSuggestion(state.sugIndex);
+  loadChart(el.input.value);
+});
+
+el.input.addEventListener("input", scheduleSuggest);
+el.input.addEventListener("blur", () => setTimeout(closeSuggestions, 120));
+el.input.addEventListener("keydown", (ev) => {
+  if (ev.key === "ArrowDown") { ev.preventDefault(); moveSuggestion(1); }
+  else if (ev.key === "ArrowUp") { ev.preventDefault(); moveSuggestion(-1); }
+  else if (ev.key === "Escape") closeSuggestions();
+});
+
+el.tableToggle.addEventListener("click", () => {
+  const show = el.tableWrap.hidden;
+  el.tableWrap.hidden = !show;
+  el.tableToggle.setAttribute("aria-pressed", show ? "true" : "false");
+  el.tableToggle.textContent = show ? "Hide table" : "Table view";
+});
+
+/* theme toggle: stamp data-theme so it wins over the OS setting both ways */
+function applyTheme(mode) {
+  document.documentElement.setAttribute("data-theme", mode);
+  el.theme.textContent = mode === "dark" ? "Light mode" : "Dark mode";
+  el.theme.setAttribute("aria-pressed", mode === "dark" ? "true" : "false");
+  try { localStorage.setItem("apd-theme", mode); } catch {}
+  if (state.data) drawChart();   // re-render so SVG fills resolve the new tokens
+}
+
+el.theme.addEventListener("click", () => {
+  applyTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+});
+
+(function initTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem("apd-theme"); } catch {}
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  applyTheme(saved || (prefersDark ? "dark" : "light"));
+})();
+
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (ev) => {
+  let saved = null;
+  try { saved = localStorage.getItem("apd-theme"); } catch {}
+  if (!saved) applyTheme(ev.matches ? "dark" : "light");
+});
+
+/* ---- watchlist wiring ---- */
+
+/* Reordering is wired on the list, not on each row: rows are rebuilt by every
+   drawWatchList() — including on each quote arriving — so per-row handlers
+   would be dropped mid-drag. Events from a grip bubble up to here, and once a
+   drag is live the bubbling target is the grip regardless of the row under it. */
+el.watchList.addEventListener("dragover", (ev) => {
+  if (dragSymbol === null) return;
+  const rows = [...el.watchList.children];
+  const from = state.watch.findIndex((it) => it.symbol === dragSymbol);
+  if (from < 0) return endDrag();
+
+  // Insert above or below the nearest row by which half of it the pointer is in.
+  let target = rows.length;
+  for (let i = 0; i < rows.length; i++) {
+    const box = rows[i].getBoundingClientRect();
+    const mid = box.top + box.height / 2;
+    if (i === from) continue;
+    if (ev.clientY < mid) { target = i; break; }
+  }
+  if (target > from) target -= 1;            // the dragged row vacates its slot
+  shiftWatchRow(el.watchList, from, target);
+
+  ev.preventDefault();                       // required to allow a drop
+  ev.dataTransfer.dropEffect = "move";
+});
+
+el.watchList.addEventListener("drop", (ev) => {
+  if (dragSymbol === null) return;
+  ev.preventDefault();
+  dragDropped = true;      // dragend fires next, and will now commit
+});
+
+/* Adds or removes the charted asset. Symbol and name come off the payload, so
+   a rerouted crypto keeps its canonical identity and its decorated meta line is
+   never parsed as a ticker. */
+el.watchToggle.addEventListener("click", () => {
+  const d = state.data;
+  if (!d) return;
+  if (isWatched(d.symbol)) {
+    removeFromWatch(d.symbol);
+    setStatus(`Removed ${d.symbol} from the watchlist.`);
+  } else {
+    addToWatch(d.symbol, d.name);
+  }
+});
+
+/* ------------------------------------------------------------------ *
+ * Most-traded tables
+ *
+ * Two leaderboards of what traded most by value today. The ranking is
+ * decided server-side (see markets.py); the page only draws it, formats
+ * each figure in the currency it was quoted in, and offers the
+ * converted amount as a second line under it.
+ * ------------------------------------------------------------------ */
+/* Matches the server's TOP_TTL: refreshing faster would re-render the same
+   cached answer, and slower would let a stale table sit on screen. */
+const LEADERS_TTL = 300 * 1000;
+
+function compact(value, currency) {
+  if (!Number.isFinite(value)) return "—";
+  try {
+    return nf(2, { notation: "compact", style: "currency", currency }).format(value);
+  } catch { return "—"; }
+}
+
+function leaderMoney(value, currency) {
+  if (!Number.isFinite(value)) return "—";
+  try { return nf(2, { style: "currency", currency }).format(value); }
+  catch { return nf(2).format(value); }
+}
+
+function cell(text, className) {
+  const td = document.createElement("td");
+  if (className) td.className = className;
+  td.textContent = text;
+  return td;
+}
+
+/* A figure with the other market's money beneath it, so each column answers
+   "how much is that in my money" without becoming two full-width columns. */
+function moneyCell(primary, primaryCurrency, secondary, secondaryCurrency) {
+  const td = document.createElement("td");
+  td.textContent = leaderMoney(primary, primaryCurrency);
+  if (Number.isFinite(secondary)) {
+    const alt = document.createElement("span");
+    alt.className = "alt";
+    alt.textContent = leaderMoney(secondary, secondaryCurrency);
+    td.append(alt);
+  }
+  return td;
+}
+
+function drawLeaders(section) {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const head = document.createElement("div");
+  head.className = "card-head";
+  const title = document.createElement("h3");
+  title.textContent = section.label;
+  const sub = document.createElement("span");
+  sub.className = "card-sub";
+  sub.textContent = `Top ${section.rows.length || 10} by traded value`;
+  head.append(title, sub);
+  card.append(head);
+
+  if (section.error) {
+    const p = document.createElement("p");
+    p.className = "card-error";
+    p.textContent = section.error;
+    card.append(p);
+    return card;
+  }
+
+  // Headings name the market's own currency first; the converted figure is a
+  // sub-line inside each cell, so it needs no heading of its own.
+  const other = section.currency === "PHP" ? "USD" : "PHP";
+  // Only the PSE has a board lot, so only its table has a minimum buy to show.
+  // The other market's table has no fifth column at all: an empty one would
+  // reserve its width and leave the price figures with a band of blank space
+  // beside them. The four columns both markets do have keep their own fixed
+  // widths, so rank, traded value and price still sit at the same x in either
+  // card, and the width the missing column would have taken goes to the symbol.
+  const hasLot = section.currency === "PHP";
+  const headings = hasLot
+    ? ["#", "Symbol", "Traded", "Price", "Min. investment"]
+    : ["#", "Symbol", "Traded", "Price"];
+  const table = document.createElement("table");
+  const thead = document.createElement("thead");
+  const hrow = document.createElement("tr");
+  for (const heading of headings) {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.textContent = heading;
+    hrow.append(th);
+  }
+  thead.append(hrow);
+  table.append(thead);
+
+  const tbody = document.createElement("tbody");
+  for (const row of section.rows) {
+    const tr = document.createElement("tr");
+    tr.append(cell(String(row.rank), "rank"));
+
+    // The label carries the instrument name and its kind, since a fund and a
+    // share sit in the same ranking and should be told apart at a glance.
+    const label = document.createElement("td");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tick-btn";
+    button.textContent = row.ticker;
+    // No handler of its own: its click bubbles to the row's, so keyboard
+    // activation and a mouse click take the same single path.
+    const name = document.createElement("span");
+    name.className = "tick-sub";
+    name.textContent = `${row.name} · ${row.kind}`;
+    label.append(button, name);
+    tr.append(label);
+
+    tr.append(moneyCell(row.turnover, section.currency,
+                        other === "PHP" ? row.turnoverPhp : row.turnoverUsd, other));
+    tr.append(cell(leaderMoney(row.price, section.currency)));
+
+    // The server leaves the board lot null outside the PSE rather than
+    // inventing a rule, so the column is left off that table entirely.
+    if (hasLot) {
+      tr.append(Number.isFinite(row.lotCost)
+        ? moneyCell(row.lotCost, "PHP", row.lotCostUsd, "USD")
+        : cell("—"));
+    }
+
+    // Row click is the mouse convenience; the button above is the control a
+    // keyboard or screen reader uses, so the row is not made focusable too.
+    tr.addEventListener("click", () => loadChart(row.chartSymbol));
+    tbody.append(tr);
+  }
+  table.append(tbody);
+
+  const wrap = document.createElement("div");
+  wrap.className = "table-wrap";
+  wrap.append(table);
+  card.append(wrap);
+  return card;
+}
+
+function drawLeadersNote(payload) {
+  const parts = [];
+  // The server stamps a fresh answer `checkedAt`; a disk fallback instead
+  // carries `cached`/`fetchedAt` and no `checkedAt` at all, so the two
+  // branches never compete, and the fallback names what could not be reached.
+  if (payload.cached && payload.fetchedAt) {
+    parts.push("Data last retrieved " + retrievedAt(payload.fetchedAt));
+    if (payload.cacheError) parts.push("offline — " + payload.cacheError);
+  } else if (payload.checkedAt) {
+    parts.push("Checked " + new Date(payload.checkedAt * 1000).toLocaleTimeString());
+  }
+  if (payload.fx && Number.isFinite(payload.fx.phpPerUsd)) {
+    parts.push(`Converted at USDPHP ${nf(2).format(payload.fx.phpPerUsd)}`);
+  } else {
+    parts.push("Dollar conversion unavailable");
+  }
+  el.leadersNote.textContent = parts.join(" · ");
+}
+
+async function loadLeaders() {
+  try {
+    const payload = await requestJSON("/api/top");
+    el.leadersGrid.textContent = "";
+    for (const section of payload.markets || []) {
+      el.leadersGrid.append(drawLeaders(section));
+    }
+    drawLeadersNote(payload);
+  } catch (err) {
+    // A failed refresh must not clear a table already on screen; it only
+    // reports the failure. A first load that fails leaves the note as the
+    // whole content, which is why the grid is not wiped here.
+    el.leadersNote.textContent = "Market tables unavailable — " + err.message;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Most traded crypto — 24 hours
+ *
+ * The heaviest coins of the rolling last 24 hours by turnover (Binance's
+ * USDT-pair quote volume), filtered to the ones whose chart is bullish AND
+ * whose day is up: the server walks the volume ranking from the top down and
+ * keeps a coin only when the label on the window the chart would draw is
+ * bullish and its 24-hour change is positive -- until ten rows are filled --
+ * expanding down the ranking rather than shipping the top ten whatever their
+ * trend. The label is the same `trend.classify` the chart's own badge uses,
+ * reached through the same `crypto.try_chart` the chart route itself ends in,
+ * so a row and the chart its click opens are the same call over the same
+ * bars -- there is no second definition of bullish here either. The day
+ * condition is the reader's own eye, not a second classifier: a coin down on
+ * the rolling day reads as anything but bullish, however its three-month
+ * chart leans, and the first build shipped a table full of exactly that --
+ * ten rows, every one red on the day.
+ *
+ * Like the other two tables, the figures are the server's: the turnover is
+ * the 24-hour quote volume in dollars with the peso figure beneath it at the
+ * leaderboards' own rate, and the price is the chart's latest completed close
+ * rather than a live print, so a row's price and its chart can never
+ * disagree. The 24-hour change is the one live figure -- it describes the
+ * rolling day the table ranks on.
+ * ------------------------------------------------------------------ */
+/* Matches the server's cache TTL for the same reason the tables' does: the
+   answer behind this is re-scanned on that clock, and polling faster would
+   re-render the same table from the same payload. */
+const CRYPTOBULL_TTL = 300 * 1000;
+
+/* A crypto price at the decimals the coin's magnitude asks for: `leaderMoney`
+   pins two, which turns a $0.0000057 close into "$0.00" -- a figure that says
+   nothing. The row carries the same `priceHint` the chart's own readout uses,
+   so the table and the chart print the coin the same way. */
+function cryptoMoney(value, hint) {
+  const digits = Number.isFinite(hint) ? hint : 2;
+  if (!Number.isFinite(value)) return "—";
+  try { return nf(digits, { style: "currency", currency: "USD" }).format(value); }
+  catch { return nf(digits).format(value); }
+}
+
+function drawCryptobull(payload) {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const head = document.createElement("div");
+  head.className = "card-head";
+  const title = document.createElement("h3");
+  title.textContent = payload.label || "Most traded crypto — 24 hours";
+  const sub = document.createElement("span");
+  sub.className = "card-sub";
+  sub.textContent = `${payload.rows.length} bullish of ${payload.scanned ?? payload.rows.length} scanned`;
+  head.append(title, sub);
+  card.append(head);
+
+  if (payload.error) {
+    const p = document.createElement("p");
+    p.className = "card-error";
+    p.textContent = payload.error;
+    card.append(p);
+    return card;
+  }
+
+  const table = document.createElement("table");
+  const thead = document.createElement("thead");
+  const hrow = document.createElement("tr");
+  for (const heading of ["#", "Symbol", "Traded · 24h", "Price", "24h"]) {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.textContent = heading;
+    hrow.append(th);
+  }
+  thead.append(hrow);
+  table.append(thead);
+
+  const tbody = document.createElement("tbody");
+  payload.rows.forEach((row, i) => {
+    const tr = document.createElement("tr");
+    // The rank column is the row's place in the table -- its position in the
+    // volume ranking, as in every other table's "#" -- not the coin's
+    // market-cap rank, which travels in the name line below the ticker where
+    // it answers "which coin is this" rather than "how heavy is this row".
+    tr.append(cell(String(i + 1), "rank"));
+
+    // The label stacks the coin's name over its market-cap rank, which is
+    // what tells the real coin from a ticker collision everywhere else
+    // crypto is named on this page.
+    const label = document.createElement("td");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tick-btn";
+    button.textContent = row.ticker;
+    // No handler of its own, as in the other tables: the click bubbles to the
+    // row's one handler, so keyboard and mouse take the same path.
+    const name = document.createElement("span");
+    name.className = "tick-sub";
+    name.textContent = row.rank
+      ? `${row.name} · rank ${row.rank}`
+      : row.name;
+    label.append(button, name);
+    tr.append(label);
+
+    // The rolling day's turnover, dollars first with the peso figure beneath.
+    tr.append(moneyCell(row.turnover, "USD", row.turnoverPhp, "PHP"));
+    tr.append(cell(cryptoMoney(row.price, row.priceHint)));
+
+    // Signed and coloured like the watchlist rail's deltas. A change of
+    // exactly zero keeps the plain colour: it says "flat", not "up".
+    const chg = document.createElement("td");
+    const pct = Number(row.change);
+    if (Number.isFinite(pct)) {
+      chg.className = "chg" + (pct > 0 ? " up" : pct < 0 ? " down" : "");
+      chg.textContent = `${pct > 0 ? "+" : ""}${pct.toFixed(2)}%`;
+    } else {
+      chg.textContent = "—";
+    }
+    tr.append(chg);
+
+    tr.addEventListener("click", () => loadChart(row.chartSymbol));
+    tbody.append(tr);
+  });
+  table.append(tbody);
+
+  const wrap = document.createElement("div");
+  wrap.className = "table-wrap";
+  wrap.append(table);
+  card.append(wrap);
+  return card;
+}
+
+function drawCryptobullNote(payload) {
+  const parts = [];
+  if (payload.cached && payload.fetchedAt) {
+    parts.push("Data last retrieved " + retrievedAt(payload.fetchedAt));
+    if (payload.cacheError) parts.push("offline — " + payload.cacheError);
+  } else if (payload.checkedAt) {
+    parts.push("Checked " + new Date(payload.checkedAt * 1000).toLocaleTimeString());
+  }
+  // The walk stops when ten bullish rows are filled; saying how far down the
+  // ranking it had to reach is the difference between "the ten heaviest are
+  // bullish" and "the search had to expand" -- the fact this table exists to
+  // show.
+  if (payload.rows && payload.rows.length) {
+    parts.push(`${payload.scanned} of ${payload.universe} pairs scanned`);
+  } else if (payload.universe) {
+    parts.push(`${payload.universe} chartable pairs scanned — none bullish`);
+  }
+  // The day condition skips off the ticker, before any probe: a coin flat or
+  // down on the rolling day never reaches the trend call. Saying how many it
+  // turned away is the difference between "few coins qualify" and "the scan
+  // never looked".
+  if (payload.flat) {
+    parts.push(`${payload.flat} skipped — flat or down on the day`);
+  }
+  if (payload.missing && payload.missing.length) {
+    parts.push(`${payload.missing.length} did not answer`);
+  }
+  if (payload.fx && Number.isFinite(payload.fx.phpPerUsd)) {
+    parts.push(`Converted at USDPHP ${nf(2).format(payload.fx.phpPerUsd)}`);
+  } else if (payload.fxError) {
+    parts.push("Peso conversion unavailable");
+  }
+  el.cryptobullNote.textContent = parts.join(" · ");
+}
+
+async function loadCryptobull() {
+  try {
+    const payload = await requestJSON("/api/cryptobull");
+    el.cryptobullGrid.textContent = "";
+    // A scan can land with zero rows -- none of the pairs scanned is
+    // bullish. That is an answer, not a failure: the note carries it and the
+    // section stays up rather than reading as a section that never loaded.
+    if (payload.rows && payload.rows.length) {
+      el.cryptobullGrid.append(drawCryptobull(payload));
+    }
+    drawCryptobullNote(payload);
+  } catch (err) {
+    // Same rule as the other tables: a failed refresh must not clear a table
+    // already on screen.
+    el.cryptobullNote.textContent = "Crypto table unavailable — " + err.message;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Bullish Philippine stocks
+ *
+ * Every PSE stock whose current label is bullish, dated to the bar the run
+ * began on and sorted newest first. The label is the same `trend.classify`
+ * the chart's own badge uses -- there is no second definition of bullish
+ * here -- and the onset is worked out server-side (see bullish.py), because
+ * it needs 270 bars per symbol and a classification per bar walked.
+ *
+ * The order and both money columns are the server's too. Names sharing a
+ * session are broken by that session's traded value, and "Min. investment" is
+ * the leaderboards' own column -- the board lot times the price, off the one
+ * board-lot table in the project -- so this draws the payload's figures in the
+ * currency it names rather than recomputing either.
+ *
+ * The sweep reads the whole universe and takes about half a minute, so the
+ * server keeps an answer warm on a background thread instead of fetching on
+ * demand; this only ever draws the last one it produced.
+ * ------------------------------------------------------------------ */
+/* Shorter than the server's refresh interval on purpose: the sweep behind this
+   is a fifteen-minute one, and polling faster than it changes re-renders the
+   same table from the same payload. */
+const BULLISH_TTL = 300 * 1000;
+
+/* A calendar date with no clock time: a trading session is the unit here, and
+   the second the bar opened is noise. Read as UTC, which is what the server
+   dated it in -- `toLocaleDateString` on a timestamp from a Manila session
+   slips to the previous day in a western timezone. */
+function sessionDate(stamp) {
+  const d = new Date(stamp * 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+}
+
+/* The same date, read in the timezone the row names.
+   A Philippine bond yield is closed at five in the morning, which is 21:00
+   the day before in UTC -- so read as UTC it lands on the wrong day. The
+   server says which timezone each row's bars are stamped in, and this reads
+   the date there. Rows without a timezone are read as UTC, like every other
+   date on the page. */
+function rowDate(stamp, tz) {
+  if (!tz) return sessionDate(stamp);
+  try {
+    // The parts are formatted in the named timezone and then put together
+    // here, rather than formatted as a whole: `toLocaleDateString`'s output
+    // is whatever the locale says a date looks like, and this table's dates
+    // are read against the other tables' -- which are all `YYYY-MM-DD`.
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
+    }).formatToParts(new Date(stamp * 1000));
+    const get = (type) => parts.find((p) => p.type === type)?.value ?? "";
+    return `${get("year")}-${get("month")}-${get("day")}`;
+  } catch {
+    return sessionDate(stamp);
+  }
+}
+
+function drawBullish(payload) {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const head = document.createElement("div");
+  head.className = "card-head";
+  const title = document.createElement("h3");
+  title.textContent = payload.label || "Bullish Philippine stocks";
+  const sub = document.createElement("span");
+  sub.className = "card-sub";
+  sub.textContent = `${payload.rows.length} bullish now`;
+  head.append(title, sub);
+  card.append(head);
+
+  if (payload.error) {
+    const p = document.createElement("p");
+    p.className = "card-error";
+    p.textContent = payload.error;
+    card.append(p);
+    return card;
+  }
+
+  const table = document.createElement("table");
+  const thead = document.createElement("thead");
+  const hrow = document.createElement("tr");
+  for (const heading of ["#", "Symbol", "Bullish since", "Run", "Price",
+                         "Min. investment"]) {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.textContent = heading;
+    hrow.append(th);
+  }
+  thead.append(hrow);
+  table.append(thead);
+
+  // The newest session any row reaches, which is what "began on the latest bar"
+  // is measured against: recency is a fact about the data, not about the
+  // reader's clock, and some PSE names report a bar a day or two late.
+  const latest = payload.rows.reduce((m, r) => Math.max(m, r.last || 0), 0);
+
+  const tbody = document.createElement("tbody");
+  payload.rows.forEach((row, i) => {
+    const tr = document.createElement("tr");
+    tr.append(cell(String(i + 1), "rank"));
+
+    const label = document.createElement("td");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tick-btn";
+    button.textContent = row.ticker;
+    // As in the leaderboards: no handler of its own, so a mouse click and a
+    // keyboard activation bubble to the row's one handler and take the same path.
+    const name = document.createElement("span");
+    name.className = "tick-sub";
+    name.textContent = row.name;
+    label.append(button, name);
+    if (Number.isFinite(row.score)) {
+      const score = document.createElement("span");
+      score.className = "tick-sub";
+      score.textContent = `Score +${row.score.toFixed(3)}` +
+        (row.score < 0.30 ? " · borderline" : "");
+      label.append(score);
+    }
+    tr.append(label);
+
+    // The date the current run started. A run that began on the latest bar is
+    // the freshest signal in the table and the reason the sort order is worth
+    // reading, so it is marked rather than left to be found by comparing dates.
+    const since = cell(sessionDate(row.since), "since");
+    if (row.since === latest) since.classList.add("fresh");
+    if (row.censored) {
+      since.title = "Bullish for at least this long — the run starts before the bars fetched";
+    }
+    tr.append(since);
+
+    // Bars, not days: the label is decided a bar at a time, so a run of five is
+    // five sessions of it however far apart they fell.
+    tr.append(cell(String(row.run)));
+    tr.append(cell(leaderMoney(row.price, payload.currency || "PHP")));
+
+    // The smallest cheque that can buy the stock, which is the leaderboards'
+    // own column and the same server-side board lot. An instrument with no
+    // board lot has no minimum buy, so it is marked rather than left blank --
+    // a blank cell reads as a figure that failed to load.
+    tr.append(Number.isFinite(row.lotCost)
+      ? cell(leaderMoney(row.lotCost, payload.currency || "PHP"))
+      : cell("—"));
+
+    tr.addEventListener("click", () => loadChart(row.chartSymbol));
+    tbody.append(tr);
+  });
+  table.append(tbody);
+
+  const wrap = document.createElement("div");
+  wrap.className = "table-wrap";
+  wrap.append(table);
+  card.append(wrap);
+  return card;
+}
+
+function drawBullishNote(payload) {
+  const parts = [];
+  if (payload.cached && payload.fetchedAt) {
+    // The table is a sweep read off disk, not one this server ran. The rows
+    // and their dates are real either way; what changes is that the sweep
+    // itself stopped arriving at `fetchedAt`, and the note says so — ahead of
+    // `pending`, because "scanning" alone would hide the copy the reader is
+    // actually looking at. A failing refresher reports itself beside this line
+    // through `staleError`, once it has.
+    parts.push("Swept " + retrievedAt(payload.fetchedAt) + " — source offline");
+  } else if (payload.pending) {
+    // The first sweep has not landed yet. Saying so is the whole reason this
+    // note exists: an empty table would read as "no Philippine stock is
+    // bullish", which is a far stronger claim than "not measured yet".
+    parts.push("Scanning the PSE universe — this table fills in when the first sweep finishes");
+  } else if (payload.checkedAt) {
+    parts.push("Swept " + new Date(payload.checkedAt * 1000).toLocaleTimeString());
+  }
+  if (payload.fetched) {
+    parts.push(`${payload.fetched} of ${payload.universe} symbols scanned`);
+  }
+  if (payload.boundary) {
+    parts.push(`${payload.boundary} at the call threshold`);
+  }
+  // A failed refresh leaves the last good sweep on screen, dated, so the failure
+  // is reported beside the rows rather than by clearing them.
+  if (payload.staleError) parts.push("last refresh failed — " + payload.staleError);
+  el.bullishNote.textContent = parts.join(" · ");
+}
+
+async function loadBullish() {
+  try {
+    const payload = await requestJSON("/api/bullish");
+    el.bullishGrid.textContent = "";
+    // Nothing to draw before the first sweep lands; the note carries it.
+    if (payload.rows && payload.rows.length) {
+      el.bullishGrid.append(drawBullish(payload));
+    }
+    drawBullishNote(payload);
+  } catch (err) {
+    // Same rule as the leaderboards: a failed refresh must not clear a table
+    // already on screen.
+    el.bullishNote.textContent = "Bullish table unavailable — " + err.message;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Recently bullish assets
+ *
+ * One table across four markets: US stocks, Philippine stocks, crypto and
+ * the Philippine government bond yields. Every row carries the day its
+ * current run began, and the rows are ordered newest-turn first, so what
+ * turned most recently across every market is at the top.
+ *
+ * The label is the badge's -- the same `trend.classify` the chart's own
+ * badge uses -- and the date is the same walk, worked out server-side
+ * (`onset.py`), because it needs a year of bars per instrument and a
+ * classification per bar walked.
+ *
+ * Bond rows invert the yield's direction to reflect the usual price movement
+ * of an existing fixed-rate bond, and name the yield movement explicitly.
+ * Only a falling yield is a row: a rising yield is a falling bond price, and a
+ * flat one has no run to date, so neither belongs in a table of what turned
+ * bullish.
+ *
+ * The sweep behind this reads fifty US tickers and twenty-five coins, so the
+ * server keeps an answer warm on a background thread; this only ever draws
+ * the last one it produced.
+ * ------------------------------------------------------------------ */
+/* Matches the server's refresh interval on purpose: polling faster than the
+   sweep runs re-renders the same table from the same payload. */
+const RECENT_TTL = 900 * 1000;
+
+/* The chart's own clock. While the newest bar is a price still moving -- a
+   live, pre-market or after-hours print, which the server names in
+   `lastBarBasis` -- the chart and its badge re-read every minute, the
+   server's own chart-cache lifetime, so the trend verdict follows the market
+   in real time. Once the newest bar is a settled close nothing moves, and
+   the slow fifteen-minute clock is enough to notice the next session. */
+const CHART_TTL = 900 * 1000;
+const CHART_LIVE_TTL = 60 * 1000;
+
+/* A price the way this table draws it. A yield is a percentage, not an
+   amount of money, so it never gets a currency symbol -- the `%` is the
+   unit and the number is the yield. `priceHint` is the row's own precision
+   where it has one: a fund's NAVPU is published with two or four decimals,
+   and printing a four-decimal fund at two would round away the digits that
+   actually moved. */
+function recentPrice(value, currency, hint) {
+  if (!Number.isFinite(value)) return "—";
+  if (currency === "%") return `${nf(3).format(value)}%`;
+  const digits = Number.isFinite(Number(hint)) ? Math.min(Math.max(Number(hint), 0), 8) : 2;
+  try { return nf(digits, { style: "currency", currency: currency || "USD" }).format(value); }
+  catch { return nf(digits).format(value); }
+}
+
+function drawRecent(payload) {
+  const card = document.createElement("div");
+  card.className = "card";
+
+  const head = document.createElement("div");
+  head.className = "card-head";
+  const title = document.createElement("h3");
+  title.textContent = payload.label || "Recently bullish assets";
+  const sub = document.createElement("span");
+  sub.className = "card-sub";
+  sub.textContent = `${payload.rows.length} rows`;
+  head.append(title, sub);
+  card.append(head);
+
+  if (payload.error) {
+    const p = document.createElement("p");
+    p.className = "card-error";
+    p.textContent = payload.error;
+    card.append(p);
+    return card;
+  }
+
+  const table = document.createElement("table");
+  const thead = document.createElement("thead");
+  const hrow = document.createElement("tr");
+  for (const heading of
+       ["Market", "Asset", "Direction", "Since", "Run", "Price",
+        "Trading volume (in PHP)"]) {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.textContent = heading;
+    hrow.append(th);
+  }
+  thead.append(hrow);
+  table.append(thead);
+
+  // The newest bar each market reaches, which is what "began on the latest
+  // bar" is measured against: recency is a fact about the data, not about
+  // the reader's clock. It is measured per market, because the markets do
+  // not trade on the same clock -- the Philippine bond yield is closed at
+  // five in the morning, hours before the American session opens -- and a
+  // bond row compared against a New York bar would never be "fresh" for a
+  // reason that has nothing to do with the bond.
+  const latest = {};
+  for (const row of payload.rows) {
+    const market = row.market || "";
+    latest[market] = Math.max(latest[market] || 0, row.last || 0);
+  }
+
+  const tbody = document.createElement("tbody");
+  // The rate the peso volume column converted at, named once and read on
+  // every row's hover; the server already said it in the note.
+  const rate = payload.fx && payload.fx.phpPerUsd;
+  payload.rows.forEach((row) => {
+    const tr = document.createElement("tr");
+
+    tr.append(cell(row.market || "—", "market"));
+
+    // The asset cell stacks a ticker over its name, so it is the one cell
+    // allowed to wrap -- a long instrument name held on one line would need a
+    // column wider than the five others leave over.
+    const label = document.createElement("td");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tick-btn";
+    button.textContent = row.ticker || row.symbol;
+    // As in the leaderboards: no handler of its own, so a mouse click and a
+    // keyboard activation bubble to the row's one handler and take the same
+    // path.
+    const name = document.createElement("span");
+    name.className = "tick-sub";
+    name.textContent = row.name || "";
+    label.append(button, name);
+    tr.append(label);
+
+    // Bond direction is inferred from yield movement, which is named too.
+    const dir = document.createElement("td");
+    const isYield = row.note === "yield rising" || row.note === "yield falling"
+                 || row.note === "yield flat";
+    if (isYield) {
+      dir.className = "dir yield";
+      dir.textContent = `${TREND_WORD[row.direction] || row.direction} (${row.note})`;
+      dir.title = "Inferred from the yield: existing fixed-rate bond prices generally "
+                + "move inversely to yields. The chart this row opens plots the "
+                + "yield in percent, not a bond price.";
+    } else {
+      dir.className = `dir ${row.direction || "neutral"}`;
+      dir.textContent = `${TREND_GLYPH[row.direction] || ""} ${TREND_WORD[row.direction] || row.direction || "—"}`;
+    }
+    tr.append(dir);
+
+    // The date the current run started. A run that began on the latest bar is
+    // the freshest signal in the table and the reason the sort order is worth
+    // reading, so it is marked rather than left to be found by comparing dates.
+    const since = cell(row.since ? rowDate(row.since, row.tz) : "—", "since");
+    if (row.since && row.since === latest[row.market || ""]) since.classList.add("fresh");
+    if (row.censored) {
+      since.title = "Running for at least this long — the run starts before the bars fetched";
+    }
+    if (row.stale) {
+      since.title = `Read from a stored copy — the source did not answer (${row.stale}s old)`;
+    }
+    tr.append(since);
+
+    // Bars, not days: the label is decided a bar at a time, so a run of five
+    // is five sessions of it however far apart they fell.
+    tr.append(cell(Number.isFinite(row.run) ? String(row.run) : "—"));
+    tr.append(cell(recentPrice(row.price, row.currency, row.priceHint)));
+
+    // The latest bar's value traded, in pesos, whatever the row's own
+    // currency -- the same turnover the other tables rank on, converted at
+    // the payload's own rate rather than a second one. The compact figure is
+    // what the column shows (a peso turnover reaches thirteen digits); the
+    // exact figure, and for a converted row the native one, ride on the
+    // cell's title. A yield trades no shares, so its cell is empty -- an
+    // empty cell is the honest reading, not a zero.
+    const vol = document.createElement("td");
+    vol.className = "vol";
+    if (Number.isFinite(row.turnoverPhp)) {
+      vol.textContent = compact(row.turnoverPhp, "PHP");
+      const native = recentPrice(row.turnover, row.currency, row.priceHint);
+      vol.title = (row.currency || "").toUpperCase() === "PHP"
+        ? leaderMoney(row.turnoverPhp, "PHP")
+        : `${native} at USDPHP ${rate ? rate : "—"}`;
+    } else if (row.market === "Philippine bond") {
+      vol.textContent = "—";
+      vol.title = "A yield has no traded volume";
+    } else if (row.market === "Philippine fund") {
+      // A fund is not traded: units are bought from and sold back to the
+      // manager at the day's NAVPU, so there is no volume to report and no
+      // liquidity test to fail. A dash, not a zero.
+      vol.textContent = "—";
+      vol.title = "A fund publishes one net asset value per unit; nothing is traded on an exchange";
+    } else if (row.market === "US Treasury") {
+      // A contract's volume is a count of contracts, not money: close times
+      // contracts is not a traded value in any currency, so there is no peso
+      // figure to print. A dash, not a zero.
+      vol.textContent = "—";
+      vol.title = "A futures contract's volume counts contracts, not currency, so there is no traded value to convert";
+    } else {
+      vol.textContent = "—";
+    }
+    tr.append(vol);
+
+    // Every row on this table opens a chart: a price row through its own
+    // source, a bond yield through `tv.py`'s series of the same bars the row
+    // was judged on. The fallback stays for a row that genuinely has no chart
+    // (a payload with no `chartSymbol`), and says so rather than pretending.
+    if (row.chartable && row.chartSymbol) {
+      tr.addEventListener("click", () => loadChart(row.chartSymbol));
+    } else {
+      tr.classList.add("no-chart");
+      tr.title = "No chart for this row.";
+    }
+    tbody.append(tr);
+  });
+  table.append(tbody);
+
+  const wrap = document.createElement("div");
+  wrap.className = "table-wrap";
+  wrap.append(table);
+  card.append(wrap);
+  return card;
+}
+
+function drawRecentNote(payload) {
+  const parts = [];
+  if (payload.pending) {
+    // The first sweep has not landed yet. Saying so is the whole reason this
+    // note exists: an empty table would read as "nothing anywhere is
+    // bullish", which is a far stronger claim than "not measured yet".
+    parts.push("Scanning — this table fills in when the first sweep finishes");
+  } else if (payload.cached && payload.fetchedAt) {
+    // The table is a sweep read off disk, not one this server ran. The rows
+    // and their dates are real either way; what changes is that the sweep
+    // itself stopped arriving at `fetchedAt`, and the note says so.
+    parts.push("Swept " + retrievedAt(payload.fetchedAt) + " — source offline");
+  } else if (payload.checkedAt) {
+    parts.push("Swept " + new Date(payload.checkedAt * 1000).toLocaleTimeString());
+  }
+  // The server's own one-line summary of what was judged and what answered.
+  if (payload.note) parts.push(payload.note);
+  // A failed refresh leaves the last good sweep on screen, dated, so the
+  // failure is reported beside the rows rather than by clearing them.
+  if (payload.staleError) parts.push("last refresh failed — " + payload.staleError);
+  el.recentNote.textContent = parts.join(" · ");
+}
+
+/* ------------------------------------------------------------------ *
+ * Leaning bullish -- not confirmed
+ *
+ * The near-misses of the same sweep: assets whose own chart reads Neutral
+ * but whose window sits inside the band that keeps a bullish label
+ * (score >= 0.15, drift t >= 1.0) without meeting the bar that earns one
+ * (score >= 0.25, t >= 1.96). Same classifier, same window; ordered by how
+ * much of that bar is met. No date: a label was never given, so there is
+ * no run to date.
+ * ------------------------------------------------------------------ */
+function drawLeaning(payload) {
+  const rows = payload.leaning || [];
+  const card = document.createElement("div");
+  card.className = "card";
+  const head = document.createElement("div");
+  head.className = "card-head";
+  const title = document.createElement("h3");
+  title.textContent = "Neutral on the chart, leaning bullish";
+  const sub = document.createElement("span");
+  sub.className = "card-sub";
+  sub.textContent = `${rows.length} rows`;
+  head.append(title, sub);
+  card.append(head);
+
+  const table = document.createElement("table");
+  const thead = document.createElement("thead");
+  const hrow = document.createElement("tr");
+  for (const heading of ["Market", "Asset", "Toward bullish", "Score", "Drift t",
+                         "Price", "Trading volume (in PHP)"]) {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.textContent = heading;
+    hrow.append(th);
+  }
+  thead.append(hrow);
+  table.append(thead);
+
+  const tbody = document.createElement("tbody");
+  for (const row of rows) {
+    const tr = document.createElement("tr");
+    tr.append(cell(row.market || "—", "market"));
+
+    const label = document.createElement("td");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tick-btn";
+    button.textContent = row.ticker || row.symbol;
+    const name = document.createElement("span");
+    name.className = "tick-sub";
+    name.textContent = row.note ? `${row.name || ""} (${row.note})` : (row.name || "");
+    label.append(button, name);
+    tr.append(label);
+
+    const pct = Number.isFinite(row.progress) ? Math.round(row.progress * 100) : null;
+    const meter = document.createElement("td");
+    meter.className = "meter-cell";
+    const wrap = document.createElement("span");
+    wrap.className = "meter";
+    const bar = document.createElement("span");
+    bar.className = "meter-bar";
+    const fill = document.createElement("span");
+    fill.className = "meter-fill";
+    fill.style.width = `${Math.min(100, Math.max(0, pct || 0))}%`;
+    bar.append(fill);
+    const num = document.createElement("span");
+    num.className = "num";
+    num.textContent = pct === null ? "—" : `${pct}%`;
+    wrap.append(bar, num);
+    meter.append(wrap);
+    meter.title = "Share of the bullish entry bar met: score 0.25 and drift t 1.96 "
+                + "both reached is 100%. Not a probability.";
+    tr.append(meter);
+
+    const score = Number.isFinite(row.score)
+      ? (row.score >= 0 ? "+" : "−") + Math.abs(row.score).toFixed(3) : "—";
+    tr.append(cell(score, "num"));
+    const t = Number.isFinite(row.significance)
+      ? (row.significance >= 0 ? "+" : "−") + Math.abs(row.significance).toFixed(2) : "—";
+    tr.append(cell(t, "num"));
+    tr.append(cell(recentPrice(row.price, row.currency, row.priceHint)));
+
+    const vol = document.createElement("td");
+    vol.className = "vol";
+    vol.textContent = Number.isFinite(row.turnoverPhp) ? compact(row.turnoverPhp, "PHP") : "—";
+    tr.append(vol);
+
+    if (row.chartable && row.chartSymbol) {
+      tr.addEventListener("click", () => loadChart(row.chartSymbol));
+    } else {
+      tr.classList.add("no-chart");
+    }
+    tbody.append(tr);
+  }
+  table.append(tbody);
+  const tw = document.createElement("div");
+  tw.className = "table-wrap";
+  tw.append(table);
+  card.append(tw);
+  return card;
+}
+
+function drawLeaningNote(payload) {
+  if (!Array.isArray(payload.leaning) || (payload.pending && !payload.leaning.length)) {
+    el.leaningNote.textContent = "Scanning — fills in when the next sweep finishes";
+    return;
+  }
+  const n = (payload.leaning || []).length;
+  el.leaningNote.textContent =
+    `${n} assets whose own chart reads Neutral but sit in the band that keeps a bullish label ` +
+    "(score ≥ 0.15, drift t ≥ 1.0) without meeting the bar that earns one (score ≥ 0.25, t ≥ 1.96). " +
+    "Closest to Bullish first. Measured on saved history: about 1 in 4 of these became Bullish within " +
+    "the next ~20 bars. Not a buy signal.";
+}
+
+async function loadRecent() {
+  try {
+    const payload = await requestJSON("/api/recent");
+    el.recentGrid.textContent = "";
+    // Nothing to draw before the first sweep lands; the note carries it.
+    if (payload.rows && payload.rows.length) {
+      el.recentGrid.append(drawRecent(payload));
+    }
+    drawRecentNote(payload);
+    el.leaningGrid.textContent = "";
+    if (payload.leaning && payload.leaning.length) {
+      el.leaningGrid.append(drawLeaning(payload));
+    }
+    drawLeaningNote(payload);
+  } catch (err) {
+    // Same rule as the leaderboards: a failed refresh must not clear a table
+    // already on screen.
+    el.recentNote.textContent = "Recently bullish table unavailable — " + err.message;
+  }
+}
+
+/* Open on a well-known symbol so the page is never a blank slate. */
+loadWatch();
+drawWatchList();
+refreshWatchQuotes();
+// Declares the list to the server and files the reconnect baseline. This is
+// the *load-time* declaration: `saveWatch` only fires on a change, so without
+// this a page that merely opens and reads never tells the server anything.
+pollHealth();
+el.input.value = "BTC-USD";
+loadChart("BTC-USD");
+loadLeaders();
+loadCryptobull();
+loadBullish();
+loadRecent();
+// Kept current while the tab is open, but only while it is visible -- a
+// background tab polling three upstream queries every five minutes is waste.
+setInterval(() => { if (!document.hidden) loadLeaders(); }, LEADERS_TTL);
+setInterval(() => { if (!document.hidden) loadCryptobull(); }, CRYPTOBULL_TTL);
+// The sweep behind this one is slower still, so a hidden tab has even less
+// reason to ask.
+setInterval(() => { if (!document.hidden) loadBullish(); }, BULLISH_TTL);
+// The sweep behind this one is slower still -- it reads a browser-backed
+// Yahoo fetch for fifty US tickers -- so a hidden tab has even less reason
+// to ask.
+setInterval(() => { if (!document.hidden) loadRecent(); }, RECENT_TTL);
+// The chart on screen re-reads itself without being clicked, quietly, so the
+// last bar (which carries live and extended-hours trading) and the trend
+// badge scored on it do not sit frozen at whatever they said when the asset
+// was opened. Skipped while a request of the reader's own is in flight: that
+// one is about to land, and racing it would only make the newer answer lose.
+//
+// The clock ticks every minute and asks whether a read is due: one minute
+// after the last answer while the newest bar is moving, fifteen once it has
+// settled. Asking every minute means opening a live coin from a settled
+// chart starts the fast clock at once instead of after the slow wait.
+function chartIsLive() {
+  const basis = state.data && state.data.lastBarBasis;
+  return basis === "live" || basis === "pre" || basis === "after";
+}
+setInterval(() => {
+  if (document.hidden || !state.chartSymbol || state.loading) return;
+  const age = Date.now() - (state.chartLoadedAt || 0);
+  if (age >= (chartIsLive() ? CHART_LIVE_TTL : CHART_TTL) - 1000) {
+    loadChart(state.chartSymbol, { quiet: true });
+  }
+}, CHART_LIVE_TTL);
+// A tab brought back to the front re-reads at once rather than showing a
+// verdict up to fifteen minutes old.
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && state.chartSymbol && !state.loading) {
+    loadChart(state.chartSymbol, { quiet: true });
+  }
+});
+</script>
+</body>
+</html>

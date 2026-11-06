@@ -1,0 +1,169 @@
+{
+  "collected_at": "2026-10-30T16:40:51.137355+08:00",
+  "source": "TradingView PSE daily bars, split adjusted",
+  "universe_requested": 244,
+  "series_received": 244,
+  "missing": [],
+  "sample_start": "2008-04-01",
+  "sample_end": "2026-07-08",
+  "holdout_start": "2025-01-01",
+  "skipped": {
+    "insufficient_history": 4008,
+    "incomplete_outcome": 1674
+  },
+  "example_stock_results": {
+    "PSE:SMC": {
+      "development": {
+        "n": 26,
+        "stocks": 1,
+        "months": 26,
+        "positive_pct": 34.62,
+        "mean_return_pct": -1.21,
+        "median_return_pct": -2.86,
+        "loss_over_10_pct": 7.69
+      },
+      "holdout": {
+        "n": 19,
+        "stocks": 1,
+        "months": 19,
+        "positive_pct": 26.32,
+        "mean_return_pct": -2.14,
+        "median_return_pct": -6.22,
+        "loss_over_10_pct": 31.58
+      }
+    },
+    "PSE:SPNEC": {
+      "development": {
+        "n": 5,
+        "stocks": 1,
+        "months": 5,
+        "positive_pct": 60.0,
+        "mean_return_pct": 14.96,
+        "median_return_pct": 5.71,
+        "loss_over_10_pct": 0.0
+      },
+      "holdout": {
+        "n": 19,
+        "stocks": 1,
+        "months": 19,
+        "positive_pct": 68.42,
+        "mean_return_pct": 2.7,
+        "median_return_pct": 6.56,
+        "loss_over_10_pct": 26.32
+      }
+    }
+  },
+  "method": "First available session each month; signal at close, enter next available session open, exit close on or after three calendar months. Gross split-adjusted price returns; no dividends, fees, tax or slippage. Minimum 252 prior bars for every rule.",
+  "limitations": [
+    "Current listed universe: survivorship and selection bias; delisted stocks are missing.",
+    "Monthly observations overlap and stocks share market shocks; counts are not independent.",
+    "Next-session open may not be achievable, especially for illiquid shares; results exclude all transaction costs and dividends.",
+    "Signal is based on historical daily closes, not the unfinished current session.",
+    "Continuous bullishness requires the same historical label on every available bar through the exit; missing trading sessions can hide changes. A positive return is a different outcome, and neither guarantees the future.",
+    "The holdout begins 2025-01-01, but data after it is used for outcome measurement; this is one retrospective holdout, not a prospective trial."
+  ],
+  "results": {
+    "development": {
+      "all": {
+        "n": 6528,
+        "stocks": 233,
+        "months": 139,
+        "positive_pct": 41.84,
+        "mean_return_pct": 0.19,
+        "median_return_pct": -1.82,
+        "loss_over_10_pct": 23.12
+      },
+      "bullish_3m": {
+        "n": 933,
+        "stocks": 206,
+        "months": 90,
+        "positive_pct": 44.37,
+        "mean_return_pct": 0.56,
+        "median_return_pct": -1.54,
+        "loss_over_10_pct": 26.58,
+        "continuously_bullish_pct": 5.14
+      },
+      "bullish_3m_6m_up": {
+        "n": 803,
+        "stocks": 198,
+        "months": 88,
+        "positive_pct": 44.21,
+        "mean_return_pct": 0.79,
+        "median_return_pct": -1.52,
+        "loss_over_10_pct": 26.9,
+        "continuously_bullish_pct": 5.6
+      },
+      "bullish_3m_12m_up": {
+        "n": 637,
+        "stocks": 167,
+        "months": 84,
+        "positive_pct": 46.15,
+        "mean_return_pct": 0.78,
+        "median_return_pct": -1.02,
+        "loss_over_10_pct": 25.9,
+        "continuously_bullish_pct": 5.97
+      },
+      "bullish_3m_6m_12m_up": {
+        "n": 602,
+        "stocks": 166,
+        "months": 84,
+        "positive_pct": 46.01,
+        "mean_return_pct": 0.74,
+        "median_return_pct": -1.02,
+        "loss_over_10_pct": 26.41,
+        "continuously_bullish_pct": 6.31
+      }
+    },
+    "holdout": {
+      "all": {
+        "n": 3776,
+        "stocks": 224,
+        "months": 19,
+        "positive_pct": 45.05,
+        "mean_return_pct": 1.97,
+        "median_return_pct": -0.74,
+        "loss_over_10_pct": 20.76
+      },
+      "bullish_3m": {
+        "n": 614,
+        "stocks": 165,
+        "months": 19,
+        "positive_pct": 46.42,
+        "mean_return_pct": 2.37,
+        "median_return_pct": -0.75,
+        "loss_over_10_pct": 25.73,
+        "continuously_bullish_pct": 5.86
+      },
+      "bullish_3m_6m_up": {
+        "n": 544,
+        "stocks": 156,
+        "months": 19,
+        "positive_pct": 46.69,
+        "mean_return_pct": 2.99,
+        "median_return_pct": -0.65,
+        "loss_over_10_pct": 25.0,
+        "continuously_bullish_pct": 6.07
+      },
+      "bullish_3m_12m_up": {
+        "n": 510,
+        "stocks": 143,
+        "months": 19,
+        "positive_pct": 47.84,
+        "mean_return_pct": 3.15,
+        "median_return_pct": 0.0,
+        "loss_over_10_pct": 24.31,
+        "continuously_bullish_pct": 6.08
+      },
+      "bullish_3m_6m_12m_up": {
+        "n": 476,
+        "stocks": 138,
+        "months": 19,
+        "positive_pct": 47.9,
+        "mean_return_pct": 3.5,
+        "median_return_pct": -0.03,
+        "loss_over_10_pct": 24.37,
+        "continuously_bullish_pct": 6.3
+      }
+    }
+  }
+}
