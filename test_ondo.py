@@ -16,6 +16,7 @@ import unittest
 from unittest import mock
 
 import ondo
+import onset
 import probability
 
 
@@ -46,11 +47,27 @@ class SearchTests(unittest.TestCase):
                          "Ondo Short-Term U.S. Government Bond Fund")
 
     def test_the_words_a_reader_types_find_it(self):
-        for query in ("OUSG", "ousg", "ondo", "ondo short term",
+        for query in ("OUSG", "ousg", "ondo short term",
                       "short-term treasury", "tokenized treasury"):
             self.assertEqual([row["symbol"] for row in
                               ondo.search_tokens(query)],
                              ["ONDO:OUSG"], query)
+
+    def test_the_issuer_word_lists_the_tokens(self):
+        # "ondo" is the shop's own name, so it answers with the shop's tokens
+        # rather than with one of them -- the fund first, the portfolios after
+        # it, in the order they are declared. Every row is an `ONDO:` symbol,
+        # because none of these has a Yahoo listing to fall back on.
+        rows = ondo.search_tokens("ondo")
+        self.assertEqual(rows[0]["symbol"], "ONDO:OUSG")
+        self.assertTrue(rows)
+        for row in rows:
+            self.assertTrue(row["symbol"].startswith("ONDO:"), row)
+
+    def test_a_portfolio_is_findable_by_its_own_code(self):
+        rows = ondo.search_tokens("mag7x")
+        self.assertEqual([row["symbol"] for row in rows], ["ONDO:MAG7X"])
+        self.assertEqual(rows[0]["type"], ondo.PORTFOLIO)
 
     def test_another_ondo_product_is_not_this_one(self):
         # Yahoo lists the tokenized stocks itself (`QQQON-USD`), so "ondo qqq"
@@ -149,7 +166,10 @@ class ChartTests(unittest.TestCase):
             with mock.patch.object(ondo, "_get_json",
                                    return_value=_document(days=days)) as get:
                 ondo.chart("ONDO:OUSG", span, "1d")
-            self.assertIn("span=%d" % days, get.call_args[0][0], span)
+            # A few days more than the chart draws: the badge's steadiness reading
+        # looks back over the sessions behind the window (`onset.decorate`).
+        self.assertIn("span=%d" % (days + onset.LEAN_HOLD_BARS),
+                      get.call_args[0][0], span)
 
     def test_a_fresh_point_is_the_price_trading_now(self):
         payload = self.chart()

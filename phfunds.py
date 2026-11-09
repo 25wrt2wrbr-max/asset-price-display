@@ -619,6 +619,7 @@ def _chart_payload(code: str, bars: list[dict], span: str, interval: str,
     """
     entry = _BY_CODE[code]
     ordered = sorted(bars, key=lambda bar: bar["t"])
+    tail: list[dict] = []
     if interval == "1wk":
         ordered = _weekly(ordered)
         points = [{"t": int(bar["t"]), "c": round(float(bar["c"]), 6)}
@@ -629,6 +630,10 @@ def _chart_payload(code: str, bars: list[dict], span: str, interval: str,
         keep = onset_module.window_now([p["t"] for p in points],
                                        len(points) - 1,
                                        days=RANGE_DAYS.get(span, RANGE_DAYS["3mo"]))
+        # The bars before the window, for `onset.decorate`'s steadiness reading.
+        # The series is `HISTORY_DAYS` long, so a 90-day chart has months behind
+        # it; a fund publishes one value a business day, so it carries no volume.
+        tail = points[:keep[0]][-onset_module.LEAN_HOLD_BARS:]
         points = [points[i] for i in keep]
     if not points:
         raise FundNotFound("No NAVPU data for %s in this window." % entry["name"])
@@ -655,6 +660,7 @@ def _chart_payload(code: str, bars: list[dict], span: str, interval: str,
         "previousClose": points[-2]["c"] if len(points) > 1 else None,
         "marketPrice": points[-1]["c"],
         "points": points,
+        "historyTail": tail,
         "trend": call,
         # The page hides the research-judgment box for a series that is not a
         # traded price (it reads price history, and a daily-struck asset value

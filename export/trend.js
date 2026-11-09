@@ -508,6 +508,10 @@
       price: closes[last],
       turnover: turnover,
       window: used.length,
+      // The window's first drawn close. (windowFirst, price) is the pair a
+      // caller's three-month move is computed from -- a percentage for a
+      // price, points for a yield; the caller knows which it asked about.
+      windowFirst: used.length ? closes[used[0]] : null,
     };
   }
 

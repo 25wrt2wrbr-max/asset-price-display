@@ -336,6 +336,155 @@ def leaning(stamps: list[int], closes: list[float], volumes: list,
     }
 
 
+# The leaning table's steadiness rule, at the reader's request (2026-11-07):
+# "is there a way to filter out 'fragile' stocks like AAPL from being shown to
+# me? it's been going Neutral to leaning bullish and then back to Neutral
+# multiple times now".
+#
+# Measured over the last 120 sessions on 464 shelf names before the rule was
+# chosen: the median name flipped its leaning tag 4 times, and among the names
+# leaning on the day measured the median was 10 (AAPL 14, its drift reading
+# running 1.26, 1.42, 1.26, 1.01, 0.76, 1.19, 1.02, 1.01). A tag on the 1.00
+# line is one soft bar from gone, and a reader watching it learns nothing.
+#
+# The two conditions are measured, not stylistic: the same 120 sessions say this
+# pair cuts the median name's flips from 4 to 0 and the count of tag episodes
+# across the population from 1,024 to 359, at a cost of 11 leaning rows down to
+# 5 on the day it was measured.
+LEAN_MARGIN = 1.15
+LEAN_HOLD_BARS = 5
+LEAN_HOLD_NEED = 4
+
+# The fewest bars a prefix must hold before its lean is worth consulting. Below
+# this the window is a stub and the classifier is answering about the start of
+# the data rather than about the asset -- the same floor the walk uses to call a
+# run censored.
+LEAN_MIN_HISTORY = 11
+
+
+def lean_hold(stamps: list[int], closes: list[float], volumes: list,
+              want: str = "bullish", days: int = WINDOW_DAYS,
+              months: int | None = None,
+              hold: int = LEAN_HOLD_BARS) -> int | None:
+    """How many of the last `hold` bars answered "leaning", or None.
+
+    The same call, asked of the window the chart would have drawn on each of
+    those bars -- `window_now` trims every prefix, so the question is
+    "would this have read the same yesterday?", not "does a shorter window
+    lean too?". That is the whole difference between a tag that is a reading
+    and a tag that is a coin flip.
+
+    None means the series does not reach far enough back to answer at all:
+    a missing reading, which callers must not treat as a flicker.
+    """
+    n = len(closes)
+    if n < LEAN_MIN_HISTORY or len(stamps) != n:
+        return None
+    held = 0
+    for back in range(hold):
+        end = n - 1 - back
+        if end + 1 < LEAN_MIN_HISTORY:
+            return None
+        if leaning(stamps[:end + 1], closes[:end + 1], volumes[:end + 1],
+                   want=want, days=days, months=months) is not None:
+            held += 1
+    return held
+
+
+def steady_lean(stamps: list[int], closes: list[float], volumes: list,
+                want: str = "bullish", days: int = WINDOW_DAYS,
+                months: int | None = None, margin: float = LEAN_MARGIN,
+                hold: int = LEAN_HOLD_BARS,
+                need: int = LEAN_HOLD_NEED) -> dict | None:
+    """`leaning`, kept only when it is steady enough for the near-miss table.
+
+    Two questions, both about the same bars:
+
+    * **Is it clear of the line?** The drift must be at least `margin` (1.15)
+      in the lean's own direction -- not merely across the 1.00 hold bar.
+    * **Has it stayed there?** The same call, asked of the window the chart
+      would have drawn on each of the last `hold` bars, must have answered
+      "leaning" on at least `need` of them (`lean_hold`).
+
+    The answer is `leaning`'s own dict with two extras (`held`, `holdBars`), or
+    None. **It never changes a label.** A row that survives is still the verdict
+    its chart draws; this says only whether that verdict is steady enough to be
+    worth putting in a list of near-misses.
+
+    `decorate` applies the same two questions to a chart's badge, so a chart,
+    a watchlist row and this table cannot disagree: they all print a lean only
+    when it is steady, and all of them keep the raw reading (`leanRaw`) beside
+    it.
+    """
+    call = leaning(stamps, closes, volumes, want=want, days=days, months=months)
+    if call is None:
+        return None
+    drift = call.get("significance")
+    if drift is None or abs(drift) < margin:
+        return None
+
+    held = lean_hold(stamps, closes, volumes, want=want, days=days,
+                     months=months, hold=hold)
+    if held is None or held < need:
+        return None
+
+    out = dict(call)
+    out["held"] = held
+    out["holdBars"] = hold
+    return out
+
+
+def decorate(call: dict | None, stamps: list[int], closes: list[float],
+             volumes: list, days: int = WINDOW_DAYS,
+             months: int | None = None) -> dict | None:
+    """A `trend.classify` call, with its lean kept only if it is steady.
+
+    This is the one place the "steady lean" rule is applied to a chart's badge,
+    so every surface that shows a verdict -- the main price graph, the
+    watchlist tag, the leaning table -- says the same thing about the same
+    asset at the same moment. Asked for by name, 2026-11-07: "how about we make
+    the filtering consistent ... 'watchlist' and the main price graph judgment".
+
+    What changes and what does not:
+
+    * **The label, score and drift are the classifier's, untouched.** A chart
+      that would say Bullish still says Bullish; this function never earns or
+      removes a label.
+    * **`lean` is set to None when the lean is not steady**, which is what makes
+      a flickering name read "Neutral" on the chart and in the rail instead of
+      flickering with it.
+    * **Nothing is lost.** `leanRaw` keeps the classifier's own reading, and
+      `held` / `holdBars` / `steady` say why it was withheld, so the page can
+      explain itself on hover rather than quietly hiding a fact.
+
+    `stamps`, `closes` and `volumes` are the window *and the bars behind it* --
+    the drawn window is what `call` already judged, the history is what makes
+    the steadiness answerable. A series too short to look back over answers
+    `steady: None` and keeps its lean: an unanswerable question is not a
+    negative one (invariant 3).
+    """
+    if not call:
+        return call
+    lean = call.get("lean")
+    out = dict(call)
+    out["leanRaw"] = lean
+    out["holdBars"] = LEAN_HOLD_BARS
+    out["held"] = None
+    out["steady"] = None
+    if not lean:
+        return out
+    held = lean_hold(stamps, closes, volumes, want=lean, days=days,
+                     months=months)
+    drift = call.get("significance")
+    if held is None or drift is None:
+        return out                       # not answerable: keep the lean
+    out["held"] = held
+    out["steady"] = held >= LEAN_HOLD_NEED and abs(drift) >= LEAN_MARGIN
+    if not out["steady"]:
+        out["lean"] = None
+    return out
+
+
 def onset(stamps: list[int], closes: list[float], volumes: list,
           want: str = "bullish", days: int = WINDOW_DAYS,
           months: int | None = None) -> dict | None:
@@ -415,6 +564,14 @@ def onset(stamps: list[int], closes: list[float], volumes: list,
     except (ValueError, IndexError):
         score = None
 
+    # The window's first bar's close, shipped as a raw price rather than as a
+    # move: a price's move is a percentage and a yield's is a number of
+    # percentage points, and only the caller knows which series it asked about.
+    # `price` above is the other end of the same pair, so the table's
+    # three-month column and the chart's hero delta ("+12.95% three-month move,
+    # since Jul 31") are computed from one window, not two.
+    first = closes[used[0]] if used else None
+
     # The value traded on the bar the price comes from. A missing volume is not
     # a zero-volume session, so the turnover is left as None rather than 0.0.
     volume = volumes[last]
@@ -443,4 +600,7 @@ def onset(stamps: list[int], closes: list[float], volumes: list,
         "price": closes[last],
         "turnover": turnover,
         "window": len(used),
+        # The window's first drawn close -- see `first` above. The pair
+        # (`windowFirst`, `price`) is what a caller's move is computed from.
+        "windowFirst": first,
     }

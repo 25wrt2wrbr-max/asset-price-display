@@ -1,5 +1,423 @@
 # asset-price-display — agent notes
 
+## The table prints the window's move (2026-11-07)
+
+Asked for by name, right after the merge: "i also want the three-month move
+printed on each row like +8.4%".
+
+The figure has to be the chart's own or a row and its chart would disagree about
+how the window went, so it is not computed here: `onset.onset` already knows the
+window it scores, and now returns that window's first close beside the newest
+one it has always returned as `price`. Four rules:
+
+1. **Two raw prices, not a percentage.** `windowFirst` ships as a close, because
+   the unit differs by market: a stock, fund or coin moves in per cent, a bond
+   **yield** moves in percentage points. Which is why the yield is the one row
+   that gets **no move at all** — asked for by name on the same day: "for bonds,
+   the most important thing is yield. changes don't mean shit. + the bearish or
+   bullish judgment". Its yield is the price column and its bond-price call is
+   the direction column; a change between them would be a figure about a figure.
+   `recent._window_move` computes the price-side move; `bond_rows` ships
+   `windowMove: None`.
+2. **Every other leg carries it.** `_price_row` covers the Ondo stocks and ETFs,
+   the Treasury futures, crypto and the Ondo portfolios; `fund_rows` builds its
+   own row; `bullish.py` ships `windowFirst` in the sweep row's key list and
+   `recent.ph_rows` turns it into a move. A row whose window could not be
+   measured carries `None` and the cell prints "—", never a zero.
+3. **The JS mirror moved with it.** `export/trend.js` returns `windowFirst`
+   too, and `export/verify_parity.py` now compares it across all 371 onset cases
+   and the 371 calendar-month ones — 0 mismatches.
+4. **It is a column, not a second reading.** Eight columns now: the new one
+   sits between Price and the volume, 92px, and the card went 960 → **1052px**
+   (118 + 250 + 132 + 118 + 62 + 112 + 92 + 118 + 50). Green above zero, red
+   below, muted at flat. A yield's cell is a dash with the reason on hover, not
+   a coloured figure.
+
+Measured 2026-11-07 through the page: `BEAMUSDT +189.51%`, the five funds
++0.84%, +0.80%, +0.95%, +0.94%, +0.88%, every cell carrying a title
+("The window's first close to its newest close — the same bars the badge beside
+it was scored on."). The window the row reads is the chart's window: checked
+against `/api/chart?range=3mo` for AAPL, MSFT, SPY, `PSE:TEL` and
+`FUND:BPI-MM`, the row's first close and the chart's first point agree to the
+last digit (diff 0 on all five).
+
+**One seam, and it is closed rather than stated.** A coin whose chart is served by
+Yahoo is drawn on three **calendar** months (93 bars), while the table used to
+judge Binance's ninety days — so BTC-USD's chart printed +18.06% against the
+row's +17.08%, NEAR-USD +123.58% against +131.75%. The reader did not accept
+that: "if there are 93 bars in yahoo, there should also be 93 data points from
+Binance not just 90. right? for uniformity and fairness". So one span is now one
+window whichever venue draws it: `crypto.chart` cuts a daily series with
+`onset.window_now(..., months=months)` (`crypto.RANGE_MONTHS`) instead of
+counting bars, exactly as `slim_chart` cuts Yahoo's, and `recent.crypto_rows`
+judges and measures with `CRYPTO_WINDOW_MONTHS` = 3. Measured after the change,
+every span the same on both sources and the same start date — `1mo` 32/32,
+`3mo` 93/93, `6mo` 185/185, `1y` 366/366 — with BTC-USD's move +18.014% on
+Yahoo against +18.070% on Binance, a source's prices rather than a window's
+bars, and BEAM-USD's row matching its own Kraken chart to the digit (+184.5383%).
+
+`test_window_move.py` is new (6 tests: the window's first close against
+`window_now`, the calendar-month window, a price row's relative move, a row with
+no window, a yield row in points — built to fail if it ever reports per cent —
+and a Philippine row through the sweep's shape), and `test_crypto_leg.py` gained
+one for the move riding a crypto row. Suite: **439 tests OK**.
+
+## One table for what is bullish now (2026-11-07)
+
+Asked plainly: "I think we can combine 'Recently bullish assets', 'Most traded
+crypto - 24 hours', and 'Bullish Philippine stocks' in one table/section,
+right?" and then, on what the table is for, "the idea is just to show me which
+assets are bullish right now, easy to understand?" The peso floor stayed, by
+name: "Keep the floor".
+
+They were never three subjects. The big table already carried the other two's
+markets — crypto and Philippine stocks — judged by the same classifier over the
+same bars; the small tables were narrower views of the same scan. So the page
+now has **one** bullish table, and the only question worth ruling on was what
+would be lost.
+
+Measured 2026-11-07, through the page, before and after:
+
+- the recent sweep on its own: **5 rows**, all Philippine funds;
+- the crypto table on its own: **1 row** — BEAMUSDT at $0.004040, +3.17% on the
+  day, turnover $0.74M;
+- the Philippine table on its own: PAL, which the floor hides anyway.
+- after the merge: **6 rows** — the five funds plus BEAMUSDT — and the leaning
+  table unchanged at **9 rows** (PHR, ACN, PG, ABBV, ZECUSDT, V, NEARUSDT, PNB,
+  MA), on the same membership it had before.
+
+Five rules:
+
+1. **The crypto leg reads the whole chartable ranking, not its first 25.** The
+   old crypto table walked the ranking until it had ten bullish coins; the recent
+   table judged only `CRYPTO_LIMIT` = 25 candidates. Merged at 25, the one
+   bullish coin of the day would have vanished — BEAM at $0.74M traded sits
+   around 200th. `recent.crypto_rows` now takes
+   `cryptobull.candidates(cryptobull.MAX_CANDIDATES)` (120 chartable pairs on
+   the day, 8.1 s with eight workers) and every bullish coin is a row, because
+   every other leg is exhaustive too (474 shelf names, all PSE names, all 47
+   funds). The note then reads "Crypto: 120 scanned".
+2. **Leaning rows still come from the first 25 only.** `CRYPTO_LIMIT` is now
+   explicitly the *leaning* depth: the leaning table absorbed nothing, so
+   widening the leg must not put five new crypto rows in it. Measured: a
+   full-depth leaning read would have added QNT, RAY, JST, NIGHT and XMR.
+3. **The crypto table's day condition is gone, and no day figure replaces it.**
+   It was the right rule for a table of what was heavy *and* up today (a reader
+   was shown "ten rows, every one red on the day" and objected). This table is
+   the three-month verdict — and the reader said so plainly on the first report:
+   "i'm only interested in 3-month change bro". So the rolling day is not a
+   filter and not a figure on the row: the first build put "+3.17% 24h" on the
+   coin's name line, and it was removed the same day. A coin up over three
+   months and down today is a row with nothing on it about today, which is the
+   whole claim.
+4. **A sub-cent coin prints its own decimals.** The crypto row now carries the
+   chart's `priceHint`; before this the merged table drew BEAM as **$0.00**,
+   because `_price_row` had no hint and the table defaults to two decimals.
+5. **The page lost the markup, the code and the CSS; the server lost nothing.**
+   Gone from `index.html`: the two `<section>` blocks, `drawCryptobull`,
+   `drawCryptobullNote`, `loadCryptobull`, `drawBullish`, `drawBullishNote`,
+   `loadBullish`, `cryptoMoney`, `moneyCell`, `CRYPTOBULL_TTL`, `BULLISH_TTL`,
+   their `el` refs, both timers and the `.bullish` / `.cryptobull` rules (and
+   `.alt`, which only `moneyCell` used). `/api/cryptobull` and `/api/bullish`
+   still answer, and the server still sweeps both — `/api/bullish` because the
+   recent table's Philippine leg reads its rows, `/api/cryptobull` because
+   nothing asked to switch it off. Say so if the reader wants that sweep
+   stopped. The section's own heading now carries the table: its card head was
+   a second title and a third row count (the note already opens with the count),
+   so it is gone.
+
+Kept on purpose: the Philippine ₱1M floor (a rule about a market, printed in the
+note as "4 below ₱1,000,000 volume hidden"), the bond rows' "Bullish (yield
+falling)" wording and their hover explanation, and the static line "Past price
+trend only — not a forecast..." which used to sit over the Philippine table and
+now sits under the merged heading, since it applies to every market in it.
+
+`test_crypto_leg.py` is new (7 tests, both upstreams mocked: the full-depth ask,
+a bullish coin past the old 25-row cut, a coin down on the day still being a
+row, that the day change is *not* carried, the price hint, a lean inside the cut
+and a lean past it). Suite: **432 tests OK**; `export/verify_parity.py` still 0
+mismatches. Verified through the page the same day: two sections remain
+(Recently bullish / Leaning bullish), the merged table draws 6 rows with no
+sideways overflow, and BEAM's price reads `$0.004040` with its name line plain
+("Beam") again.
+
+## A series that stopped printing is not a price (2026-11-07)
+
+The reader's report, verbatim: "ATKR last price was October. wtf. don't show me
+this. can you remove/filter those stale stocks available in app.ondo.finance? i
+saw this ticker in 'Leaning bullish - not confirmed'". Measured the same day, so
+the standing is on the record:
+
+- `/api/chart?symbol=ATKR` answered **51 bars ending 2026-10-16**, hero
+  **$94.96**, `lastBarBasis: "close"` — Atkore had been taken over and the source
+  had stopped printing, three weeks before.
+- The classifier read those 51 bars of a frozen price as **neutral +0.4607 with
+  lean "bullish"**, and `onset.steady_lean` found it *steady* (held 5 of 5), so
+  the sweep put it **first** in the leaning table at that October price. Nothing
+  in the code could tell: the series answered, so it was not `missing`.
+- The other **473** shelf names answered with a bar **0.3 days** old. There was
+  no middle ground to tune a threshold against.
+
+Seven rules:
+
+1. **The gap is one function, measured against two references.**
+   `recent.stale_gap(stamps, reference=None)` answers the days a series' newest
+   bar falls behind, or None when it is within `STALE_GAP_DAYS` = **5**. A live
+   read passes the clock; a table read back from disk passes the sweep's own
+   `fetchedAt`, because bars swept six days ago were current when they were
+   fetched — judged against today, a whole copy would read as a table of dead
+   series, which is a fetch-age fact dressed up as a stock's.
+2. **Five days is not a long weekend.** A US listing's newest daily bar is the
+   last session's close: hours old on any evening, two or three days across a
+   weekend, at most four across a holiday weekend. Five is also
+   `crypto.STALE_BAR_DAYS`'s number for a pair Binance has stopped trading — the
+   same idea at the same tolerance, deliberately the same number, so "five days
+   of silence" means one thing in this project.
+3. **It is a US-only rule, and that is the whole point of it being narrow.** The
+   Philippine sweep, the funds and the bonds are read from markets that close for
+   long holidays — the PSE shuts from 23 December to 4 January — so a calendar
+   gap there is the exchange's calendar, not a stopped series. Crypto has its own
+   test; the Ondo tokens are priced at the moment of the request. `STALE_MARKETS`
+   = `("US",)` is the list, and it is the only leg that reads Yahoo daily bars
+   from a market that never closes for more than one extra day.
+4. **The scan drops the name from *both* tables and says so.** `us_rows` tests
+   the bars before it judges them, so a stopped series can be neither a bullish
+   row nor a leaning one, and it is counted in `stats["US"]["stale"]`
+   (`{ticker, chartSymbol, lastBar, days}`). The note prints up to three names
+   with their last bar — "1 stale series hidden: ATKR (last bar 2026-10-16)" —
+   because a name that was on the table yesterday and is gone today with no word
+   is the exact complaint the peso floor produced (see 2026-11-07 above).
+5. **A seeded copy is re-filtered on read, against its own `fetchedAt`.** A
+   restart serves the disk copy until the first sweep lands — long enough to see
+   ATKR again — so `server.seed_recent` calls `recent.drop_stale` on the rows and
+   on the leaning list, and merges what it dropped into the stats the note is
+   rebuilt from. Verified live: the copy seeded at startup held ATKR and the
+   page came up without it.
+6. **The chart says it instead of drawing a verdict over it.** `chart_data`
+   ships `staleDays` and `staleBar` for a **Yahoo daily** series past the gap,
+   withholds `trend` and `profitProbability`, and the page prints the reason
+   under the price while the meta line gains "newest bar is 21 days old
+   (2026-10-16)". The line is still drawn — that history exists — but a badge and
+   an odds figure are claims about now. Weekly bars are exempt (a weekly bar is
+   stamped at its week's start, so its age is not a session's), and so is every
+   other source, for rule 3's reason.
+7. **Nothing is silent, and nothing is invented.** A stopped series has no
+   verdict anywhere: not the badge, not the rail pill, not either table. The
+   absent badge's text is **cleared**, not just hidden, the way the odds line
+   already was — a stale "Neutral · leaning bullish +0.26" left in the DOM is one
+   inspector away from being read as a claim about the chart on screen.
+
+Measured after the fix, 2026-11-07 through the page: the leaning table went 10
+rows → **9** (ATKR gone, every other name kept), the note read "US: 474 scanned ·
+1 stale series hidden: ATKR (last bar 2026-10-16)", and the ATKR chart showed
+hero $94.96 with meta "newest bar is 21 days old (2026-10-16)", **no badge**, no
+odds, and the sentence "The source has not printed since 2026-10-16 — the newest
+bar is 21 days old. No three-month verdict and no profit odds are shown: a label
+read off a price that stopped moving is a label about that month, not about
+now." Re-checked the same minute: `SPY`, `AAPL`, `ACN`, `BTC-USD`, `PSE:PHR`,
+`TVC:PH10Y`, `FUND:BPI-INFRA`, `USDPHP=X`, `ZB=F`, `ONDO:MAG7X`, `VFIAX` — all
+still charting with their verdicts, none carrying `staleDays`.
+
+`test_stale_series.py` is new (19 tests, the clock pinned so none depends on when
+the suite runs: the gap at the five-day boundary and with no bars at all, the
+copy-versus-clock references, both tables losing the name, the note naming it,
+the chart withholding the verdict and the odds, the weekly and non-Yahoo
+exemptions, and the seed path dropping a row that was already dead when it was
+swept). Suite: 424 tests OK.
+
+## The live price is the source's, on every chart that has one (2026-11-07)
+
+Asked plainly: "if i keep the webpage open, is the price graph live? as in
+always moving in accordance to live data from the source? are the labels in
+watchlist always refreshing?" — and then, when the answer described a settled
+close, "i want the live price to be the live price from source".
+
+The two mechanisms were already there and neither was changed:
+
+1. **The chart re-reads itself.** The tick asks every `CHART_LIVE_TTL` = 60 s
+   (the server's own chart cache) whether a read is due, and takes one when
+   `chartIsLive()` — `lastBarBasis` `live`, `pre` or `after` — or after
+   `CHART_TTL` = 15 min otherwise. A returning tab re-reads at once. A hidden
+   tab asks nothing.
+2. **The newest point is the live print.** `full_day_close` folds
+   `fulldayPrice` (pre/after hours included) into the newest bar when that bar
+   is the session trading now; `live_print` + `live_point` add the session's own
+   print as a fresh point when no bar exists for it yet. Measured 2026-11-06
+   20:34 UTC (15:34 New York, session open): `AAPL` → `lastBarBasis` "live",
+   `lastPrint` 0.2 min old, hero **$343.86** — the newest bar's own price.
+
+**The one real gap was the PSE**, and it was a labelling gap: TradingView's
+daily payload carries today's candle from the opening bell, so the newest point
+*was* the last trade, but nothing said so — `lastBarBasis` read every PSE chart
+as `close`, so the page re-read it only every fifteen minutes. Fixed:
+
+- `pse.session_window(stamp, interval)` ships `session` = `{regular: [9:30,
+  15:15 Manila], coversLastBar, formingBar}` with both producers (`chart` and
+  `_build_chart`, so a warmed row and a clicked chart carry the same claim).
+  The window is built from the bar's own stamp, so it is an absolute fact that
+  expires by itself: read tomorrow the same payload is a close. `1wk` ships
+  none (a week's candle is not a trading day's price).
+- `server.last_bar_basis` returns `live` for a `formingBar` inside its window —
+  **and never from a disk copy** (`cached`), the same guard the Binance branch
+  has, because a copy hours old is not a price.
+- The page needed no change: `chartIsLive()` follows `lastBarBasis`, so a PSE
+  chart now re-reads every minute while the exchange trades and falls back to
+  fifteen outside it. The hover word and the meta line follow too.
+
+Nothing invented between sessions: after the 20:00 New York post-market end
+Yahoo folds nothing and the newest point stays the close it became, and a
+holiday has no bar dated today so `coversLastBar` is false — both read `close`,
+which is what they are. Funds (a NAVPU once a day) and bond yields (a daily
+close) have no intraday print to show and are untouched. **The watchlist is
+unchanged**: every row re-reads every `WATCH_TTL` = 5 min while the tab is
+visible, and each row's pill is the tag from that same fresh `/api/chart`
+payload — slow on purpose, because a three-month verdict that moved each minute
+would be noise.
+
+`test_pse_live.py` is new (12 tests: the window for today, yesterday, a weekly
+and an unreadable stamp; `live` inside the session, `close` after the bell and
+the next morning; no live from a disk copy or a series ending yesterday; both
+producers agree; the route carries it through `chart_data`). Suite: 405 tests
+OK.
+
+**Also removed, in the same turn, by name: "Most traded today".** The section,
+its markup, `loadLeaders`/`drawLeaders`/`drawLeadersNote`, `LEADERS_TTL`, its
+`el` refs, its five-minute timer and a now-dead `.leaders-grid` rule (and its
+media query) left `index.html`; the page now runs Recently bullish → Leaning
+bullish → Most traded crypto → Bullish Philippine stocks. The shared helpers
+(`cell`, `moneyCell`, `leaderMoney`, `compact`) stay — the crypto and PSE tables
+use them. **`markets.py` and `/api/top` are untouched**: the server still builds
+both rankings and still sweeps them, so nothing broke a route, but no page asks
+for that work any more. Say so if the reader wants the sweep switched off too.
+
+## The shelf is the scan, and volume limits nothing (2026-11-07)
+
+Asked for after two rows went missing: "why is ACN no longer part of 'Leaning
+bullish - not confirmed'?" and "also why is PAL no longer part of 'Recently
+bullish assets'". Neither was a verdict. ACN's own chart read Neutral · leaning
+bullish (+0.56, t 1.45) and it ranked **172nd** by turnover at $420M, outside
+the 130-name US universe; PAL was bullish at +0.77 with a 14-bar run since
+2026-10-19 and its last session traded **₱311,040**, under the ₱1,000,000 peso
+floor. The reader's answer was to change the algorithm: "the limit is just
+what's available @ app.ondo.finance, ok? no longer trading volume, for both
+bullish list and 'leaning bullish - not confirmed'", then "include all stocks &
+ETFs, and intelligent portfolios of app.ondo.finance, in both scans".
+
+Six rules:
+
+1. **The universe is the shelf, for both tables.** `recent.us_rows` takes
+   `ondolist.tickers(shelf)` -- every `/assets/<ticker>on` on the sitemap,
+   suffix stripped (`nvdaon` → `NVDA`, `brk.bon` → `BRK.B`, `onon` → `ON`) --
+   instead of `markets.us_universe`. A name outside it is never fetched; a name
+   inside it is fetched however thinly it trades. Measured 2026-11-07 through
+   the page: **474 stocks and ETFs scanned, 0 did not answer** in 23 s.
+2. **The portfolios are part of it.** The sitemap's
+   `/intelligent-portfolios/<code>on` pages are read too (`ondolist.portfolios`)
+   and the seven baskets live in `ondo.py` as `ONDO:` tokens priced by
+   DeFiLlama (`coins.llama.fi/chart/coingecko:<id>`): MAG7X, BRAIN, BLKGRW,
+   BLKHI, BLKDIG, YLD5, YLD8. They are judged on the chart's own ninety-day
+   window (`ondo` trims in days, not Yahoo months) and carry market "Ondo
+   portfolio"; all seven measured neutral on 2026-11-07 (BRAIN and BLKGRW
+   leaning bearish), so the leg printed "Ondo portfolio: 7 scanned" and no row.
+   Their series is only **43 daily points** long -- the baskets launched
+   2026-09-24 -- which the badge states by scoring the bars it draws.
+3. **The peso floor survives for Philippine stocks, and only for them.** Asked
+   for in the same breath: "there should still be a volume floor for
+   philippines stocks. PHP1M". So `MIN_TURNOVER_PHP` = ₱1,000,000 applies to
+   `FLOOR_MARKETS` = `("Philippines",)`: PAL is judged (bullish +0.77, 14 bars)
+   and hidden from the table again, with its ₱311,040. A **leaning** Philippine
+   row is floored too, because the rule is about the market and not about one
+   table -- measured 2026-11-07: 4 rows hidden (PAL plus the leaning PA, WPI,
+   FOOD), leaving the five leaning rows that clear ₱1M. Ondo stocks, ETFs and
+   portfolios are not floored (the shelf is their limit), and neither is crypto
+   (`CRYPTO_LIMIT` is its bound). What the floor hides is **counted**, not
+   swallowed -- `stats["Philippines"]["hidden"]`, printed as "4 below
+   ₱1,000,000 volume hidden" -- because a name that is bullish on its own chart
+   and absent with no explanation is exactly what the reader objected to.
+4. **Two slugs are deliberately not scanned.** OUSG and USDY are listed bare,
+   are T-bill tokens, and a token that accrues is bullish forever -- the
+   money-market property `phfunds` already documents. The request named stocks,
+   ETFs and portfolios.
+5. **A missing shelf is an outage, not an empty shop.** `shelf_universe` falls
+   back to the old turnover ranking (`US_FALLBACK_LIMIT` = 130) so the table
+   still has rows, and `summarize` then prints "US (turnover universe)" instead
+   of implying the shelf was read. `RECENT_KEY` moved to `v5:t2`; a v4 copy on
+   disk is still seeded, but its United States rows are re-filtered through
+   `ondolist.carries` and its stats marked `shelf: False`.
+6. **Names come from Yahoo, not from a scanner.** With a shelf ticker and no
+   scanner metadata, the row name would be "ACN"; `server.yahoo_meta` rides
+   along as the fourth element of each `fetch_us_bars` answer (`(stamps,
+   closes, volumes, meta)`) and the table prints "Accenture plc",
+   "GameStop Corp.", "Atkore Inc". `recent` reads `series[:3]` so a 3-tuple
+   fake in a test still works.
+7. **A lean is only shown when it is steady — on every surface.** Asked for
+   after AAPL flickered: "is there a way to filter out 'fragile' stocks like
+   AAPL from being shown to me?", then "how about we make the filtering
+   consistent: 'Recently bullish assets', 'Leaning bullish - not confirmed',
+   'watchlist' and the main price graph judgment". `onset.steady_lean` is the
+   rule and `onset.decorate` applies it to a `trend.classify` call: a lean must
+   clear **drift 1.15** (not merely the 1.00 hold bar) and must have answered
+   on **4 of the last 5 bars** (`lean_hold`). Measured over 120 sessions on 464
+   shelf names: the median name flipped its tag **4 times**, the median name
+   leaning on the day measured **10** (AAPL 14, its drift running 1.26, 1.42,
+   1.26, 1.01, 0.76, 1.19, 1.02, 1.01). The rule takes the median to **0
+   flips** and the tag episodes across the population from **1,024 to 359**,
+   at the cost of 11 rows down to 5 on the day it was measured.
+8. **`decorate` is the one place it is applied, and it never invents a label.**
+   `label`, `score` and `significance` are the classifier's, untouched. What
+   changes is `lean`: set to **None** when it is not steady, so the chart, the
+   rail tag and the tables cannot disagree. Nothing is hidden — `leanRaw` keeps
+   the classifier's own reading and `held`/`holdBars`/`steady` say why it was
+   withheld, and the chart's note prints it ("It would lean bullish (52% of the
+   way) but the reading is not steady — held on 4 of the last 5 sessions").
+   Applied in `server.chart_data` after the read-time re-score, so a cached
+   copy gets the same treatment as a fresh one.
+9. **The steadiness reading needs history behind the window, so a chart fetches
+   one range more than it draws.** `FETCH_SPAN` (3mo -> 6mo ... 5y -> 10y) and
+   `slim_chart` trims back to the asked span, so what is *drawn* and scored is
+   unchanged; the trim's dropped bars ride in the payload as `historyTail`
+   (five bars, `{t, c, v}` — the volume matters, it is a classifier input).
+   PSE, bonds, funds and crypto ship a tail too (`crypto` asks 5 bars more than
+   it draws; `pse`/`tv`/`phfunds` already hold a year behind the window).
+   **No tail is not "flickering"**: `decorate` leaves the lean alone and says
+   `steady: None`, because an unanswerable question is not a negative one
+   (invariant 3). Weekly charts and a 5-year-plus series with no wider upstream
+   range take that path.
+
+Measured through the page 2026-11-07: bullish table **5 rows**, all five
+money-market and short-term funds (PAL is floored, and the note says so), and
+the leaning table **22-25 rows** as quotes move, 13 of them United States names
+from the shelf: ATKR, GME, ACN, PG, V, ABBV, MA, COST, TMO, ISRG, AAPL, GGOV
+(an ETF), ECO. Note reads "Philippines: 1 · 4 below ₱1,000,000 volume hidden ·
+US: 474 scanned · Ondo portfolio: 7 scanned"; the card subtitle is "United
+States rows are Ondo-listed".
+
+The floor is the one place a row can be true and absent, so it is also the one
+place the note has to speak. **AAPL's lean was marginal the whole time**: score
++0.369 with drift t **1.015** against a 1.00 hold bar (52% of the entry bar), so
+a single soft bar removes the tag -- WMT lost it on the 2026-11-06 bar (t 1.03 →
+0.93, close 127.72 → 126.10) while its score stayed +0.378. The tag is the hold
+band's, re-scored from the whole window every bar, not a property of the stock.
+
+`test_ondolist.py` gained the shelf's three slug shapes (tickers, portfolios,
+bare funds); `test_recent_shelf.py` is new (24 tests: the shelf universe, the
+Yahoo spelling of a class share, the fallback, the portfolio leg, the floor --
+above it, below it, leaning and not, and the Ondo exemption -- and the note);
+`test_leaning.py` gained `SteadyLeanTests` (5 tests, each *searching* seeded
+walks for the case it needs rather than hand-tuning an array: a lean that held,
+a lean that just appeared, the margin, an earned label). The one flaky test in
+that file -- its 91 synthetic bars put the oldest exactly on the ninety-day
+cutoff, so the window it compared against turned on the second of the day the
+suite ran -- is pinned to midday and compares `leaning` against `classify` on
+the same window. Suite: 393 tests OK; `export/verify_parity.py` still 0
+mismatches (classify's own output is untouched).
+
+Verified live 2026-11-07: `AAPL` badge "Neutral" with the withheld-lean
+sentence, `ACN` "Neutral · leaning bullish" (t 1.44, held 5/5); the leaning
+table lists 14 rows, ACN among them, AAPL not; `PSE:PAL` still Bullish,
+`TVC:PH10Y` still Bearish, `ONDO:MAG7X` charts; 1mo/1y/5y AAPL all draw the
+same bar counts as before (24/252/1255) with a 5-bar tail.
+
 ## The leaning table sells only what Ondo sells (2026-11-06)
 
 Asked for by name: "regarding 'Leaning bullish — not confirmed', remove US
@@ -897,14 +1315,14 @@ badge is.
 | `trend.py` | The classifier: `classify(closes, volumes)`. Version 2: enter score ≥ 0.25 and t ≥ 1.96, hold ≥ 0.15 / t ≥ 1.0 for 10 bars, whole window, ramp-weighted. `trend_v1.py` is the frozen research copy. |
 | `onset.py` | The shared "since when" walk — one window, one label, one answer to *when did this turn?* — and `turn`, which says *why* it turned (`turn` / `flat` / `against`). The window's **shape** is per source: `months=` for Yahoo, days for the rest. |
 | `probability.py` | The 0–1 chance the asset is higher in three months: the asset class's measured up-rate, adjusted for the asset's own volatility and the round trip. Deliberately not a function of the chart's shape. No number for a yield or a futures contract. |
-| `recent.py` | The combined "recently bullish assets" table: US stocks, Philippine stocks, crypto, US Treasury futures, Philippine bond yields, Philippine funds, each dated. |
+| `recent.py` | The combined "recently bullish assets" table: Ondo stocks and ETFs, Ondo intelligent portfolios, Philippine stocks, crypto, US Treasury futures, Philippine bond yields, Philippine funds, each dated. The leaning table is the neutral-but-holding same scan. |
 | `rates.py` | The US Treasury futures curve (ZT…UB): the contracts, the search rows and synonyms that make each findable, the bare-ticker chart alias, and the quote precision. |
 | `phfunds.py` | The 47 Philippine funds — daily NAVPU from TOAP's UITF register, PIFA's NAV history and BPI Wealth's own pages — and the chart a fund row opens. |
 | `coinsph.py` | Coins.ph's USDC/PHP daily bars — the peso pair's Saturdays and Sundays, the two days the FX week does not trade. `is_usd_php`, `manila_day`, `fill`. |
-| `ondo.py` | The Ondo tokens Yahoo has no spelling for — OUSG, the short-term Treasury fund token: its on-chain identity, the DeFiLlama price series, the `ONDO:` chart route and the search rows. |
+| `ondo.py` | The Ondo tokens Yahoo has no spelling for — OUSG the short-term Treasury fund, and the seven **intelligent portfolios**: their identities, the DeFiLlama price series (contract address or coin index id), the `ONDO:` chart route and the search rows. |
 | `tv.py` | The Philippine government bond yields — the TradingView symbols, their names, their daily bars, and the chart a bond row opens. |
 | `bullish.py` | The Philippine sweep: every PSE name that is bullish now, dated to the bar its run began on. |
-| `pse.py` | PSE universe (TradingView scanner) and bars (browser-backed TradingView chart socket); `history_many` is the socket `tv.py` borrows. `completed_trade` is the last finished session's peso turnover the chart prints. |
+| `pse.py` | PSE universe (TradingView scanner) and bars (browser-backed TradingView chart socket); `history_many` is the socket `tv.py` borrows. `completed_trade` is the last finished session's peso turnover the chart prints, and `session_window` is the exchange clock that lets a forming session bar read `live`. |
 | `markets.py` | The two most-traded tables and the PSE board-lot table; `us_universe()` feeds the recent table. |
 | `crypto.py` / `cryptobull.py` | Coin identity (CoinGecko), bars (Binance, and Kraken for a pair Binance has stopped trading), and the 24-hour most-traded crypto table. |
 | `ecb.py` | ECB reference rates via Frankfurter, for currency crosses Yahoo fabricates. |
@@ -942,7 +1360,8 @@ two windows a session apart can be two different answers.
 | Source | The window its chart draws | How the walk asks for it |
 |---|---|---|
 | Yahoo (the US stocks) | **three calendar months** back from today — `range=3mo` is three months, not ninety days | `onset.onset(..., months=3)` |
-| PSE, Binance, the bond yields | ninety days | `onset.onset(...)` (the default) |
+| Binance (crypto) | **three calendar months**, since 2026-11-07 — one span is one window whichever venue draws it, so a coin's chart and its row hold the same bars | `onset.onset(..., months=3)` |
+| PSE, the bond yields | ninety days | `onset.onset(...)` (the default) |
 
 `onset.months_back()` is Yahoo's own rule (verified 2026-10-30: `range=3mo`
 answered from 2026-07-30, `range=6mo` from 2026-04-30, `range=1y` from
@@ -1254,7 +1673,8 @@ the day its current run began, sorted **newest-turn first**.
 
 | Market | Source | Note |
 |---|---|---|
-| US stocks | Yahoo daily bars **through Moli** | `server.fetch_us_bars()`, `RECENT_BATCH = 20` per browser run, `US_LIMIT = 130`, one year of bars (`RECENT_SPAN = "1y"`). Never swap Moli for `curl`/`urllib` — Yahoo answers those with a 429. |
+| Ondo stocks and ETFs | Yahoo daily bars **through Moli** | `server.fetch_us_bars()`, `RECENT_BATCH = 20` per browser run, one year of bars (`RECENT_SPAN = "1y"`). The universe is the shelf (`ondolist.tickers`), not a turnover limit — see 2026-11-07. Never swap Moli for `curl`/`urllib` — Yahoo answers those with a 429. |
+| Ondo portfolios | DeFiLlama token price | `ondo.portfolio_tokens()` — the seven baskets, plain HTTPS, judged on the series their `ONDO:` chart draws. |
 | Philippine stocks | the existing bullish sweep's rows | Reused from the sweep `server.py` keeps warm (`bullish_state().get("rows")`). **No second sweep.** |
 | Crypto | Binance daily bars | `crypto.try_chart`, `CRYPTO_LIMIT = 25`, `CRYPTO_WORKERS = 8`. Plain HTTPS works here. |
 | Philippine bonds | TradingView chart socket | `TVC:PH02Y`, `TVC:PH05Y`, `TVC:PH10Y` via `tv.py` → `pse.history_many`. |
@@ -1262,7 +1682,9 @@ the day its current run began, sorted **newest-turn first**.
 
 `recent.scan` receives `fetch_us_bars` as an **injected callable** (the browser
 lives in `server.py`, which imports `recent.py`), which keeps the module testable
-without a browser. A full sweep is ≈ 29 s; the US browser leg dominates.
+without a browser. A full sweep is ≈ 40 s with the shelf's 474 symbols (the
+Ondo browser leg dominates, 23 s of it measured alone); the leg's turnover
+fallback (`US_FALLBACK_LIMIT`) is only used when the shelf cannot be read.
 
 ### Bond yields read the other way, and say so out loud
 
@@ -1473,8 +1895,8 @@ NAVPU printed at two when the fund quotes four rounds away the digits that
 moved), `fundSeries: true`, and `exchange` "Philippine fund" / `type` "Net asset
 value". The chart note says the line is a NAVPU set once a business day; the
 research-judgment box that a fund used to have to suppress is gone from the page
-altogether. A fund row's turnover is `null`, so it is exempt from
-`MIN_TURNOVER_PHP` like a bond row, and the volume column prints a dash.
+altogether. A fund row's turnover is `null`, so the volume column prints a dash
+(there is no peso floor any more — see 2026-11-07).
 
 **The warmer has a fund leg** (`_warm_batch_funds`, `FUND_WARM_CHUNK = 12`),
 because a fund row sent down the Yahoo leg would earn a 404 per pass. It needs

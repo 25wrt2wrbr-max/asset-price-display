@@ -1,5 +1,11 @@
 # Asset price display
 
+A small web app you run on your own computer. Type in a stock, ETF, coin,
+fund, currency or futures symbol and it draws that asset's prices over the
+last three months. It labels the trend bullish, bearish or neutral, and shows
+tables of assets that turned bullish recently. There is nothing to install:
+Python 3 and a browser are all you need. See [Run it](#run-it) below.
+
 A local web page that charts the last three months of an asset's price and
 labels the trend — bullish, bearish, or neutral — from a weighted-signal
 ensemble of four price-based signals, using the same weights at every window length.
@@ -23,14 +29,14 @@ the source it used. One instrument Yahoo has no spelling for at all — `OUSG`,
 Ondo's short-term Treasury fund token — is priced from its on-chain market
 instead (see [A token Yahoo has no spelling for](#a-token-yahoo-has-no-spelling-for-2026-11-02)).
 
-Below the chart: the two most-traded tables, [Most traded crypto — 24
-hours](#most-traded-crypto--24-hours) — the day's heaviest coins, kept only
-where the trend call is bullish and the rolling day is up —
-[Bullish Philippine stocks](#bullish-philippine-stocks) — every PSE listing the
-trend call likes right now, dated to the day its run started — and
-[Recently bullish assets](#recently-bullish-assets), one table across US stocks,
-Philippine stocks, crypto, the US Treasury futures and the Philippine
-government bond yields, every row dated to the day its run began.
+Below the chart: [Recently bullish assets](#recently-bullish-assets), one
+table across every market the page follows — US stocks and ETFs on the Ondo
+shelf, Ondo's intelligent portfolios, Philippine stocks, crypto, the US
+Treasury futures, the Philippine government bond yields and the Philippine
+funds — every row dated to the day its run began, newest turn first. It
+absorbed the two tables that used to sit beside it, "Most traded crypto — 24
+hours" and "Bullish Philippine stocks" (2026-11-07), because both were narrow
+views of the same scan.
 
 ![stack](https://img.shields.io/badge/deps-none-brightgreen) Python 3 stdlib on
 the server, vanilla JS in the page — no `pip install`, no `npm install`, no
@@ -66,7 +72,7 @@ Stop with `Ctrl-C`.
 | | |
 |---|---|
 | **Python** | 3.8 or newer. Nothing to install. |
-| **Moli** | Required for Yahoo price data, the PSE histories and the bond yields. Not needed for crypto (Binance, Kraken), currency fixes (ECB) or the Philippine funds — their registries answer plain HTTPS. Already at `~/.local/bin/moli` (v1.1.10) on this machine. |
+| **Moli** | Required for Yahoo price data, the PSE histories and the bond yields. Not needed for crypto (Binance, Kraken), currency fixes (ECB) or the Philippine funds — their registries answer plain HTTPS. Install it and make sure `moli` is on your PATH (or set `MOLI_BIN`). |
 
 Moli is the only real dependency, and it is not optional for Yahoo-sourced or
 PSE symbols — see below. (The CoinGecko/Binance/Kraken crypto path does *not* use
@@ -91,7 +97,7 @@ Check with the health route:
 
 ```sh
 curl http://127.0.0.1:8000/api/health
-# {"ok": true, "moli": "/Users/.../moli", "moliFound": true,
+# {"ok": true, "moli": "/path/to/moli", "moliFound": true,
 #  "online": true, "reconnections": 0, "watchlist": ["AAPL", "BTC-USD"]}
 ```
 
@@ -104,7 +110,7 @@ To install Moli, see `~/.claude/skills/moli-webfetch/SKILL.md`.
 | File | Role |
 |---|---|
 | `server.py` | Static file server + Yahoo proxy + the background sweeps. Routes: `/api/chart`, `/api/search`, `/api/top`, `/api/bullish`, `/api/cryptobull`, `/api/recent`, `/api/health`, and `POST /api/watch` (the page declaring its watchlist). |
-| `markets.py` | The two most-traded tables (TradingView scanner) and the PSE board-lot table. |
+| `markets.py` | The two most-traded tables (TradingView scanner) and the PSE board-lot table. The tables are still built and served at `/api/top`, but no longer drawn on the page (removed 2026-11-07 at the reader's request). |
 | `crypto.py` | Coin identity (CoinGecko) and bars (Binance, or Kraken for a coin Binance has delisted) for coins Yahoo gets wrong. |
 | `cryptobull.py` | The most-traded crypto of the last 24 hours, filtered to the bullish ones. |
 | `ecb.py` | ECB daily reference rates (via the Frankfurter API, no key) for currency crosses Yahoo fabricates — the honest history for pairs with no dollar leg. |
@@ -129,13 +135,21 @@ To install Moli, see `~/.claude/skills/moli-webfetch/SKILL.md`.
 ### It re-reads itself — every minute while the price is moving
 
 While the newest bar is a price still moving — `lastBarBasis` `live`, `pre`
-or `after` (a US stock in or around its session, a coin at any hour) — the
-chart and its trend badge re-read every minute (`CHART_LIVE_TTL`, the
-server's own 60 s chart cache), so the verdict follows the market in real
-time. Once the newest bar is a settled close, the slow clock
-(`CHART_TTL = 900 * 1000`) is enough. Visible tabs only; a tab brought back to
-the front re-reads at once. Binance coins now keep the day still trading as
-their newest bar (`liveLastBar`), so a coin's badge includes today's price.
+or `after` (a US stock in or around its session, a coin at any hour, and a
+PSE listing while the exchange is open: TradingView hands today's candle from
+the opening bell, so the newest point *is* the last trade) — the chart and its
+trend badge re-read every minute (`CHART_LIVE_TTL`, the server's own 60 s chart
+cache), so the verdict follows the market in real time. Once the newest bar is
+a settled close, the slow clock (`CHART_TTL = 900 * 1000`) is enough. Visible
+tabs only; a tab brought back to the front re-reads at once. Binance coins now
+keep the day still trading as their newest bar (`liveLastBar`), so a coin's
+badge includes today's price.
+
+Nothing in that loop invents a price: between one session's close and the next
+one's first print the source has no newer number to give, so the newest point
+stays the close it became, and the page says so (`close`). The one place a
+figure could look stale while the market moves is a chart whose source has no
+clock — which is why the PSE now ships one.
 
 A real-time badge would be useless if one print could flip it; the hold band
 described under "The trend badge" is what makes it safe — a one-sigma move in
@@ -291,11 +305,47 @@ and it can be the last extended-hours print. Each point now says which:
 The call is made at **read** time, in `chart_data`, not at fetch time, so a
 chart served from the 60-second memo or from a disk copy cannot still claim to
 be live an hour later. Sources with no session of their own — a fund's NAVPU, a
-bond yield, a PSE row, a Binance bar kept only once its close time had passed —
-ship no window and read as `close`; a fund prints `NAV`, because no trade
-happened at that number. The same word rides the meta line ("last bar is the
+bond yield, a Binance bar kept only once its close time had passed — ship no
+window and read as `close`; a fund prints `NAV`, because no trade happened at
+that number. A **PSE row is the exception**: TradingView's daily payload carries
+today's candle from the opening bell, so the chart ships the exchange's own
+9:30-15:15 session (`pse.session_window`) and the bar reads `live` while it can
+move — `close` from the bell, on a holiday, or from a disk copy. The same word rides the meta line ("last bar is the
 after-hours price"), the table view's caption and the newest row's hover, so the
 keyboard- and screen-reader-clean twin says what the plot says.
+
+### A series the source stopped printing is drawn, but not judged (2026-11-07)
+
+Reported by the reader: "ATKR last price was October. wtf. don't show me this."
+Atkore had been taken over, the source had stopped printing, and the chart still
+answered — 51 bars ending 2026-10-16, hero `$94.96`, `lastBarBasis: "close"` —
+with a **Neutral · leaning bullish +0.46** badge on it. A verdict read off a
+price that stopped moving is a verdict about the month it stopped in.
+
+So a **Yahoo daily** series whose newest bar is more than `recent.STALE_GAP_DAYS`
+(**5** — hours on an evening, two or three days across a weekend, never more than
+four across a US holiday weekend) ships two extra fields and withholds two:
+
+| Field | When | What it is |
+|---|---|---|
+| `staleDays` | the newest drawn bar is 5+ days old | how many days old it is |
+| `staleBar` | the same | that bar's date, `YYYY-MM-DD` |
+| `trend` | **null** when stale | the badge, the rail pill |
+| `profitProbability` | **null** when stale | the three-month odds |
+
+The line is still drawn — that history exists — and the page says why the badge
+is gone. Measured on ATKR: meta line "newest bar is 21 days old (2026-10-16)", no
+badge, no odds, and under the price "The source has not printed since 2026-10-16
+— the newest bar is 21 days old. No three-month verdict and no profit odds are
+shown: a label read off a price that stopped moving is a label about that month,
+not about now."
+
+Three exemptions, each for a reason: **weekly** bars (a weekly bar is stamped at
+the start of its week, so its age is not a session's), **every other source**
+(the PSE shuts from 23 December to 4 January, so a calendar gap there is the
+exchange's calendar), and a **series with no bars at all** (that is `missing`,
+counted as an outage, and an absent series is not a negative verdict). The same
+rule keeps the name off the [recent tables](#recently-bullish-assets).
 
 ### The delta under the price is the window's move (2026-10-31)
 
@@ -620,7 +670,7 @@ off the same socket by `tv.py`. See "The bond chart" under the recent table.
 
 Search ranks locally rather than asking the scanner to filter, because the
 scanner's `match` operator is word-based and returns **zero** rows for `pldt`,
-`globe`, `jollibee` and `metrobank`. One request returns all 261 securities and
+`globe`, `jollibee` and `metrobank`. One request returns all 262 securities and
 ranking them here is both faster and better: exact ticker, then ticker prefix,
 then name prefix, then name substring. Two wrinkles worth knowing:
 
@@ -647,7 +697,7 @@ Three limits worth knowing:
   is made on price alone.
 - **The PSEi is not in the scanner's universe** — that lists securities, not
   indices — so it is registered by hand in `pse.py` and added to the search
-  results alongside the stocks it tracks.
+  results and to the sweep's universe alongside the stocks it tracks.
 
 A PSE symbol keeps its identity when added to the watchlist: the Add button
 takes its symbol and name from the chart payload, so `PSE:TEL` in the rail is
@@ -656,6 +706,12 @@ the watchlist's parallel quote refresh is slower for a rail full of PSE rows
 than for a rail of Yahoo ones.
 
 ## The two most-traded tables
+
+**Not drawn on the page any more (removed 2026-11-07).** The reader asked for
+the section to go, so `index.html` no longer has the "Most traded today" card,
+its loader or its timer. `markets.py` still builds both rankings and
+`/api/top` still serves them, and the section below is kept as the record of
+how they are computed — nothing on the page asks for them now.
 
 Below the chart, `markets.py` answers one question for both markets: which ten
 securities traded the most value today. The Philippine card is on the left, the
@@ -682,7 +738,7 @@ and BDO (2,246,400 × ₱114).
 
 | | Endpoint | Filter |
 |---|---|---|
-| Philippines | `POST scanner.tradingview.com/philippines/scan` | none — the 261-row universe is securities already |
+| Philippines | `POST scanner.tradingview.com/philippines/scan` | none — the 262-row universe is securities already (the PSEi is added by hand) |
 | United States | `POST scanner.tradingview.com/america/scan` | `typespecs has common`, then `typespecs has etf`, merged |
 | Cross rate | `POST scanner.tradingview.com/forex/scan` | `name match USDPHP` |
 
@@ -754,7 +810,13 @@ the tables reports when the page checked rather than implying a live tape.
 
 ## Bullish Philippine stocks
 
-Under the two leaderboards is a third table: every PSE stock whose trend call is
+> **This table has no section of its own on the page any more.** Since
+> 2026-11-07 the PSE names it found are the Philippine rows of [Recently
+> bullish assets](#recently-bullish-assets), judged by the same sweep. What
+> follows documents the sweep, which `bullish.py` still runs every fifteen
+> minutes and `recent.py` still reads.
+
+Every PSE stock whose trend call is
 bullish right now, each row dated to the bar its current run began on, newest
 first. `bullish.py` answers it and the page draws it as one wide table rather
 than a card per market — there were 29 rows on the last sweep, and a two-column
@@ -799,8 +861,9 @@ produce it is to redraw the chart at each earlier bar and ask again:
 | `window_at` | the 90 days the chart would have drawn on that day | that day's bar | the **onset walk** |
 
 (The Philippine exchange's chart really does draw ninety days. Yahoo's draws
-three *calendar* months, so the United States rows ask `onset` for that shape
-instead — see
+three *calendar* months, and since 2026-11-07 Binance's does too, so a coin's
+row and its chart hold the same bars. The United States and crypto rows therefore
+ask `onset` for the calendar-months shape — see
 [One definition of "bullish", one definition of "since when"](#one-definition-bullish-one-definition-since-when).)
 
 Two windows rather than one because they answer different questions. A run is
@@ -887,7 +950,7 @@ a loss. An absent reading is left absent rather than guessed.
 ### Why it is held warm by a background thread
 
 This table cannot be fetched while a reader waits. It reads 270 daily bars for
-each of ~261 PSE symbols over the socket, and a cold run takes about **35
+each of 263 PSE symbols over the socket, and a cold run takes about **35
 seconds** — far too slow to sit in front of, and too expensive to redo per poll.
 
 So nothing about it is lazy. One background thread sweeps on a loop, `BULL_TTL`
@@ -915,7 +978,7 @@ recording:
 - **Forty sessions is the comfortable ceiling.** Up to 40 concurrent chart
   sessions answer reliably; past that, messages start going missing wholesale.
   So symbols are fetched in chunks of 40 across 4 workers, with a retry pass,
-  which reads all 261 symbols and 270 bars each in about 35 seconds.
+  which reads all 263 symbols and 270 bars each in about 35 seconds.
 
 A symbol that does not answer is left out of the table and counted in `missing`
 — treating a fetch failure as "not bullish" would put an outage in the table as
@@ -923,10 +986,57 @@ a fact about the stock. Two hundred and seventy bars are fetched per symbol
 because the walk needs to redraw a 90-day window at each bar it tests: 90 days is
 ~63 trading bars, so 270 is four windows of history behind the latest bar.
 
+### The PSEi is scanned with the stocks (2026-11-09)
+
+The index used to be dropped from the sweep's universe, which meant its own
+chart could never put it on either table however it trended. The reader asked
+for it by name — *"i think you should still include PSEi in the appropriate
+sections if it is currently bullish or leaning bullish"* — so it now goes
+through the same walk as the stocks, and lands on whichever table its own chart
+belongs to. That is the only way the row and the chart it opens can agree
+(invariant 1).
+
+An index is not a security, and three facts follow:
+
+- **No board lot and no minimum investment.** It is not bought in lots of five,
+  so `bullish.py` leaves both fields empty and `pse.chart` withholds the
+  "Min. investment" readout rather than inventing a cheque.
+- **No traded value.** The socket's index bars carry five fields, not six (no
+  volume), so the row's turnover is `None` — never zero — and the peso floor
+  does not hide it. The volume column shows a dash with the reason on hover.
+- **It is chartable.** `PSE:PSEI` resolves over the same socket and opens the
+  page's own chart, which is the point of including it at all.
+
+### The notes say how much was scanned (2026-11-09)
+
+*"The user has no way of knowing if you really scanned many philippines stocks
+and not just 10"* — so both tables now print the makeup of the scan. The
+sweep's payload carries `kinds` (`{EQUITY: 249, PREFERRED: 11, ETF: 1,
+CLOSEDEND: 1, INDEX: 1}` on the day it was built), and
+`recent.ph_scan_line` turns it into one sentence:
+
+```
+Philippines: 263 scanned (249 common shares, 11 preferred shares, 1 ETF,
+1 closed-end fund, 1 index)
+```
+
+`recent.summarize` prints it in the note under **Recently bullish assets**, and
+the same string travels as `payload.phScan` so the page can print it under
+**Leaning bullish — not confirmed** too. One string for both notes, so the two
+cannot describe the same sweep differently. A table read from an older disk copy
+has no `kinds`; the note then says "262 scanned" and leaves the makeup out
+rather than guessing it.
+
 ## Most traded crypto — 24 hours
 
-Between the two leaderboards and the bullish PSE table sits the crypto table:
-the heaviest coins of the rolling last 24 hours, kept only where the trend is
+> **This table has no section of its own on the page any more.** Since
+> 2026-11-07 the coins it found are the crypto rows of [Recently bullish
+> assets](#recently-bullish-assets). `/api/cryptobull` and `cryptobull.py`
+> still exist and still answer — nothing was removed server-side — but the
+> page no longer asks for them. What follows documents the ranking they build,
+> which `recent.crypto_rows` now reads directly.
+
+The heaviest coins of the rolling last 24 hours, kept only where the trend is
 bullish **and** the rolling day is up, ten rows at most. `cryptobull.py`
 answers it, `/api/cryptobull` serves it, and the order is always the volume
 ranking — the table is *not* "the ten heaviest coins, whatever their trend".
@@ -1019,20 +1129,45 @@ can still draw every coin the table names.
 
 ## Recently bullish assets
 
-The last table on the page answers one question across six markets at once:
-**what turned bullish most recently?** `recent.py` builds it, `/api/recent`
-serves it, and the page draws it as a single table with a **Market** column —
-US stocks, Philippine stocks, crypto, the US Treasury futures, the Philippine
+The page's one table answers one question across every market it follows:
+**what is bullish right now, and since when?** `recent.py` builds it,
+`/api/recent` serves it, and the page draws it as a single table with a
+**Market** column — US stocks and ETFs on the Ondo shelf, Ondo's intelligent
+portfolios, Philippine stocks, crypto, the US Treasury futures, the Philippine
 government bond yields and the Philippine funds — sorted newest turn first.
 
-The page already had three tables that each answered a piece of this and a
-fourth that answered none of it. "Bullish Philippine stocks" is every PSE name
-that is bullish, dated. "Most traded crypto" is the heaviest coins that are
-bullish. "Most traded today" is the busiest listings in two markets, with no
-verdict at all. None of them spans markets, and none of them had anything to
-say about the Philippine government bond yield — which is read with the same
-algorithm as everything else and wants the same thing said about it: when did
-it turn?
+The page used to carry three tables that each answered a piece of this.
+"Bullish Philippine stocks" is every PSE name that is bullish, dated. "Most
+traded crypto" is the heaviest coins that are bullish. "Most traded today" is
+the busiest listings in two markets, with no verdict at all — the first of the
+three that has left the page (2026-11-07, for being a volume table with nothing
+to say about a trend). On 2026-11-07 the reader asked for the other two to be
+folded in as well: "I think we can combine ... in one table/section", and then,
+on what the table is for, "the idea is just to show me which assets are bullish
+right now, easy to understand?"
+
+Merging them changed three things, and only three:
+
+- **The crypto rows now read the whole chartable ranking**, not its first 25
+  candidates. The old crypto table walked the ranking until it had ten bullish
+  coins, so a shallow read would have lost rows it was showing — measured that
+  day, the only bullish coin (BEAMUSDT, $0.74M traded) sat around 200th. The
+  walk costs ~8 s over ~120 candidates, and the **leaning** rows are still read
+  from the first 25 only, so the leaning table is exactly what it was.
+- **The crypto table's day condition is gone, and nothing replaces it.** It was
+  a rule for a table of what was heavy *and* up today: a coin flat or down on
+  the rolling day was skipped before any bars were fetched. This table is the
+  three-month verdict, and the reader asked for that reading only — "i'm only
+  interested in 3-month change bro" — so the rolling day is neither a filter nor
+  a figure on the row.
+- **The Philippine volume floor and the "inferred from the yield" bond wording
+  are unchanged**, because they are rules about a market and about a series,
+  not about a table.
+
+The Philippine rows remain the floored subset of the sweep: a name under
+₱1,000,000 of turnover is judged and hidden, and the note says how many were
+hidden. The crypto rows carry `priceHint` from their own chart, so a sub-cent
+coin prints `$0.004040` rather than `$0.00`.
 
 On one recent sweep it produced **27 rows**: 8 Philippine stocks, 13 US stocks,
 3 coins and the 3 bond tenors it read — and the note above the table says so, in
@@ -1054,7 +1189,8 @@ count. "The window the chart draws" is not the same window for every source:
 | Source | The window its chart draws | How the walk asks for it |
 |---|---|---|
 | Yahoo (the US stocks) | three **calendar** months back from today — `range=3mo` is three months, not ninety days | `onset.onset(..., months=3)` |
-| Philippine exchange, Binance, the bond yields | ninety days | `onset.onset(...)` (the default) |
+| Binance (crypto) | three **calendar** months, since 2026-11-07 — one span is one window whichever venue draws it, so a coin's chart and its row hold the same bars | `onset.onset(..., months=3)` |
+| Philippine exchange, the bond yields | ninety days | `onset.onset(...)` (the default) |
 
 Previously SPY appeared bullish in the table and neutral on its chart when the
 two used different windows and different scoring regimes. `onset.py` asks for each source's own
@@ -1081,6 +1217,50 @@ the edges. So the walk moved into **`onset.py`**, and every table that asks
 caller and the recently-bullish table is the second; the refactor was verified
 behaviour-identical on 300 randomized series.
 
+### A lean is shown only when it is steady (2026-11-07)
+
+Asked for by name after a watchlist name flickered in and out of the leaning
+tag: "is there a way to filter out 'fragile' stocks like AAPL from being shown
+to me?", followed by "how about we make the filtering consistent: 'Recently
+bullish assets', 'Leaning bullish - not confirmed', 'watchlist' and the main
+price graph judgment".
+
+`onset.steady_lean` is the rule; `onset.decorate` is the same rule applied to a
+`trend.classify` call. A lean is shown only when
+
+* its **drift clears 1.15**, not merely the 1.00 hold bar, and
+* the **same call answers "leaning" on 4 of the last 5 bars** — the previous
+  windows, trimmed exactly as the chart would have trimmed them that day.
+
+Measured over 120 sessions on 464 shelf names before the rule was chosen: the
+median name flipped its tag **4 times**, and among the names leaning on the day
+measured the median was **10** (AAPL 14, its drift reading running 1.26, 1.42,
+1.26, 1.01, 0.76, 1.19, 1.02, 1.01). With the rule the median name flips **0**
+times and the number of tag episodes across the population falls from **1,024 to
+359**, at the cost of 11 rows down to 5 on the day it was measured.
+
+**One rule, every surface.** `server.chart_data` applies `decorate` after its
+read-time re-score, so a chart served from the 60-second memo or from a disk
+copy gets the same treatment as a fresh fetch — and everything that prints a
+verdict reads `trend.lean` from that one payload: the main price graph's badge,
+the watchlist rail's tag, and the leaning table. A name withheld from the table
+is a name whose chart reads plain "Neutral" too, and the chart's note says why
+("It would lean bullish — 52% of the way — but the reading is not steady: held on
+4 of the last 5 sessions"). `leanRaw` keeps the classifier's own reading beside
+the verdict, so nothing is lost by withholding it.
+
+**Two things it never does.** It never touches `label`, `score` or
+`significance` — a Besarish chart is still Bearish, and no label is earned or
+removed. And it never guesses: a series with no history behind its window
+answers `steady: null` and keeps its lean, because an unanswerable question is
+not a negative one (invariant 3). To give every chart that history, a Yahoo
+chart now fetches **one range wider than it draws** (`FETCH_SPAN`: 3mo → 6mo,
+…, 5y → 10y); `slim_chart` trims back to the asked span, so the drawn bars and
+the badge are unchanged, and the five bars the trim drops ride along as
+`historyTail`. The PSE, bond, fund, crypto and Ondo producers ship the same
+five-bar tail from the history they already hold (crypto asks five bars more
+than it draws).
+
 `onset.py` holds the two windows the walk needs — `window_now` (the badge's own
 window, which decides *inclusion*) and `window_at` (the window the chart
 would have drawn on a given day, which the walk *measures with*) — plus the
@@ -1097,48 +1277,95 @@ so a row's verdict and the chart its click opens are the same series:
 
 | Market | Source | Why |
 |---|---|---|
-| US stocks | Yahoo daily bars, through the Moli browser path | the most-traded US listings from the TradingView scanner (`markets.us_universe`), judged on the bars the page's own chart draws for that ticker |
+| Ondo stocks and ETFs | Yahoo daily bars, through the Moli browser path | every stock and ETF listed at app.ondo.finance (`ondolist.tickers`), judged on the bars the page's own chart draws for that ticker — the shelf is the universe (2026-11-07) |
+| Ondo portfolios | the token's own daily price from DeFiLlama (`ondo.py`) | the seven intelligent portfolios the same shop sells, judged on the series the chart a click opens draws |
 | Philippine stocks | the Philippine sweep's own rows (`bullish.py`) | read from the sweep the server already keeps warm — re-sweeping would make this table fresher than the sweep it is built from |
 | Crypto | Binance daily bars | the chartable USDT ranking (`cryptobull.candidates`), judged on the same bars the crypto table and the crypto chart use |
 | US Treasuries | Yahoo daily bars, through the same Moli browser path | the seven Treasury futures on the curve (`rates.CONTRACTS`), a fixed list rather than a ranking, judged on the bars the chart route draws for them — see [the Treasury futures](#the-united-states-treasury-futures-which-are-prices-2026-10-31) |
 | Philippine bonds | TradingView chart socket | `TVC:PH02Y`, `TVC:PH05Y`, `TVC:PH10Y` — the 2-year, 5-year and 10-year government bond yields, as daily closes in percent |
 | Philippine funds | the publisher's own NAVPU register (`phfunds.py`) | forty-seven funds with no ticker and no exchange; each one's daily net asset value per unit is read from TOAP's UITF register, PIFA's NAV history or BPI Wealth's own fund page — see [Philippine funds](#philippine-funds-on-their-published-navpu) |
 
-The US leg is the expensive one: a year of daily bars for each of **130** tickers
-(`recent.US_LIMIT`), fetched through the browser because Yahoo answers plain HTTP
+The Ondo leg is the expensive one: a year of daily bars for each of **474**
+stocks and ETFs, fetched through the browser because Yahoo answers plain HTTP
 clients with a 429. So this table is a **sweeper**, not a route, for the same
 reason the Philippine sweep is: `RECENT_TTL` (900 s) apart on a background
 thread, and a reader only ever reads what that thread last produced. The
 Philippine rows come from the sweep above rather than a second one.
 
-A full sweep measured about **10 seconds** with 130 tickers (2026-10-31), almost
-all of it the US browser leg — twenty Yahoo URLs per browser run, seven runs for
-a hundred and thirty tickers. So the payload is kept on disk under its own key
+A full sweep measured about **23 seconds** for the 474 shelf symbols (2026-11-07,
+twenty-four browser runs of twenty URLs each, none missing), measured on the
+same machine that took 10 seconds for 130 names on 2026-10-31. So the payload is kept on disk under its own key
 (`recent:scan`) and hydrated at startup, the same contract the Philippine sweep
 has: an offline start still shows rows, and the note says the table is a saved
 sweep rather than a live one. A failed refresh leaves the previous rows on
 screen and reports the failure beside them; it never clears the table.
 
-**Why 130 and not 50.** The cutoff is coverage, not a verdict: a name outside it
-is never fetched, so the table has no opinion about it at all — which reads like
-a bearish call. Fifty was a shortlist of the heaviest names, and it dropped two
-that were bullish on their own charts: WMT ranked 57th by turnover and KO 124th,
-so neither row existed while both were ▲ Bullish. The universe now reaches deep
-enough to hold the large caps a reader would name, at the price of a longer US
-leg (seven browser runs instead of three).
+**Why the shelf and not a turnover ranking (2026-11-07).** The universe used to
+be the 50, then 130, most-traded United States listings. Both were coverage
+decisions taken by a number the reader never asked for, and both cut real names
+off: WMT ranked 57th and KO 124th when 50 was the limit, and ACN ranked **172nd**
+by turnover at $420M when 130 was — bullish on its own chart at +0.56, and
+invisible. The reader's instruction replaced the ranking altogether: "the limit
+is just what's available at app.ondo.finance — no longer trading volume, for both
+bullish list and 'leaning bullish — not confirmed'", then "include all stocks &
+ETFs, and intelligent portfolios". So the universe is `ondolist.tickers` — every
+stock and ETF the shop lists — and the portfolios are judged beside them.
 
-**A class share takes Yahoo's spelling.** The scanner names it with a dot
-(`BRK.B`); Yahoo — and so the chart route — names it with a dash (`BRK-B`), and
-`BRK.B` answers `/api/chart` with a 404. `markets.yahoo_symbol()` is the one
-place that rule lives, and both the chart symbol on a row and the ticker the US
-bars are fetched under go through it. Without it, a name inside the widened
-universe would have been reported as "did not answer" on every sweep: a fetch
-failure written into the table as a fact about a stock. The row still *displays*
-the scanner's `BRK.B`, because that is the listing's own name.
+Two things changed on the same instruction, and one of them came back a
+different shape:
+
+* **the peso-volume floor now applies to Philippine stocks only** (`recent.
+  FLOOR_MARKETS`). Asked for by name, 2026-11-07: "there should still be a
+  volume floor for philippines stocks. PHP1M". PAL is the case it decides:
+  bullish at +0.77 with a 14-bar run since 2026-10-19 on ₱311,040, so the sweep
+  judges it and the table hides it — and the note counts what it hid ("4 below
+  ₱1,000,000 volume hidden"), because a name that is bullish on its own chart
+  and absent with no explanation is worse than either answer. The Ondo rows are
+  not floored -- the shelf is their limit -- and neither are the coins.
+* **the turnover ranking stopped being a universe.** With no readable shelf
+  there is no universe at all, so the leg falls back to the ranking
+  (`recent.US_FALLBACK_LIMIT`) and the note says "US (turnover universe)"
+  rather than implying the shelf. An outage must not empty the table.
+
+**A class share takes Yahoo's spelling.** The shelf names it with a dot
+(`brk.bon`, so `BRK.B`); Yahoo — and so the chart route — names it with a dash
+(`BRK-B`), and `BRK.B` answers `/api/chart` with a 404. `markets.yahoo_symbol()`
+is the one place that rule lives, and both the chart symbol on a row and the
+ticker the bars are fetched under go through it. Without it, a name on the shelf
+would be reported as "did not answer" on every sweep: a fetch failure written
+into the table as a fact about a stock. The row still *displays* `BRK.B`,
+because that is the shelf's own spelling.
+
+**Two slugs are not scanned, and it is a measured decision.** OUSG and USDY are
+listed bare (no `on` suffix) and are T-bill tokens, not stocks, ETFs or
+portfolios. A Treasury token accrues and never marks to a loss, so its window is
+always bullish — the money-market property, not a finding — and the reader's
+instruction named stocks, ETFs and portfolios.
+
+**A name whose source stopped printing is on neither table (2026-11-07).** The
+reader's complaint was `ATKR`: priced **$94.96** in "Leaning bullish — not
+confirmed" with a newest bar of **2026-10-16**, three weeks dead, because the
+company had been taken over. It was a row for a reason worth stating — the series
+*answered*, 51 bars of a frozen price, so it was not `missing`, and the
+classifier read it as neutral +0.46 with a steady bullish lean.
+
+So the leg tests the bars **before** it judges them. `recent.stale_gap` answers
+how far the newest bar falls behind the clock, and a gap over `STALE_GAP_DAYS`
+(5) leaves the name out of **both** tables and into `stats["US"]["stale"]`, which
+the note prints: *"1 stale series hidden: ATKR (last bar 2026-10-16)"* — the same
+"count what you hide" rule the peso floor follows. A copy hydrated from disk is
+re-filtered against **its own** `fetchedAt`, so a restart cannot put the row back
+for the seconds before the first sweep lands.
+
+Measured the same day: 473 of the shelf's **474** names answered with a bar
+**0.3 days** old and ATKR with one **21.3 days** old, so there was no threshold
+to tune — five days is a weekend plus a market holiday, and everything else was
+three weeks away. Not applied to the Philippine legs, the funds or the bonds:
+their exchanges close for long holidays, so a calendar gap is the calendar.
 
 ### What each row says
 
-Seven columns, and each one earns its place:
+Eight columns, and each one earns its place:
 
 | Column | What it is |
 |---|---|
@@ -1148,7 +1375,14 @@ Seven columns, and each one earns its place:
 | **Since** | the day the current run began, in the row's own market's timezone |
 | **Run** | how many bars the run has lasted — bars, not days, because that is the unit the label speaks in |
 | **Price** | the latest close, a percentage for a yield and a currency amount for everything else |
+| **3-month** | the window's move, first close to newest — the same pair the chart prints under the price ("+12.95% three-month move, since Jul 31"), so the row and the chart cannot disagree about how the window went. **A yield gets none**, by name ("for bonds, the most important thing is yield. changes don't mean shit. + the bearish or bullish judgment"): its yield is the price column and its bond-price call is the direction column, so the cell is a dash with the reason on hover rather than a points change between them |
 | **Trading volume (in PHP)** | the latest bar's value traded in pesos — native for a Philippine stock, converted for a US stock or a coin at the same `markets.php_per_usd` rate the "most traded" tables annotate with, and empty for a yield, which trades no shares, and a futures contract, whose volume counts contracts rather than money. The exact figure (and, for a converted row, the native one) is on the cell's hover |
+
+The **3-month** figure is `onset`'s, not a second calculation: `onset.onset`
+returns the scored window's first close beside the newest one it has always
+returned as `price`, and each leg turns that pair into its own unit. That is
+why a US stock's row and its chart print the same percentage — both read one
+window, decided by `onset.window_now` and nothing else.
 
 The **Since** column is the point of the table, and it is a different date for a
 different reason on each row. The date is the first bar of an unbroken run of
@@ -1269,10 +1503,12 @@ The rate market is the sixth market on this table, and the first one added
 because something was **missing** rather than because a source was new. The
 United States Treasury futures had always been chartable — `ZB=F` (the 30-year
 bond contract) answers `/api/chart` with five years of daily bars and a verdict
-— but nothing on the page could reach them: the table's US leg is a *turnover
-ranking* (`markets.us_universe`), and the TradingView scanner's `common` /
-`etf` typespecs cannot even name a futures contract. So the whole curve sat
-outside every sweep, whatever its chart said.
+— but nothing on the page could reach them: the table's US leg was a *turnover
+ranking* at the time (`markets.us_universe`), and the TradingView scanner's
+`common` / `etf` typespecs cannot even name a futures contract. So the whole
+curve sat outside every sweep, whatever its chart said. (The US leg is the Ondo
+shelf since 2026-11-07, which does not carry a futures contract either — the
+reason this leg exists is unchanged.)
 
 `rates.py` is the curve as a **fixed list** — the same shape `tv.BONDS` has for
 the Philippine yields — because there is one 30-year contract, not a market of
@@ -1297,8 +1533,8 @@ Three things distinguish this leg from the Philippine bond one:
   every other market.
 * **No turnover.** A contract's volume counts contracts, and close times
   contracts is not a traded value in any currency, so the row carries
-  `turnover: None` — exempt from the peso-volume floor the way a yield and a
-  fund are, printed as a dash, and explained on the cell's hover.
+  `turnover: None` — printed as a dash like a yield's and a fund's, and
+  explained on the cell's hover.
 * **Its own price precision.** A Treasury quote's fraction is a 32nd
   (0.03125), a 64th or a 128th, so `rates.price_hint` asks the fetched closes
   how many decimals they need (2 to 8) rather than hard-coding two. `ZB` at
@@ -1398,8 +1634,7 @@ Two facts about the raw data decide the shape of everything:
 * **A NAVPU is struck once, after the close.** The newest bar is usually
   yesterday's, and the chart's hero figure is that bar's value. There is no
   intraday price to wait for and no volume to report, so the row's turnover is
-  `null` — the table prints a dash, and the peso-volume floor that keeps thin
-  names off this table cannot apply, the same exemption a bond yield gets.
+  `null` — the table prints a dash in the volume column.
 
 **A money market fund is always bullish, and that is not a bug.** Its NAVPU
 accrues interest every business day and never marks to a loss, so a three-month

@@ -65,6 +65,7 @@ import time
 import urllib.request
 
 import crypto
+import onset
 import pse_outlook
 import trend
 
@@ -119,6 +120,10 @@ TIMEFRAME_WEEKLY = "1W"
 # without needing to know the exchange was shut.
 SESSION_CLOSE = datetime.time(15, 15)
 CLOSING_PRINT_DELAY = datetime.timedelta(minutes=2)
+# When today's bar can be moving at all: the opening bell to the close. The
+# same published schedule decides this, and `chart()` ships the window so the
+# page can say the newest point is the price trading now rather than a close.
+SESSION_OPEN = datetime.time(9, 30)
 
 # In-page deadline. The socket answers in 2-3s; past this nothing useful is
 # coming, and a bounded wait keeps the whole request inside SUBPROCESS_TIMEOUT
@@ -928,6 +933,40 @@ def completed_trade(points: list[dict], volumes: list, now: float | None = None
     return None, None, None
 
 
+def session_window(stamp: int, interval: str, now: float | None = None) -> dict | None:
+    """The PSE session a newest bar belongs to, for `server.last_bar_basis`.
+
+    TradingView's daily payload carries today's candle from the opening bell,
+    so during the session the newest bar **is** the price trading now -- what
+    the chart draws and what a broker screen quotes are the same reading. The
+    frame does not say so, which is why the clock does: the bar is stamped at
+    the session it belongs to, and 9:30-15:15 Manila is when it can move.
+
+    Answers None for a weekly bar (a week's candle is not a trading day's
+    price) and for a payload whose clock cannot be read. `formingBar` is the
+    claim, `regular` is when it can be true, and the read-time test in
+    `server.last_bar_basis` is what stops a payload read after today's close
+    from still claiming to be live -- the window is an absolute stamp, so it
+    expires on its own.
+    """
+    if interval != "1d":
+        return None
+    try:
+        day = datetime.datetime.fromtimestamp(int(stamp), pse_outlook.MANILA).date()
+    except (TypeError, ValueError, OSError, OverflowError):
+        return None
+    now_manila = datetime.datetime.fromtimestamp(
+        time.time() if now is None else now, pse_outlook.MANILA)
+    opened = datetime.datetime.combine(day, SESSION_OPEN, tzinfo=pse_outlook.MANILA)
+    closed = datetime.datetime.combine(day, SESSION_CLOSE, tzinfo=pse_outlook.MANILA)
+    forming = day == now_manila.date()
+    return {
+        "regular": [int(opened.timestamp()), int(closed.timestamp())],
+        "coversLastBar": forming,
+        "formingBar": forming,
+    }
+
+
 def chart(symbol: str, span: str, interval: str) -> dict:
     """Daily/weekly bars for a PSE security, in the server's payload shape.
 
@@ -1002,6 +1041,14 @@ def chart(symbol: str, span: str, interval: str) -> dict:
     last = used[-1]["c"]
     previous = used[-2]["c"] if len(used) > 1 else None
 
+    # The bars behind the window, for the badge's steadiness reading
+    # (`server.chart_data` -> `onset.decorate`). The socket already returned
+    # `OUTLOOK_BARS` of history, so a 90-day chart has years behind it and the
+    # reading is exact rather than approximate.
+    tail = [{"t": point["t"], "c": point["c"], "v": volumes[i]}
+            for i, point in list(enumerate(points))[:start]
+            [-onset.LEAN_HOLD_BARS:]]
+
     # The board lot times the last close: the smallest cheque that buys this
     # stock, which the page shows under the price. Imported here rather than at
     # the top because `markets` imports this module -- for the scanner POST and
@@ -1009,7 +1056,12 @@ def chart(symbol: str, span: str, interval: str) -> dict:
     # the one place in it that needs the lot table. That table is the exchange's,
     # keyed on price, not the instrument's `pricescale`, which is the tick size.
     import markets
-    lot, lot_cost = markets.minimum_investment(last)
+    # An index has no board lot: it is a reading of its members, not a
+    # security, so a "5-share lot" under its price would be a cheque nobody
+    # can write. Scanned with the stocks since 2026-11-09, so its chart can be
+    # opened from a row; the figure is withheld rather than invented.
+    lot, lot_cost = ((None, None) if meta.get("type") == "index"
+                     else markets.minimum_investment(last))
 
     return {
         "symbol": canonical,
@@ -1027,8 +1079,17 @@ def chart(symbol: str, span: str, interval: str) -> dict:
         # so the last *completed* session's value can be read off at read time
         # instead of being frozen into this payload -- see `completed_trade`.
         "volumes": used_volumes,
+        # The session the newest bar belongs to. A bar dated today is the day
+        # **so far** until the exchange's close, so this is what lets the page
+        # call the newest point the live price (`server.last_bar_basis`) instead
+        # of a settled close -- and re-read it every minute rather than every
+        # fifteen.
+        "session": session_window(used[-1]["t"], interval),
         "longTermContext": pse_outlook.context(points) if interval == "1d" else None,
         "trend": trend_call,
+        # The bars before the window, so the badge's lean can be checked over
+        # the previous sessions (`server.chart_data` -> `onset.decorate`).
+        "historyTail": tail,
         "source": "TradingView",
     }
 
@@ -1186,7 +1247,9 @@ def _build_chart(symbol: str, rows, meta: dict, span: str, interval: str) -> dic
     previous = used[-2]["c"] if len(used) > 1 else None
 
     import markets
-    lot, lot_cost = markets.minimum_investment(last)
+    # Same rule as `chart()`: no board lot for an index (2026-11-09).
+    lot, lot_cost = ((None, None) if meta.get("type") == "index"
+                     else markets.minimum_investment(last))
 
     # `volumes` beside `points`, exactly as `chart()` ships them, so the
     # batched route a warmed row is stored through cannot omit what the
@@ -1204,6 +1267,9 @@ def _build_chart(symbol: str, rows, meta: dict, span: str, interval: str) -> dic
         "minInvestment": lot_cost,
         "points": used,
         "volumes": used_volumes,
+        # The newest bar's session, so the batched route carries the same claim
+        # the single-symbol route does (`chart()` -> `session_window`).
+        "session": session_window(used[-1]["t"], interval),
         "longTermContext": pse_outlook.context(points) if interval == "1d" else None,
         "trend": trend_call,
         "source": "TradingView",

@@ -151,7 +151,8 @@ const out = cases.map(c => {
   const r = T.onset(c.stamps, c.closes, c.volumes, 'bullish');
   return r === null ? null : {since: r.since, run: r.run, censored: r.censored,
                               anchored: r.anchored, manner: r.manner,
-                              turnMove: r.turnMove, score: r.score, window: r.window};
+                              turnMove: r.turnMove, score: r.score, window: r.window,
+                              windowFirst: r.windowFirst};
 });
 fs.writeFileSync(process.argv[3], JSON.stringify(out));
 """, os.path.join(HERE, "trend.js"),
@@ -174,7 +175,8 @@ fs.writeFileSync(process.argv[3], JSON.stringify(out));
             continue
         if py is None:
             continue
-        for k in ("since", "run", "censored", "anchored", "manner", "turnMove", "window"):
+        for k in ("since", "run", "censored", "anchored", "manner",
+              "turnMove", "window", "windowFirst"):
             if py[k] != js[k]:
                 print("ONSET MISMATCH", k, py[k], js[k])
                 bad += 1
@@ -207,7 +209,8 @@ const out = cases.map(c => {
   const r = T.onset(c.stamps, c.closes, c.volumes, 'bullish', undefined, 3);
   return r === null ? null : {since: r.since, run: r.run, censored: r.censored,
                               anchored: r.anchored, manner: r.manner,
-                              turnMove: r.turnMove, score: r.score, window: r.window};
+                              turnMove: r.turnMove, score: r.score, window: r.window,
+                              windowFirst: r.windowFirst};
 });
 fs.writeFileSync(process.argv[3], JSON.stringify(out));
 """, os.path.join(HERE, "trend.js"),
@@ -231,7 +234,8 @@ fs.writeFileSync(process.argv[3], JSON.stringify(out));
             continue
         if py is None:
             continue
-        for k in ("since", "run", "censored", "anchored", "manner", "turnMove", "window"):
+        for k in ("since", "run", "censored", "anchored", "manner",
+              "turnMove", "window", "windowFirst"):
             if py[k] != js[k]:
                 print("MONTH ONSET MISMATCH", k, py[k], js[k])
                 bad += 1

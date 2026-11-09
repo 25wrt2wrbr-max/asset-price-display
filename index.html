@@ -494,7 +494,6 @@
   .leaders-head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
   .leaders-head h2 { font-size: 17px; margin: 0; }
   .leaders-note { color: var(--text-secondary); font-size: 12.5px; }
-  .leaders-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 12px; }
 
   /* A column, so the table below can take whatever height the card is given and
      pass it down to its rows. See `.leaders table` for why that matters. */
@@ -548,123 +547,23 @@
   .tick-btn:hover { text-decoration: underline; }
   .tick-btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; border-radius: 3px; }
   .tick-sub { display: block; color: var(--text-secondary); font-size: 11.5px; font-weight: 400; }
-  .alt { display: block; color: var(--text-secondary); font-size: 11.5px; }
 
   /* Rows load the chart, so they read as interactive: pointer, hover, focus. */
   .leaders tbody tr { cursor: pointer; }
   .leaders tbody tr:hover { background: var(--gridline); }
   .leaders tbody tr:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
 
-  @media (max-width: 900px) {
-    .leaders-grid { grid-template-columns: minmax(0, 1fr); }
-  }
-
-  /* ---- bullish table ----
-     Not a `.leaders-grid` card: it is one wide table of every bullish PSE name,
-     and there were 82 of them on the last sweep. Two columns of forty rows each
-     would make the reader choose a column before they can scan the list, so the
-     card spans the page and the rows are dense instead of tall. */
-  /* The wrap keeps the base `.table-wrap` border and radius and only lifts the
-     height cap: `.leaders .table-wrap` clears all four for the cards that fill
-     their height, and none of that applies here. */
-  /* It also stops taking the full column. The column widths below add up to
-     720px -- a little over half the 1180px `.wrap` -- and the card is pinned to
-     that so the border closes on the rows instead of around a 1180px box with
-     the columns scaled up to fill it and a hole on either side. Stated as a
-     length rather than `fit-content`: a fixed-layout table's `max-content` is
-     not the sum of its columns, so `fit-content` on the card resolved to the
-     whole column and solved nothing. The 770px is the 720px of columns plus the
-     inset the base `.card` gives its contents -- 24px of padding on each side
-     and a 1px border each side, both counted inside the width by
-     `box-sizing: border-box` -- so what is left for the table is the 720px the
-     columns want. `margin-inline: auto` centres it in the section, and
-     `max-width: 100%` is the floor for a narrow viewport, where the card stops
-     shrinking and the columns scale proportionally inside it rather than the
-     table overflowing. */
-  .bullish .card { width: 770px; max-width: 100%; margin-inline: auto; }
-  .bullish .table-wrap { max-height: none; }
-  /* `100%` of a card that is now exactly as wide as the columns themselves, so
-     the stated widths below are the widths the columns render at, and no
-     `100%` stretching the table into the 1180px column it used to fill. The
-     sticky `thead` the base rule sets up still works: the wrap never scrolls
-     sideways at any width, only down. */
-  .bullish table { table-layout: fixed; width: 100%; }
-  /* Left-aligned, unlike the figure tables: the rows here are ranked by their
-     order, not read across against the same figure in the row above, so no
-     column needs its contents flush right. Left is also what removes the void
-     the user saw between the rank and the symbol -- the base `text-align: right`
-     pushed the ticker to the far edge of the widest column in the table. The
-     figures keep the tabular numerals the base rule gives them. */
-  .bullish td, .bullish th { padding: 5px 9px; white-space: nowrap; text-align: left; }
-  /* Sized for a two-digit rank, "2026-09-28" and a run of a few bars, plus the
-     two money columns: a PSE price reaching five digits with centavos, and a
-     minimum investment that can run to eight figures (a ₱2,500 name in the
-     1,000-share bracket is ₱2,500,000.00). Same reasoning as `.leaders table`:
-     a column holding something unbreakable gets a width of its own. Here every
-     column does, including the symbol column -- see that rule for why. */
-  .bullish td:nth-child(1), .bullish th:nth-child(1) { width: 34px; }
-  .bullish td:nth-child(3), .bullish th:nth-child(3) { width: 118px; }
-  .bullish td:nth-child(4), .bullish th:nth-child(4) { width: 62px; }
-  .bullish td:nth-child(5), .bullish th:nth-child(5) { width: 108px; }
-  /* The one column whose heading is wider than anything it holds, so it is
-     sized for the words: "Min. investment" held on one line is what keeps the
-     rows as short as this dense a table wants them. */
-  .bullish td:nth-child(6), .bullish th:nth-child(6) { width: 122px; }
-  /* The symbol cell stacks a ticker over an instrument name, so it is the one
-     cell allowed to wrap -- holding a long name on one line would need a wider
-     column than the five others leave over. Its width is stated like the rest
-     rather than left to absorb the remainder: the remainder is what the table
-     was told to stretch into, and with no width of its own the column would
-     take the 1180px back. At 276px the longest PSE name wraps to a second line
-     and everything shorter stays on one. */
-  .bullish td:nth-child(2), .bullish th:nth-child(2) { width: 276px; white-space: normal; }
-  /* `.rank` would colour the leading column the same muted grey as a leaderboard
-     rank, which reads as decoration; the bar number of the row's own sort is
-     not decoration, so it keeps full contrast. */
-  .bullish .rank { font-size: 12px; }
-  .since { font-variant-numeric: tabular-nums; }
-  /* A run that began on the latest bar is the newest thing in the table -- and
-     the reason the sort order is worth having -- so it is marked rather than
-     left to be spotted by comparing dates. */
-  .fresh { color: var(--delta-up); font-weight: 600; }
-
-  /* ---- bullish crypto table ----
-     Same single-wide-card shape as the Philippine bullish table, one section
-     shorter than it: five columns -- rank, symbol, traded, price, 24-hour
-     change -- so the pinned width is what those columns ask for, 598px of
-     columns plus the 50px of padding and border the base `.card` insets its
-     contents by (same arithmetic as `.bullish .card` above). The traded
-     column takes the leaderboards' own 136px, since it holds the same kind of
-     figure -- a turnover that reaches ten figures. */
-  .cryptobull .card { width: 648px; max-width: 100%; margin-inline: auto; }
-  .cryptobull .table-wrap { max-height: none; }
-  .cryptobull table { table-layout: fixed; width: 100%; }
-  .cryptobull td, .cryptobull th { padding: 5px 9px; white-space: nowrap; text-align: left; }
-  .cryptobull td:nth-child(1), .cryptobull th:nth-child(1) { width: 34px; }
-  .cryptobull td:nth-child(3), .cryptobull th:nth-child(3) { width: 136px; }
-  .cryptobull td:nth-child(4), .cryptobull th:nth-child(4) { width: 108px; }
-  .cryptobull td:nth-child(5), .cryptobull th:nth-child(5) { width: 84px; }
-  /* The symbol cell stacks the coin name over its rank line, so it is the one
-     cell allowed to wrap, stated like the rest rather than left to absorb the
-     remainder -- the same rule the bullish table's symbol column follows. */
-  .cryptobull td:nth-child(2), .cryptobull th:nth-child(2) { width: 236px; white-space: normal; }
-  .cryptobull .rank { font-size: 12px; }
-  /* The 24-hour change is signed and coloured like every other delta on the
-     page -- the watchlist rail's classes, applied to this table's cells. */
-  .cryptobull .chg { font-variant-numeric: tabular-nums; }
-  .cryptobull .chg.up { color: var(--delta-up); }
-  .cryptobull .chg.down { color: var(--delta-down); }
-
   /* ---- recently bullish table ----
-     One table that spans four markets: US stocks, Philippine stocks, crypto
-     and the Philippine government bond yields, each row carrying the day its
-     current run began, newest turn first. Seven columns -- market, asset,
-     direction, since, run, price, volume -- so the pinned width is what those
-     columns ask for: 118 + 250 + 132 + 118 + 62 + 112 + 118 = 910px of
+     The page's one list: every bullish asset across every market it follows --
+     Ondo stocks and ETFs, Ondo's intelligent portfolios, Philippine stocks,
+     crypto, United States Treasury futures, Philippine bond yields and
+     Philippine funds -- each row carrying the day its current run began,
+     newest turn first. Eight columns -- market, asset, direction, since, run,
+     price, three-month move, volume -- so the pinned width is what those
+     columns ask for: 118 + 250 + 132 + 118 + 62 + 112 + 92 + 118 = 1002px of
      columns plus the 50px of padding and border the base `.card` insets its
-     contents by (the same arithmetic as `.bullish .card` above), which is
-     960px. */
-  .recent .card { width: 960px; max-width: 100%; margin-inline: auto; }
+     contents by, which is 1052px. */
+  .recent .card { width: 1052px; max-width: 100%; margin-inline: auto; }
   .recent .table-wrap { max-height: none; }
   .recent table { table-layout: fixed; width: 100%; }
   .recent td, .recent th { padding: 5px 9px; white-space: nowrap; text-align: left; }
@@ -674,14 +573,23 @@
   .recent td:nth-child(4), .recent th:nth-child(4) { width: 118px; }
   .recent td:nth-child(5), .recent th:nth-child(5) { width: 62px; }
   .recent td:nth-child(6), .recent th:nth-child(6) { width: 112px; }
-  .recent td:nth-child(7), .recent th:nth-child(7) { width: 118px; }
+  .recent td:nth-child(7), .recent th:nth-child(7) { width: 92px; }
+  .recent td:nth-child(8), .recent th:nth-child(8) { width: 118px; }
   /* The volume heading is longer than the figures beneath it ("₱3.19T"),
      so it is the one heading allowed to wrap rather than widening the
      column for a line the cells never need. */
-  .recent th:nth-child(7) { white-space: normal; }
+  .recent th:nth-child(8) { white-space: normal; }
   .recent .vol { font-variant-numeric: tabular-nums; }
   .recent .rank { font-size: 12px; }
   .recent .since { font-variant-numeric: tabular-nums; }
+  /* The window's move is a delta like any other on the page, so it wears the
+     same green and red. A yield's move is left uncoloured on purpose: its
+     number is the yield, and the badge beside it already says which way a bond
+     price read it. */
+  .recent .move { font-variant-numeric: tabular-nums; }
+  .recent .move.up { color: var(--delta-up); }
+  .recent .move.down { color: var(--delta-down); }
+  .recent .move.flat { color: var(--text-muted); }
   /* A run that began on the latest bar is the newest thing in the table --
      the reason the sort order is worth having -- so it is marked. */
   .recent .fresh { color: var(--delta-up); font-weight: 600; }
@@ -835,6 +743,12 @@
       <h2 id="recentHeading">Recently bullish assets</h2>
       <p class="leaders-note" id="recentNote"></p>
     </div>
+    <!-- Every market the page follows, in one list: Ondo stocks and ETFs, Ondo's
+         intelligent portfolios, Philippine stocks, crypto, Treasury futures,
+         bond yields and Philippine funds. The warning that used to sit over the
+         Philippine table alone applies to all of them, so it sits here now. -->
+    <p class="leaders-note">Past price trend only — not a forecast or a promise of
+      three months of gains. Borderline calls can change quickly.</p>
     <div id="recentGrid"></div>
   </section>
 
@@ -844,31 +758,6 @@
       <p class="leaders-note" id="leaningNote"></p>
     </div>
     <div id="leaningGrid"></div>
-  </section>
-
-  <section class="leaders" aria-labelledby="leadersHeading">
-    <div class="leaders-head">
-      <h2 id="leadersHeading">Most traded today</h2>
-      <p class="leaders-note" id="leadersNote"></p>
-    </div>
-    <div class="leaders-grid" id="leadersGrid"></div>
-  </section>
-
-  <section class="leaders cryptobull" aria-labelledby="cryptoHeading">
-    <div class="leaders-head">
-      <h2 id="cryptoHeading">Most traded crypto — 24 hours</h2>
-      <p class="leaders-note" id="cryptobullNote"></p>
-    </div>
-    <div id="cryptobullGrid"></div>
-  </section>
-
-  <section class="leaders bullish" aria-labelledby="bullishHeading">
-    <div class="leaders-head">
-      <h2 id="bullishHeading">Bullish Philippine stocks</h2>
-      <p class="leaders-note">Past price trend only—not a forecast or a promise of three months of gains. Borderline calls can change quickly.</p>
-      <p class="leaders-note" id="bullishNote"></p>
-    </div>
-    <div id="bullishGrid"></div>
   </section>
 
   <footer>
@@ -953,12 +842,6 @@ const el = {
   watchList: document.getElementById("watchList"),
   watchCount: document.getElementById("watchCount"),
   watchHint: document.getElementById("watchHint"),
-  leadersGrid: document.getElementById("leadersGrid"),
-  leadersNote: document.getElementById("leadersNote"),
-  cryptobullGrid: document.getElementById("cryptobullGrid"),
-  cryptobullNote: document.getElementById("cryptobullNote"),
-  bullishGrid: document.getElementById("bullishGrid"),
-  bullishNote: document.getElementById("bullishNote"),
   recentGrid: document.getElementById("recentGrid"),
   recentNote: document.getElementById("recentNote"),
   leaningGrid: document.getElementById("leaningGrid"),
@@ -1279,6 +1162,14 @@ function renderAll() {
   }[d.lastBarBasis];
   if (basisNote) bits.push(basisNote);
   else if (!d.lastBarBasis && d.extendedLastBar) bits.push("last bar includes after-hours");
+  // A series the source has stopped printing: the hero figure above is that old
+  // bar's close, not a price now, and the line has to say so before the reader
+  // reads it as today's. The server decides it (`staleDays`), by the same rule
+  // the recent table uses to leave such a name off the table.
+  if (Number.isFinite(d.staleDays)) {
+    bits.push(`newest bar is ${d.staleDays === 1 ? "1 day" : d.staleDays + " days"} old`
+      + (d.staleBar ? ` (${d.staleBar})` : ""));
+  }
   // The peso pair's Saturdays and Sundays come from Coins.ph's USDC/PHP book,
   // because the FX week is shut. Say it whenever such bars are on screen, not
   // only when the newest one is: a weekend point in the middle of a three-month
@@ -1493,6 +1384,13 @@ function drawLastVolume() {
 const TREND_GLYPH = { bullish: "▲", bearish: "▼", neutral: "◆" };
 const TREND_WORD = { bullish: "Bullish", bearish: "Bearish", neutral: "Neutral" };
 
+// The steady-lean rule, mirrored from `onset.py` (LEAN_MARGIN / LEAN_HOLD_*).
+// The server applies it -- `trend.lean` arrives null when a lean is withheld --
+// and these numbers are here only so the tooltip can say what the bar is.
+const LEAN_MARGIN = 1.15;
+const LEAN_HOLD_NEED = 4;
+const LEAN_HOLD_BARS = 5;
+
 /* Component keys in the order they are weighted, with readable names. Every
    bar the chart draws is scored; a component that cannot be measured is
    missing and filtered out. */
@@ -1506,10 +1404,30 @@ const TREND_PARTS = [
 function drawTrend() {
   const t = state.data && state.data.trend;
   const badge = el.trendBadge;
+  // A series whose source has stopped printing carries no verdict (the server
+  // withholds it, see `staleDays`), and the note has to say why: a badge that
+  // simply vanished would read as "nothing to report" on a line that ends
+  // weeks ago, and an "Neutral · leaning bullish" over a frozen price is what
+  // the reader objected to in the first place.
+  const stopped = state.data && Number.isFinite(state.data.staleDays)
+    ? `The source has not printed since ${state.data.staleBar || "the newest bar"} — ` +
+      `the newest bar is ${state.data.staleDays === 1 ? "1 day" : state.data.staleDays + " days"} old. ` +
+      `No three-month verdict and no profit odds are shown: a label read off a ` +
+      `price that stopped moving is a label about that month, not about now. `
+    : "";
 
   if (!t || !TREND_GLYPH[t.label]) {
     badge.hidden = true;
-    el.trendNote.hidden = true;
+    // Cleared, not merely hidden -- the rule the odds line already follows. A
+    // "Neutral · leaning bullish +0.26" left in the DOM behind a hidden badge is
+    // one inspector away from being read as a claim about the chart on screen,
+    // and for a stopped series it is a claim the chart explicitly refuses.
+    badge.className = "trend";
+    el.trendGlyph.textContent = "";
+    el.trendLabel.textContent = "";
+    el.trendScore.textContent = "";
+    el.trendNote.textContent = stopped;
+    el.trendNote.hidden = !stopped;
     document.getElementById("outlookNote").hidden = true;
     return;
   }
@@ -1538,10 +1456,20 @@ function drawTrend() {
        : `drift t ${t.significance >= 0 ? "+" : "−"}${Math.abs(t.significance).toFixed(2)}`)
     : "";
   const progressPct = Number.isFinite(t.progress) ? Math.round(t.progress * 100) : null;
+  // A lean is only printed when it is steady (onset.decorate): clear of the
+  // drift line and held over the last few sessions. When it is withheld the
+  // badge says so, because "Neutral" alone would hide a real reading -- the
+  // band is still where the window sits, it just has not stayed there.
+  const withheld = t.label === "neutral" && !t.lean && TREND_WORD[t.leanRaw];
+  const steadyWords = Number.isFinite(t.held) && Number.isFinite(t.holdBars)
+    ? `held on ${t.held} of the last ${t.holdBars} sessions` : "";
   const evidence = t.label === "neutral"
     ? "Neutral means the window does not show a trend that random movement would rarely produce. " +
       (t.lean && progressPct !== null
         ? `It leans ${t.lean}: inside the band that keeps a ${t.lean} label, ${progressPct}% of the way to earning one — not confirmed. `
+        : "") +
+      (withheld
+        ? `It would lean ${t.leanRaw} (${progressPct}% of the way to a ${t.leanRaw} label), but the reading is not steady — ${steadyWords || "it has not held the last few sessions"}. A lean has to clear drift ${LEAN_MARGIN.toFixed(2)} and be there on ${LEAN_HOLD_NEED} of the last ${LEAN_HOLD_BARS} sessions, so it is not shown as one. `
         : "")
     : t.held
       ? `This ${TREND_WORD[t.label].toLowerCase()} trend has weakened but is holding: it stays until the drift falls below the hold band. `
@@ -2454,7 +2382,7 @@ function drawWatchList() {
       : "Click a symbol to chart its last three months."
   ) + (activeWatchItem() ? " The highlighted row is the chart on screen." : "")
     + (anyVerdict ? " Each tag is that row's three-month verdict" +
-        (anyLean ? ", and a lighter tag is a lean it has not confirmed." : ".") : "")
+        (anyLean ? ", and a lighter tag is a lean it has not confirmed — only a steady lean gets one." : ".") : "")
     + (anyOdds ? " The odds figure is each chart's own three-month estimate." : "");
 
   state.watch.forEach((item) => {
@@ -2477,6 +2405,12 @@ function drawWatchList() {
     const lean = verdict === "neutral" && TREND_WORD[trend.lean] ? trend.lean : null;
     const leanPct = lean && Number.isFinite(trend.progress)
       ? Math.round(trend.progress * 100) : null;
+    // A row whose series the source has stopped printing carries no verdict and
+    // no odds either (the chart's payload says so, `staleDays`), and the row
+    // says the date rather than letting an old price pass for today's. It is the
+    // same rule that kept ATKR off the leaning table.
+    const staleDays = quote && quote.data && Number.isFinite(quote.data.staleDays)
+      ? quote.data.staleDays : null;
 
     // The chart's own 0-1 odds for the next three months, from the same payload
     // the chart prints. A yield, a futures contract whose chart supports no
@@ -2495,6 +2429,8 @@ function drawWatchList() {
       `Chart ${item.name} (${item.symbol})` +
       (verdict ? `, trend ${TREND_WORD[verdict]}` : "") +
       (lean ? `, leaning ${lean}` : "") +
+      (staleDays === null ? ""
+        : `, no verdict: the newest bar is ${staleDays} days old`) +
       (oddsP === null ? "" : `, three-month profit odds ${oddsP.toFixed(2)}`));
     if (active) pick.setAttribute("aria-current", "true");
 
@@ -2538,6 +2474,13 @@ function drawWatchList() {
       // keeps its single-line shape and puts the date where hovering finds it.
       if (quote.data.cached && quote.data.fetchedAt) {
         price.title = "Last retrieved " + retrievedAt(quote.data.fetchedAt);
+      } else if (staleDays !== null) {
+        // The source stopped printing: the price on this row is that last bar's
+        // close, and the tooltip carries the date the same way a disk copy's
+        // does -- the row keeps its shape, the fact is one hover away.
+        price.title = `Newest bar is from ${quote.data.staleBar || "the last print"} — ` +
+          `${staleDays === 1 ? "1 day" : staleDays + " days"} old. The source has ` +
+          `not printed since, so this row has no verdict and no odds.`;
       }
     } else if (quote && quote.loading) {
       price.textContent = "…";
@@ -2753,17 +2696,12 @@ el.watchToggle.addEventListener("click", () => {
 });
 
 /* ------------------------------------------------------------------ *
- * Most-traded tables
+ * Shared table helpers
  *
- * Two leaderboards of what traded most by value today. The ranking is
- * decided server-side (see markets.py); the page only draws it, formats
- * each figure in the currency it was quoted in, and offers the
- * converted amount as a second line under it.
+ * Every table is ranked server-side; the page only draws the rows, formats
+ * each figure in the currency it was quoted in, and (where a row carries a
+ * second currency) offers the converted amount beneath it.
  * ------------------------------------------------------------------ */
-/* Matches the server's TOP_TTL: refreshing faster would re-render the same
-   cached answer, and slower would let a stale table sit on screen. */
-const LEADERS_TTL = 300 * 1000;
-
 function compact(value, currency) {
   if (!Number.isFinite(value)) return "—";
   try {
@@ -2783,355 +2721,6 @@ function cell(text, className) {
   td.textContent = text;
   return td;
 }
-
-/* A figure with the other market's money beneath it, so each column answers
-   "how much is that in my money" without becoming two full-width columns. */
-function moneyCell(primary, primaryCurrency, secondary, secondaryCurrency) {
-  const td = document.createElement("td");
-  td.textContent = leaderMoney(primary, primaryCurrency);
-  if (Number.isFinite(secondary)) {
-    const alt = document.createElement("span");
-    alt.className = "alt";
-    alt.textContent = leaderMoney(secondary, secondaryCurrency);
-    td.append(alt);
-  }
-  return td;
-}
-
-function drawLeaders(section) {
-  const card = document.createElement("div");
-  card.className = "card";
-
-  const head = document.createElement("div");
-  head.className = "card-head";
-  const title = document.createElement("h3");
-  title.textContent = section.label;
-  const sub = document.createElement("span");
-  sub.className = "card-sub";
-  sub.textContent = `Top ${section.rows.length || 10} by traded value`;
-  head.append(title, sub);
-  card.append(head);
-
-  if (section.error) {
-    const p = document.createElement("p");
-    p.className = "card-error";
-    p.textContent = section.error;
-    card.append(p);
-    return card;
-  }
-
-  // Headings name the market's own currency first; the converted figure is a
-  // sub-line inside each cell, so it needs no heading of its own.
-  const other = section.currency === "PHP" ? "USD" : "PHP";
-  // Only the PSE has a board lot, so only its table has a minimum buy to show.
-  // The other market's table has no fifth column at all: an empty one would
-  // reserve its width and leave the price figures with a band of blank space
-  // beside them. The four columns both markets do have keep their own fixed
-  // widths, so rank, traded value and price still sit at the same x in either
-  // card, and the width the missing column would have taken goes to the symbol.
-  const hasLot = section.currency === "PHP";
-  const headings = hasLot
-    ? ["#", "Symbol", "Traded", "Price", "Min. investment"]
-    : ["#", "Symbol", "Traded", "Price"];
-  const table = document.createElement("table");
-  const thead = document.createElement("thead");
-  const hrow = document.createElement("tr");
-  for (const heading of headings) {
-    const th = document.createElement("th");
-    th.scope = "col";
-    th.textContent = heading;
-    hrow.append(th);
-  }
-  thead.append(hrow);
-  table.append(thead);
-
-  const tbody = document.createElement("tbody");
-  for (const row of section.rows) {
-    const tr = document.createElement("tr");
-    tr.append(cell(String(row.rank), "rank"));
-
-    // The label carries the instrument name and its kind, since a fund and a
-    // share sit in the same ranking and should be told apart at a glance.
-    const label = document.createElement("td");
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "tick-btn";
-    button.textContent = row.ticker;
-    // No handler of its own: its click bubbles to the row's, so keyboard
-    // activation and a mouse click take the same single path.
-    const name = document.createElement("span");
-    name.className = "tick-sub";
-    name.textContent = `${row.name} · ${row.kind}`;
-    label.append(button, name);
-    tr.append(label);
-
-    tr.append(moneyCell(row.turnover, section.currency,
-                        other === "PHP" ? row.turnoverPhp : row.turnoverUsd, other));
-    tr.append(cell(leaderMoney(row.price, section.currency)));
-
-    // The server leaves the board lot null outside the PSE rather than
-    // inventing a rule, so the column is left off that table entirely.
-    if (hasLot) {
-      tr.append(Number.isFinite(row.lotCost)
-        ? moneyCell(row.lotCost, "PHP", row.lotCostUsd, "USD")
-        : cell("—"));
-    }
-
-    // Row click is the mouse convenience; the button above is the control a
-    // keyboard or screen reader uses, so the row is not made focusable too.
-    tr.addEventListener("click", () => loadChart(row.chartSymbol));
-    tbody.append(tr);
-  }
-  table.append(tbody);
-
-  const wrap = document.createElement("div");
-  wrap.className = "table-wrap";
-  wrap.append(table);
-  card.append(wrap);
-  return card;
-}
-
-function drawLeadersNote(payload) {
-  const parts = [];
-  // The server stamps a fresh answer `checkedAt`; a disk fallback instead
-  // carries `cached`/`fetchedAt` and no `checkedAt` at all, so the two
-  // branches never compete, and the fallback names what could not be reached.
-  if (payload.cached && payload.fetchedAt) {
-    parts.push("Data last retrieved " + retrievedAt(payload.fetchedAt));
-    if (payload.cacheError) parts.push("offline — " + payload.cacheError);
-  } else if (payload.checkedAt) {
-    parts.push("Checked " + new Date(payload.checkedAt * 1000).toLocaleTimeString());
-  }
-  if (payload.fx && Number.isFinite(payload.fx.phpPerUsd)) {
-    parts.push(`Converted at USDPHP ${nf(2).format(payload.fx.phpPerUsd)}`);
-  } else {
-    parts.push("Dollar conversion unavailable");
-  }
-  el.leadersNote.textContent = parts.join(" · ");
-}
-
-async function loadLeaders() {
-  try {
-    const payload = await requestJSON("/api/top");
-    el.leadersGrid.textContent = "";
-    for (const section of payload.markets || []) {
-      el.leadersGrid.append(drawLeaders(section));
-    }
-    drawLeadersNote(payload);
-  } catch (err) {
-    // A failed refresh must not clear a table already on screen; it only
-    // reports the failure. A first load that fails leaves the note as the
-    // whole content, which is why the grid is not wiped here.
-    el.leadersNote.textContent = "Market tables unavailable — " + err.message;
-  }
-}
-
-/* ------------------------------------------------------------------ *
- * Most traded crypto — 24 hours
- *
- * The heaviest coins of the rolling last 24 hours by turnover (Binance's
- * USDT-pair quote volume), filtered to the ones whose chart is bullish AND
- * whose day is up: the server walks the volume ranking from the top down and
- * keeps a coin only when the label on the window the chart would draw is
- * bullish and its 24-hour change is positive -- until ten rows are filled --
- * expanding down the ranking rather than shipping the top ten whatever their
- * trend. The label is the same `trend.classify` the chart's own badge uses,
- * reached through the same `crypto.try_chart` the chart route itself ends in,
- * so a row and the chart its click opens are the same call over the same
- * bars -- there is no second definition of bullish here either. The day
- * condition is the reader's own eye, not a second classifier: a coin down on
- * the rolling day reads as anything but bullish, however its three-month
- * chart leans, and the first build shipped a table full of exactly that --
- * ten rows, every one red on the day.
- *
- * Like the other two tables, the figures are the server's: the turnover is
- * the 24-hour quote volume in dollars with the peso figure beneath it at the
- * leaderboards' own rate, and the price is the chart's latest completed close
- * rather than a live print, so a row's price and its chart can never
- * disagree. The 24-hour change is the one live figure -- it describes the
- * rolling day the table ranks on.
- * ------------------------------------------------------------------ */
-/* Matches the server's cache TTL for the same reason the tables' does: the
-   answer behind this is re-scanned on that clock, and polling faster would
-   re-render the same table from the same payload. */
-const CRYPTOBULL_TTL = 300 * 1000;
-
-/* A crypto price at the decimals the coin's magnitude asks for: `leaderMoney`
-   pins two, which turns a $0.0000057 close into "$0.00" -- a figure that says
-   nothing. The row carries the same `priceHint` the chart's own readout uses,
-   so the table and the chart print the coin the same way. */
-function cryptoMoney(value, hint) {
-  const digits = Number.isFinite(hint) ? hint : 2;
-  if (!Number.isFinite(value)) return "—";
-  try { return nf(digits, { style: "currency", currency: "USD" }).format(value); }
-  catch { return nf(digits).format(value); }
-}
-
-function drawCryptobull(payload) {
-  const card = document.createElement("div");
-  card.className = "card";
-
-  const head = document.createElement("div");
-  head.className = "card-head";
-  const title = document.createElement("h3");
-  title.textContent = payload.label || "Most traded crypto — 24 hours";
-  const sub = document.createElement("span");
-  sub.className = "card-sub";
-  sub.textContent = `${payload.rows.length} bullish of ${payload.scanned ?? payload.rows.length} scanned`;
-  head.append(title, sub);
-  card.append(head);
-
-  if (payload.error) {
-    const p = document.createElement("p");
-    p.className = "card-error";
-    p.textContent = payload.error;
-    card.append(p);
-    return card;
-  }
-
-  const table = document.createElement("table");
-  const thead = document.createElement("thead");
-  const hrow = document.createElement("tr");
-  for (const heading of ["#", "Symbol", "Traded · 24h", "Price", "24h"]) {
-    const th = document.createElement("th");
-    th.scope = "col";
-    th.textContent = heading;
-    hrow.append(th);
-  }
-  thead.append(hrow);
-  table.append(thead);
-
-  const tbody = document.createElement("tbody");
-  payload.rows.forEach((row, i) => {
-    const tr = document.createElement("tr");
-    // The rank column is the row's place in the table -- its position in the
-    // volume ranking, as in every other table's "#" -- not the coin's
-    // market-cap rank, which travels in the name line below the ticker where
-    // it answers "which coin is this" rather than "how heavy is this row".
-    tr.append(cell(String(i + 1), "rank"));
-
-    // The label stacks the coin's name over its market-cap rank, which is
-    // what tells the real coin from a ticker collision everywhere else
-    // crypto is named on this page.
-    const label = document.createElement("td");
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "tick-btn";
-    button.textContent = row.ticker;
-    // No handler of its own, as in the other tables: the click bubbles to the
-    // row's one handler, so keyboard and mouse take the same path.
-    const name = document.createElement("span");
-    name.className = "tick-sub";
-    name.textContent = row.rank
-      ? `${row.name} · rank ${row.rank}`
-      : row.name;
-    label.append(button, name);
-    tr.append(label);
-
-    // The rolling day's turnover, dollars first with the peso figure beneath.
-    tr.append(moneyCell(row.turnover, "USD", row.turnoverPhp, "PHP"));
-    tr.append(cell(cryptoMoney(row.price, row.priceHint)));
-
-    // Signed and coloured like the watchlist rail's deltas. A change of
-    // exactly zero keeps the plain colour: it says "flat", not "up".
-    const chg = document.createElement("td");
-    const pct = Number(row.change);
-    if (Number.isFinite(pct)) {
-      chg.className = "chg" + (pct > 0 ? " up" : pct < 0 ? " down" : "");
-      chg.textContent = `${pct > 0 ? "+" : ""}${pct.toFixed(2)}%`;
-    } else {
-      chg.textContent = "—";
-    }
-    tr.append(chg);
-
-    tr.addEventListener("click", () => loadChart(row.chartSymbol));
-    tbody.append(tr);
-  });
-  table.append(tbody);
-
-  const wrap = document.createElement("div");
-  wrap.className = "table-wrap";
-  wrap.append(table);
-  card.append(wrap);
-  return card;
-}
-
-function drawCryptobullNote(payload) {
-  const parts = [];
-  if (payload.cached && payload.fetchedAt) {
-    parts.push("Data last retrieved " + retrievedAt(payload.fetchedAt));
-    if (payload.cacheError) parts.push("offline — " + payload.cacheError);
-  } else if (payload.checkedAt) {
-    parts.push("Checked " + new Date(payload.checkedAt * 1000).toLocaleTimeString());
-  }
-  // The walk stops when ten bullish rows are filled; saying how far down the
-  // ranking it had to reach is the difference between "the ten heaviest are
-  // bullish" and "the search had to expand" -- the fact this table exists to
-  // show.
-  if (payload.rows && payload.rows.length) {
-    parts.push(`${payload.scanned} of ${payload.universe} pairs scanned`);
-  } else if (payload.universe) {
-    parts.push(`${payload.universe} chartable pairs scanned — none bullish`);
-  }
-  // The day condition skips off the ticker, before any probe: a coin flat or
-  // down on the rolling day never reaches the trend call. Saying how many it
-  // turned away is the difference between "few coins qualify" and "the scan
-  // never looked".
-  if (payload.flat) {
-    parts.push(`${payload.flat} skipped — flat or down on the day`);
-  }
-  if (payload.missing && payload.missing.length) {
-    parts.push(`${payload.missing.length} did not answer`);
-  }
-  if (payload.fx && Number.isFinite(payload.fx.phpPerUsd)) {
-    parts.push(`Converted at USDPHP ${nf(2).format(payload.fx.phpPerUsd)}`);
-  } else if (payload.fxError) {
-    parts.push("Peso conversion unavailable");
-  }
-  el.cryptobullNote.textContent = parts.join(" · ");
-}
-
-async function loadCryptobull() {
-  try {
-    const payload = await requestJSON("/api/cryptobull");
-    el.cryptobullGrid.textContent = "";
-    // A scan can land with zero rows -- none of the pairs scanned is
-    // bullish. That is an answer, not a failure: the note carries it and the
-    // section stays up rather than reading as a section that never loaded.
-    if (payload.rows && payload.rows.length) {
-      el.cryptobullGrid.append(drawCryptobull(payload));
-    }
-    drawCryptobullNote(payload);
-  } catch (err) {
-    // Same rule as the other tables: a failed refresh must not clear a table
-    // already on screen.
-    el.cryptobullNote.textContent = "Crypto table unavailable — " + err.message;
-  }
-}
-
-/* ------------------------------------------------------------------ *
- * Bullish Philippine stocks
- *
- * Every PSE stock whose current label is bullish, dated to the bar the run
- * began on and sorted newest first. The label is the same `trend.classify`
- * the chart's own badge uses -- there is no second definition of bullish
- * here -- and the onset is worked out server-side (see bullish.py), because
- * it needs 270 bars per symbol and a classification per bar walked.
- *
- * The order and both money columns are the server's too. Names sharing a
- * session are broken by that session's traded value, and "Min. investment" is
- * the leaderboards' own column -- the board lot times the price, off the one
- * board-lot table in the project -- so this draws the payload's figures in the
- * currency it names rather than recomputing either.
- *
- * The sweep reads the whole universe and takes about half a minute, so the
- * server keeps an answer warm on a background thread instead of fetching on
- * demand; this only ever draws the last one it produced.
- * ------------------------------------------------------------------ */
-/* Shorter than the server's refresh interval on purpose: the sweep behind this
-   is a fifteen-minute one, and polling faster than it changes re-renders the
-   same table from the same payload. */
-const BULLISH_TTL = 300 * 1000;
 
 /* A calendar date with no clock time: a trading session is the unit here, and
    the second the bar opened is noise. Read as UTC, which is what the server
@@ -3166,159 +2755,13 @@ function rowDate(stamp, tz) {
   }
 }
 
-function drawBullish(payload) {
-  const card = document.createElement("div");
-  card.className = "card";
-
-  const head = document.createElement("div");
-  head.className = "card-head";
-  const title = document.createElement("h3");
-  title.textContent = payload.label || "Bullish Philippine stocks";
-  const sub = document.createElement("span");
-  sub.className = "card-sub";
-  sub.textContent = `${payload.rows.length} bullish now`;
-  head.append(title, sub);
-  card.append(head);
-
-  if (payload.error) {
-    const p = document.createElement("p");
-    p.className = "card-error";
-    p.textContent = payload.error;
-    card.append(p);
-    return card;
-  }
-
-  const table = document.createElement("table");
-  const thead = document.createElement("thead");
-  const hrow = document.createElement("tr");
-  for (const heading of ["#", "Symbol", "Bullish since", "Run", "Price",
-                         "Min. investment"]) {
-    const th = document.createElement("th");
-    th.scope = "col";
-    th.textContent = heading;
-    hrow.append(th);
-  }
-  thead.append(hrow);
-  table.append(thead);
-
-  // The newest session any row reaches, which is what "began on the latest bar"
-  // is measured against: recency is a fact about the data, not about the
-  // reader's clock, and some PSE names report a bar a day or two late.
-  const latest = payload.rows.reduce((m, r) => Math.max(m, r.last || 0), 0);
-
-  const tbody = document.createElement("tbody");
-  payload.rows.forEach((row, i) => {
-    const tr = document.createElement("tr");
-    tr.append(cell(String(i + 1), "rank"));
-
-    const label = document.createElement("td");
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "tick-btn";
-    button.textContent = row.ticker;
-    // As in the leaderboards: no handler of its own, so a mouse click and a
-    // keyboard activation bubble to the row's one handler and take the same path.
-    const name = document.createElement("span");
-    name.className = "tick-sub";
-    name.textContent = row.name;
-    label.append(button, name);
-    if (Number.isFinite(row.score)) {
-      const score = document.createElement("span");
-      score.className = "tick-sub";
-      score.textContent = `Score +${row.score.toFixed(3)}` +
-        (row.score < 0.30 ? " · borderline" : "");
-      label.append(score);
-    }
-    tr.append(label);
-
-    // The date the current run started. A run that began on the latest bar is
-    // the freshest signal in the table and the reason the sort order is worth
-    // reading, so it is marked rather than left to be found by comparing dates.
-    const since = cell(sessionDate(row.since), "since");
-    if (row.since === latest) since.classList.add("fresh");
-    if (row.censored) {
-      since.title = "Bullish for at least this long — the run starts before the bars fetched";
-    }
-    tr.append(since);
-
-    // Bars, not days: the label is decided a bar at a time, so a run of five is
-    // five sessions of it however far apart they fell.
-    tr.append(cell(String(row.run)));
-    tr.append(cell(leaderMoney(row.price, payload.currency || "PHP")));
-
-    // The smallest cheque that can buy the stock, which is the leaderboards'
-    // own column and the same server-side board lot. An instrument with no
-    // board lot has no minimum buy, so it is marked rather than left blank --
-    // a blank cell reads as a figure that failed to load.
-    tr.append(Number.isFinite(row.lotCost)
-      ? cell(leaderMoney(row.lotCost, payload.currency || "PHP"))
-      : cell("—"));
-
-    tr.addEventListener("click", () => loadChart(row.chartSymbol));
-    tbody.append(tr);
-  });
-  table.append(tbody);
-
-  const wrap = document.createElement("div");
-  wrap.className = "table-wrap";
-  wrap.append(table);
-  card.append(wrap);
-  return card;
-}
-
-function drawBullishNote(payload) {
-  const parts = [];
-  if (payload.cached && payload.fetchedAt) {
-    // The table is a sweep read off disk, not one this server ran. The rows
-    // and their dates are real either way; what changes is that the sweep
-    // itself stopped arriving at `fetchedAt`, and the note says so — ahead of
-    // `pending`, because "scanning" alone would hide the copy the reader is
-    // actually looking at. A failing refresher reports itself beside this line
-    // through `staleError`, once it has.
-    parts.push("Swept " + retrievedAt(payload.fetchedAt) + " — source offline");
-  } else if (payload.pending) {
-    // The first sweep has not landed yet. Saying so is the whole reason this
-    // note exists: an empty table would read as "no Philippine stock is
-    // bullish", which is a far stronger claim than "not measured yet".
-    parts.push("Scanning the PSE universe — this table fills in when the first sweep finishes");
-  } else if (payload.checkedAt) {
-    parts.push("Swept " + new Date(payload.checkedAt * 1000).toLocaleTimeString());
-  }
-  if (payload.fetched) {
-    parts.push(`${payload.fetched} of ${payload.universe} symbols scanned`);
-  }
-  if (payload.boundary) {
-    parts.push(`${payload.boundary} at the call threshold`);
-  }
-  // A failed refresh leaves the last good sweep on screen, dated, so the failure
-  // is reported beside the rows rather than by clearing them.
-  if (payload.staleError) parts.push("last refresh failed — " + payload.staleError);
-  el.bullishNote.textContent = parts.join(" · ");
-}
-
-async function loadBullish() {
-  try {
-    const payload = await requestJSON("/api/bullish");
-    el.bullishGrid.textContent = "";
-    // Nothing to draw before the first sweep lands; the note carries it.
-    if (payload.rows && payload.rows.length) {
-      el.bullishGrid.append(drawBullish(payload));
-    }
-    drawBullishNote(payload);
-  } catch (err) {
-    // Same rule as the leaderboards: a failed refresh must not clear a table
-    // already on screen.
-    el.bullishNote.textContent = "Bullish table unavailable — " + err.message;
-  }
-}
-
 /* ------------------------------------------------------------------ *
  * Recently bullish assets
  *
- * One table across four markets: US stocks, Philippine stocks, crypto and
- * the Philippine government bond yields. Every row carries the day its
- * current run began, and the rows are ordered newest-turn first, so what
- * turned most recently across every market is at the top.
+ * The page's one list of what is bullish now: every market it follows, in a
+ * single table. Every row carries the day its current run began, and the rows
+ * are ordered newest-turn first, so what turned most recently across every
+ * market is at the top.
  *
  * The label is the badge's -- the same `trend.classify` the chart's own
  * badge uses -- and the date is the same walk, worked out server-side
@@ -3331,9 +2774,14 @@ async function loadBullish() {
  * flat one has no run to date, so neither belongs in a table of what turned
  * bullish.
  *
- * The sweep behind this reads fifty US tickers and twenty-five coins, so the
- * server keeps an answer warm on a background thread; this only ever draws
- * the last one it produced.
+ * This absorbed two tables that used to sit below it -- "Most traded crypto"
+ * and "Bullish Philippine stocks" -- because both were narrow views of the same
+ * scan: the crypto rows and the Philippine rows already appear here, judged by
+ * the same classifier over the same bars.
+ *
+ * The sweep behind this reads the whole Ondo shelf, the chartable crypto
+ * ranking and every fund, so the server keeps an answer warm on a background
+ * thread; this only ever draws the last one it produced.
  * ------------------------------------------------------------------ */
 /* Matches the server's refresh interval on purpose: polling faster than the
    sweep runs re-renders the same table from the same payload. */
@@ -3366,16 +2814,9 @@ function drawRecent(payload) {
   const card = document.createElement("div");
   card.className = "card";
 
-  const head = document.createElement("div");
-  head.className = "card-head";
-  const title = document.createElement("h3");
-  title.textContent = payload.label || "Recently bullish assets";
-  const sub = document.createElement("span");
-  sub.className = "card-sub";
-  sub.textContent = `${payload.rows.length} rows`;
-  head.append(title, sub);
-  card.append(head);
-
+  // No card head: this table is the whole section, and its heading sits right
+  // above it. A second title and a second row count inside the card (the note
+  // already opens with the count) said the same thing three times.
   if (payload.error) {
     const p = document.createElement("p");
     p.className = "card-error";
@@ -3388,7 +2829,7 @@ function drawRecent(payload) {
   const thead = document.createElement("thead");
   const hrow = document.createElement("tr");
   for (const heading of
-       ["Market", "Asset", "Direction", "Since", "Run", "Price",
+       ["Market", "Asset", "Direction", "Since", "Run", "Price", "3-month",
         "Trading volume (in PHP)"]) {
     const th = document.createElement("th");
     th.scope = "col";
@@ -3471,6 +2912,34 @@ function drawRecent(payload) {
     tr.append(cell(Number.isFinite(row.run) ? String(row.run) : "—"));
     tr.append(cell(recentPrice(row.price, row.currency, row.priceHint)));
 
+    // The window's move: the first bar the chart draws to the newest close,
+    // which is the same pair the chart prints under the price when the row is
+    // opened ("+12.95% three-month move, since Jul 31"), so the row and its
+    // chart cannot disagree about how the window went.
+    //
+    // A yield gets none, by name: "for bonds, the most important thing is
+    // yield. changes don't mean shit. + the bearish or bullish judgment". The
+    // yield is the price column; the verdict is the direction column; a points
+    // change between them would be a figure about a figure.
+    const moveCell = document.createElement("td");
+    moveCell.className = "move";
+    if (row.currency === "%") {
+      moveCell.textContent = "—";
+      moveCell.title = "A yield's level is the figure — it is in the price column — "
+                     + "and the badge says which way a bond price read it.";
+    } else if (Number.isFinite(row.windowMove)) {
+      const pct = row.windowMove * 100;
+      moveCell.textContent = `${pct > 0 ? "+" : ""}${pct.toFixed(2)}%`;
+      moveCell.classList.add(pct > 0 ? "up" : pct < 0 ? "down" : "flat");
+      moveCell.title = "The window's first close to its newest close — the same "
+                     + "bars the badge beside it was scored on.";
+    } else {
+      // A window that could not be measured is not a zero.
+      moveCell.textContent = "—";
+      moveCell.title = "This series has no window to measure a move over.";
+    }
+    tr.append(moveCell);
+
     // The latest bar's value traded, in pesos, whatever the row's own
     // currency -- the same turnover the other tables rank on, converted at
     // the payload's own rate rather than a second one. The compact figure is
@@ -3486,6 +2955,12 @@ function drawRecent(payload) {
       vol.title = (row.currency || "").toUpperCase() === "PHP"
         ? leaderMoney(row.turnoverPhp, "PHP")
         : `${native} at USDPHP ${rate ? rate : "—"}`;
+    } else if (row.kind === "INDEX") {
+      // The PSEi is scanned with the stocks so its own chart can put it on
+      // either table; an index is a reading of its members, not a security,
+      // so it has no traded value to print. A dash, not a zero.
+      vol.textContent = "—";
+      vol.title = "An index tracks its members; it has no traded volume of its own";
     } else if (row.market === "Philippine bond") {
       vol.textContent = "—";
       vol.title = "A yield has no traded volume";
@@ -3501,6 +2976,11 @@ function drawRecent(payload) {
       // figure to print. A dash, not a zero.
       vol.textContent = "—";
       vol.title = "A futures contract's volume counts contracts, not currency, so there is no traded value to convert";
+    } else if (row.market === "Ondo portfolio") {
+      // A portfolio token is bought and redeemed at the basket's value; its
+      // price bars carry no exchange volume, so there is nothing to convert.
+      vol.textContent = "—";
+      vol.title = "A portfolio token is bought and redeemed, not traded on an exchange, so it carries no traded volume";
     } else {
       vol.textContent = "—";
     }
@@ -3570,7 +3050,10 @@ function drawLeaning(payload) {
   title.textContent = "Neutral on the chart, leaning bullish";
   const sub = document.createElement("span");
   sub.className = "card-sub";
-  sub.textContent = `${rows.length} rows · Ondo-listed`;
+  // The row count is every market. The subtitle names the filter that decides
+  // whether a name is on this list at all (`onset.steady_lean`); the note under
+  // the table spells out the rule and the Ondo shelf, so this stays short.
+  sub.textContent = `${rows.length} rows · steady leans only`;
   head.append(title, sub);
   card.append(head);
 
@@ -3619,8 +3102,11 @@ function drawLeaning(payload) {
     num.textContent = pct === null ? "—" : `${pct}%`;
     wrap.append(bar, num);
     meter.append(wrap);
+    const held = Number.isFinite(row.held) && Number.isFinite(row.holdBars)
+      ? ` Steady: the same reading held on ${row.held} of the last ${row.holdBars} sessions.`
+      : "";
     meter.title = "Share of the bullish entry bar met: score 0.25 and drift t 1.96 "
-                + "both reached is 100%. Not a probability.";
+                + "both reached is 100%. Not a probability." + held;
     tr.append(meter);
 
     const score = Number.isFinite(row.score)
@@ -3658,6 +3144,10 @@ function drawLeaningNote(payload) {
   }
   const n = (payload.leaning || []).length;
   const shelf = payload.ondoShelf;
+  // What the Philippine sweep looked at, built server-side (`recent.ph_scan_line`)
+  // so this note and the one above it print the same words about the same scan.
+  // Absent on a table read from an older copy; the note simply says less then.
+  const scan = payload.phScan ? " " + payload.phScan + "." : "";
   const shown = shelf
     ? " Only assets listed at app.ondo.finance are shown — a United States row needs an Ondo token, " +
       "and the funds are not on that shelf. Shelf read " +
@@ -3666,8 +3156,12 @@ function drawLeaningNote(payload) {
   el.leaningNote.textContent =
     `${n} assets whose own chart reads Neutral but sit in the band that keeps a bullish label ` +
     "(score ≥ 0.15, drift t ≥ 1.0) without meeting the bar that earns one (score ≥ 0.25, t ≥ 1.96). " +
+    "Only steady leans are listed: the drift has to clear 1.15, not just the 1.00 line, and the same " +
+    "reading has to have held on at least 4 of the last 5 sessions — a name that flickers in and out of " +
+    "the band is left out until it settles. Its own chart still shows the lean either way, so a name " +
+    "missing here is not a name that changed. " +
     "Closest to Bullish first. Measured on saved history: about 1 in 4 of these became Bullish within " +
-    "the next ~20 bars. Not a buy signal." + shown;
+    "the next ~20 bars. Not a buy signal." + scan + shown;
 }
 
 async function loadRecent() {
@@ -3701,20 +3195,11 @@ refreshWatchQuotes();
 pollHealth();
 el.input.value = "USDPHP=X";
 loadChart("USDPHP=X");
-loadLeaders();
-loadCryptobull();
-loadBullish();
 loadRecent();
 // Kept current while the tab is open, but only while it is visible -- a
-// background tab polling three upstream queries every five minutes is waste.
-setInterval(() => { if (!document.hidden) loadLeaders(); }, LEADERS_TTL);
-setInterval(() => { if (!document.hidden) loadCryptobull(); }, CRYPTOBULL_TTL);
-// The sweep behind this one is slower still, so a hidden tab has even less
-// reason to ask.
-setInterval(() => { if (!document.hidden) loadBullish(); }, BULLISH_TTL);
-// The sweep behind this one is slower still -- it reads a browser-backed
-// Yahoo fetch for fifty US tickers -- so a hidden tab has even less reason
-// to ask.
+// background tab polling upstream every fifteen minutes is waste, and the
+// sweep behind this one is slower still: it reads a browser-backed Yahoo
+// fetch for the whole Ondo shelf.
 setInterval(() => { if (!document.hidden) loadRecent(); }, RECENT_TTL);
 // The chart on screen re-reads itself without being clicked, quietly, so the
 // last bar (which carries live and extended-hours trading) and the trend

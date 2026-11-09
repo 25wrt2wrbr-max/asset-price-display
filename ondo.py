@@ -32,8 +32,10 @@ goes up. The chart says so honestly.
 
 Where the price comes from
 --------------------------
-**DeFiLlama's coins API** -- `coins.llama.fi/chart/{chain}:{address}`, plain
-HTTPS, no key, no rate limit that one chart a minute could reach:
+**DeFiLlama's coins API** -- `coins.llama.fi/chart/{coin}`, plain HTTPS, no key,
+no rate limit that one chart a minute could reach. `{coin}` is either a chain and
+contract (`ethereum:0x1b19...`) or a coin-index id (`coingecko:ondo-...`), which
+is how the seven intelligent portfolios are read:
 
     {"coins": {"ethereum:0x1b19...": {"prices": [{"timestamp": 1793..., "price": 117.1}, ...]}}}
 
@@ -86,16 +88,88 @@ PREFIX = "ONDO:"
 # words a reader types. A token is not discovered by any ranking; either you are
 # looking at OUSG or you are not.
 #
+# Two identities are possible, because DeFiLlama keys a coin either way and both
+# are exact:
+#
+# * `chain` + `address` -- a contract this module was given, which is how OUSG
+#   is read;
+# * `coingecko` -- the index id, which is how the seven **intelligent
+#   portfolios** are read (`coins.llama.fi/chart/coingecko:<id>` answers the
+#   same shape). Checked 2026-11-07: all seven answer, 43 daily points each
+#   since their 2026-09-24 launch, and the newest point is the current price.
+#
+# `kind` is the words the chart prints as the instrument's type: a T-bill fund
+# is a tokenized fund, a basket the shop assembles is a portfolio.
+#
 # `aliases` are extra search words, because the fund's own name says "Government
 # Bond" where a reader says "treasury".
+FUND = "Tokenized fund"
+PORTFOLIO = "Intelligent portfolio"
+
 TOKENS = (
     {
         "ticker": "OUSG",
         "name": "Ondo Short-Term U.S. Government Bond Fund",
+        "kind": FUND,
         "chain": "ethereum",
         "address": "0x1b19c19393e2d034d8ff31ff34c81252fcbbee92",
         "aliases": ("ousg", "ondo", "treasury", "t bill", "t-bill",
                     "tokenized treasury"),
+    },
+    {
+        "ticker": "MAG7X",
+        "name": "Ondo Magnificent 7 and Crypto Portfolio",
+        "kind": PORTFOLIO,
+        "coingecko": "ondo-magnificent-7-and-crypto-portfolio",
+        "aliases": ("mag7x", "ondo", "magnificent 7", "magnificent seven",
+                    "portfolio", "basket"),
+    },
+    {
+        "ticker": "BRAIN",
+        "name": "Ondo AI Leaders Portfolio",
+        "kind": PORTFOLIO,
+        "coingecko": "ondo-ai-leaders-portfolio",
+        "aliases": ("brain", "ondo", "ai leaders", "portfolio", "basket"),
+    },
+    {
+        "ticker": "BLKGRW",
+        "name": "Ondo High Growth Powered by BlackRock",
+        "kind": PORTFOLIO,
+        "coingecko": "ondo-high-growth-powered-by-blackrock",
+        "aliases": ("blkgrw", "ondo", "blackrock", "growth", "portfolio",
+                    "basket"),
+    },
+    {
+        "ticker": "BLKHI",
+        "name": "Ondo High Income Powered by BlackRock",
+        "kind": PORTFOLIO,
+        "coingecko": "ondo-high-income-powered-by-blackrock",
+        "aliases": ("blkhi", "ondo", "blackrock", "income", "portfolio",
+                    "basket"),
+    },
+    {
+        "ticker": "BLKDIG",
+        "name": "Ondo Diversified Growth Powered by BlackRock",
+        "kind": PORTFOLIO,
+        # The index id really does spell it "growrth" -- copied from the live
+        # list rather than corrected, because the id is what answers.
+        "coingecko": "ondo-diversified-growrth-powered-by-blackrock",
+        "aliases": ("blkdig", "ondo", "blackrock", "diversified", "portfolio",
+                    "basket"),
+    },
+    {
+        "ticker": "YLD5",
+        "name": "Ondo 5 Targeted Income TR Portfolio",
+        "kind": PORTFOLIO,
+        "coingecko": "ondo-5-targeted-income-tr-portfolio",
+        "aliases": ("yld5", "ondo", "income", "portfolio", "basket"),
+    },
+    {
+        "ticker": "YLD8",
+        "name": "Ondo 8 Targeted Income TR Portfolio",
+        "kind": PORTFOLIO,
+        "coingecko": "ondo-8-targeted-income-tr-portfolio",
+        "aliases": ("yld8", "ondo", "income", "portfolio", "basket"),
     },
 )
 
@@ -103,10 +177,10 @@ TOKENS = (
 # tokenized fund · via DeFiLlama`. "Tokenized fund" is the honest word -- the
 # number is a fund's per-token value, not a moneymarket quote and not a currency.
 EXCHANGE = "Ondo"
-QUOTE_TYPE = "Tokenized fund"
+QUOTE_TYPE = FUND
 SOURCE = "DeFiLlama"
 
-CHART_URL = "https://coins.llama.fi/chart/%s:%s?span=%d&period=1d"
+CHART_URL = "https://coins.llama.fi/chart/%s?span=%d&period=1d"
 
 # The endpoint refuses a span past 500 days (measured: 500 answers, 600 is a
 # 400), so a longer request is clipped rather than failing the symbol.
@@ -191,7 +265,7 @@ def is_ondo_symbol(symbol: str) -> bool:
 
 
 def record(symbol: str) -> dict:
-    """The token's own record: ticker, name, chain, contract address."""
+    """The token's own record: ticker, name, kind, and its on-chain identity."""
     canonical_symbol = canonical(symbol)
     if canonical_symbol is None:
         raise OndoNotFound("%r is not one of the tokens this page charts." % symbol)
@@ -214,6 +288,18 @@ def alias(symbol: str) -> str | None:
     text = (symbol or "").strip().upper()
     token = _BY_TICKER.get(text)
     return symbol_for(token["ticker"]) if token else None
+
+
+def portfolio_tokens() -> tuple[dict, ...]:
+    """The intelligent portfolios this module can price, in `TOKENS`' order.
+
+    The recent table's Ondo leg asks for these, and the shelf says which of
+    them is still on sale (`ondolist.portfolios`); a portfolio the shop drops
+    is filtered out there, not deleted here, because a chart that worked
+    yesterday is not a listing fact.
+    """
+    return tuple(token for token in TOKENS
+                 if (token.get("kind") or QUOTE_TYPE) == PORTFOLIO)
 
 
 # -- the price --------------------------------------------------------------
@@ -248,10 +334,25 @@ def bars_for(token: dict, span: str) -> list[dict]:
     Raises `OndoError` when the wire fails or answers nothing usable -- an
     outage, which the chart route rescues from disk like any other.
     """
-    days = min(MAX_SPAN_DAYS, RANGE_DAYS.get(span, RANGE_DAYS["3mo"]))
-    key = "%s:%s" % (token["chain"], token["address"])
-    return _parse(_get_json(CHART_URL % (token["chain"], token["address"], days)),
-                  key)
+    # A few days more than the chart draws: the badge's steadiness reading needs
+    # the points just behind the window (`onset.decorate`).
+    days = min(MAX_SPAN_DAYS,
+               RANGE_DAYS.get(span, RANGE_DAYS["3mo"])
+               + onset_module.LEAN_HOLD_BARS)
+    coin = coin_id(token)
+    return _parse(_get_json(CHART_URL % (coin, days)), coin)
+
+
+def coin_id(token: dict) -> str:
+    """How DeFiLlama names this token: a coin index id, or a chain + contract.
+
+    Both are the document's own key, so `_parse` is handed the same string the
+    answer will be nested under -- a portfolio's series can never be read out
+    of a contract's document, or the other way round.
+    """
+    if token.get("coingecko"):
+        return "coingecko:%s" % token["coingecko"]
+    return "%s:%s" % (token["chain"], token["address"])
 
 
 def price_hint(bars: list[dict]) -> int:
@@ -296,6 +397,7 @@ def _chart_payload(token: dict, bars: list[dict], span: str, interval: str,
     ordered = sorted(bars, key=lambda bar: bar["t"])
     points = [{"t": int(bar["t"]), "c": round(float(bar["c"]), 6)}
               for bar in ordered]
+    tail: list[dict] = []
     if interval == "1wk":
         points = [{"t": int(bar["t"]), "c": round(float(bar["c"]), 6)}
                   for bar in _weekly(ordered)]
@@ -303,6 +405,10 @@ def _chart_payload(token: dict, bars: list[dict], span: str, interval: str,
         keep = onset_module.window_now(
             [p["t"] for p in points], len(points) - 1,
             days=RANGE_DAYS.get(span, RANGE_DAYS["3mo"]))
+        # The points before the window, for `onset.decorate`'s steadiness
+        # reading. `bars_for` asks for a few days more than the chart draws so
+        # there is something to look back over.
+        tail = points[:keep[0]][-onset_module.LEAN_HOLD_BARS:]
         points = [points[i] for i in keep]
     if not points:
         raise OndoNotFound("No price data for %s in this window." % token["name"])
@@ -321,12 +427,13 @@ def _chart_payload(token: dict, bars: list[dict], span: str, interval: str,
         # two halves of the identity are split between them: who issues it here,
         # where the bars were read from in `source`.
         "exchange": EXCHANGE,
-        "type": QUOTE_TYPE,
+        "type": token.get("kind") or QUOTE_TYPE,
         "priceHint": price_hint(ordered),
         "previousClose": points[-2]["c"] if len(points) > 1 else None,
         "marketPrice": points[-1]["c"],
         "points": points,
         "trend": call,
+        "historyTail": tail,
         # The source's newest point is stamped now and carries the price trading
         # right now, so the bar is live -- and `server.last_bar_basis` refuses
         # that word for a copy served from disk, which keeps a rescued chart
@@ -411,7 +518,7 @@ def search_tokens(needle: str, limit: int = 3) -> list[dict]:
             "symbol": symbol_for(token["ticker"]),
             "name": token["name"],
             "exchange": EXCHANGE,
-            "type": QUOTE_TYPE,
+            "type": token.get("kind") or QUOTE_TYPE,
         }))
     scored.sort(key=lambda item: item[:2])
     return [row for _rank, _index, row in scored[:limit]]

@@ -75,6 +75,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+import onset
 import trend
 
 COINGECKO_MARKETS = (
@@ -129,6 +130,17 @@ UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AssetPriceDisplay/1.0"
 # Bars to ask Binance for, per range, at daily resolution. The page draws daily
 # closes over three months; the rest is here so the range allowlist stays honest.
 RANGE_DAYS = {"1mo": 30, "3mo": 90, "6mo": 180, "1y": 365, "2y": 730, "5y": 1825}
+
+# The window a daily chart of each span **draws**: the span's calendar months,
+# which is the rule Yahoo's own `range=` answers with (`onset.months_back`).
+# Days and calendar months are not the same thing -- three months back from
+# 2026-11-07 is 2026-08-07, 92 days, not 90 -- so a Binance chart trimmed by
+# count held three fewer bars than the Yahoo-served chart of the same coin, and
+# the two printed different three-month moves for it (+18.06% against +17.08%
+# on BTC-USD, measured 2026-11-07). One span, one window, whichever venue draws
+# it: "if there are 93 bars in yahoo, there should also be 93 data points from
+# Binance not just 90 ... for uniformity and fairness".
+RANGE_MONTHS = {"1mo": 1, "3mo": 3, "6mo": 6, "1y": 12, "2y": 24, "5y": 60}
 
 _lock = threading.Lock()
 _index_cache: tuple[float, dict | None] = (0.0, None)
@@ -496,12 +508,20 @@ def chart(symbol: str, span: str, interval: str) -> dict:
     # asking for `days` weekly bars would return seven times the range. The cap
     # is Binance's per-request maximum.
     days = RANGE_DAYS.get(span, RANGE_DAYS["3mo"])
+    months = RANGE_MONTHS.get(span)
     if interval == "1wk":
         source_interval = "1w"
         limit = max(1, min(1000, days // 7))
     else:
         source_interval = "1d"
-        limit = days
+        # Five bars more than the chart draws, so the badge's steadiness reading
+        # can ask about the previous few sessions (`onset.decorate`). They are
+        # split off into `historyTail` below and never drawn, so the chart is
+        # the window it always was. The fetched span is an upper bound on the
+        # drawn one: a calendar month runs to 31 days, and the window is cut by
+        # month further down, not by this number.
+        cover = (months or 0) * 31 if months else days
+        limit = min(1000, cover + onset.LEAN_HOLD_BARS)
     rows, venue = _bars(resolved, source_interval, limit)
 
     if not _is_trading(rows):
@@ -544,6 +564,27 @@ def chart(symbol: str, span: str, interval: str) -> dict:
     if not points:
         raise CryptoError(f"No price data for {resolved['symbol']}.")
 
+    # The bars fetched beyond the drawn window: history for the badge, not plot.
+    # On a weekly chart there is no overshoot (a week is seven days and the
+    # interval already is one), so the tail is empty and the lean stands.
+    tail: list[dict] = []
+    if interval != "1wk":
+        if months:
+            # The window is the span's calendar months, cut by the same function
+            # and the same rule the Yahoo chart is trimmed with
+            # (`onset.window_now`), so a Binance chart of BTC-USD covers exactly
+            # the dates a Yahoo chart of it covers.
+            drawn = onset.window_now([p["t"] for p in points],
+                                     len(points) - 1, months=months)
+            cut = drawn[0] if drawn else 0
+        else:
+            cut = max(0, len(points) - days)
+        if cut > 0:
+            tail = [{"t": point["t"], "c": point["c"], "v": volumes[i]}
+                    for i, point in enumerate(points[:cut])]
+            points = points[cut:]
+            volumes = volumes[cut:]
+
     # Same contract as the Yahoo path: every series is scored, however short,
     # and only unusable data (a non-positive price) leaves the badge off.
     trend_call = None
@@ -575,6 +616,7 @@ def chart(symbol: str, span: str, interval: str) -> dict:
         # fresh, never from a disk fallback.
         "liveLastBar": live,
         "trend": trend_call,
+        "historyTail": tail,
         "source": venue,
         "coinRank": resolved["rank"],
     }

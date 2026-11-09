@@ -269,6 +269,20 @@ ALLOWED_INTERVALS = {"1d", "1wk"}
 # sounds, because the classifier changes regime at 63 bars and the two
 # windows differ by a session or two.
 SPAN_MONTHS = {"1mo": 1, "3mo": 3, "6mo": 6, "1y": 12, "2y": 24, "5y": 60}
+
+# How far back Yahoo is actually asked, for a span the chart draws. One step
+# wider, because the badge's steadiness reading needs the few bars *behind* the
+# drawn window and a `range=3mo` payload starts at the cutoff (2026-11-07).
+# `slim_chart` trims what is drawn back to the requested span, so the chart and
+# its badge are unchanged; only the history behind them is available now.
+#
+# The last two entries are the edge: Yahoo's widest ranges are `10y` and `max`,
+# so a 2-year chart is fetched as 5 years and a 5-year chart as 10. Nothing
+# beyond 10 years is asked for -- a longer chart keeps its lean unfiltered,
+# which is the honest answer to "not enough history to judge" rather than a
+# guess.
+FETCH_SPAN = {"1mo": "3mo", "3mo": "6mo", "6mo": "1y", "1y": "2y",
+              "2y": "5y", "5y": "10y"}
 KEEP_QUOTE_TYPES = {
     "EQUITY", "ETF", "CRYPTOCURRENCY", "CURRENCY",
     "INDEX", "FUTURE", "MUTUALFUND",
@@ -1302,9 +1316,14 @@ def start_bullish_refresh() -> None:
 # layout version gets the suffix, so the conversions below only ever see a
 # table version 2 scored; the plain v2/v3/v4 copies on disk are version-1
 # verdicts and are never read again.
-RECENT_KEY = "recent:scan:v4:t2"
-LEGACY_RECENT_KEY = "recent:scan:v3:t2"
-OLDER_RECENT_KEY = "recent:scan:v2:t2"
+# v5 scans the Ondo shelf instead of a turnover ranking -- every stock and ETF
+# the shop lists plus its intelligent portfolios -- so a v4 copy holds rows for
+# names the reader cannot buy and none for the portfolios. It is still read (and
+# filtered onto the shelf, see `seed_recent`) so an offline start has a table,
+# but a sweep under the old rule can never pass for one under this rule.
+RECENT_KEY = "recent:scan:v5:t2"
+LEGACY_RECENT_KEY = "recent:scan:v4:t2"
+OLDER_RECENT_KEY = "recent:scan:v3:t2"
 RECENT_TTL = 900  # seconds
 
 # The span of history fetched behind the ninety-day window the walk reads. A
@@ -1340,9 +1359,11 @@ def fetch_us_bars(tickers: list[str]) -> dict[str, tuple]:
     The bars are the ones the page's own chart draws for that ticker -- the
     same URL shape, the same daily interval, a year of them instead of three
     months -- so a row's verdict is the verdict the chart its click opens
-    would show. A ticker that did not answer is left out of the answer
-    entirely rather than answered with an empty series: a fetch failure is
-    not a fact about the stock.
+    would show. Each answer is `(stamps, closes, volumes, meta)`: the meta is
+    `yahoo_meta`, because the recent table's universe is the Ondo shelf's
+    tickers and Yahoo holds the company name the shelf does not. A ticker that
+    did not answer is left out of the answer entirely rather than answered
+    with an empty series: a fetch failure is not a fact about the stock.
     """
     out: dict[str, tuple] = {}
     tickers = [t for t in tickers if t]
@@ -1365,7 +1386,8 @@ def fetch_us_bars(tickers: list[str]) -> dict[str, tuple]:
             except ValueError:
                 continue
             try:
-                out[ticker] = yahoo_bars(payload, ticker)
+                out[ticker] = tuple(yahoo_bars(payload, ticker)) + (
+                    yahoo_meta(payload),)
             except LookupError:
                 continue    # Yahoo's "no such instrument", a verdict
     return out
@@ -1427,13 +1449,53 @@ def seed_recent() -> None:
         # The note is rebuilt from the rows and stats that survive the filter,
         # so a seeded table cannot describe a wider table than it draws.
         #
-        # The leaning rows get the shelf filter again, against the copy on
-        # disk (`ondolist.saved`, no network): a table swept before this rule
-        # existed, or before a name was delisted, must not show a row the
-        # reader cannot buy. With no stored shelf the rows stand -- an outage
-        # is not a listing fact, and the next sweep re-decides.
+        # The shelf is read once, from disk (`ondolist.saved`, no network), and
+        # used twice. First on the table itself: since v5 the United States
+        # rows are the shelf's stocks and ETFs and the portfolios are the
+        # shelf's baskets, so a copy swept before that rule (a v4 copy judged
+        # the turnover ranking) must not put a name the reader cannot buy back
+        # on screen. Second on the leaning list, through `actionable`. With no
+        # stored shelf the rows stand -- an outage is not a listing fact, and
+        # the next sweep re-decides.
+        shelf = ondolist.saved()
+        if shelf:
+            seeded["rows"] = [
+                row for row in seeded["rows"]
+                if row.get("market") not in recent.ONDO_CHECKED_MARKETS
+                or ondolist.carries(row.get("ticker"), shelf)
+                or row.get("market") == "Ondo portfolio"]
+        if legacy or yield_side:
+            # The stored copy's United States rows came from a turnover
+            # ranking, not the shelf. The note is rebuilt from the stats, so
+            # the leg has to stop implying a universe it never had.
+            us_stats = stats.get("US")
+            if isinstance(us_stats, dict):
+                stats["US"] = dict(us_stats, shelf=False)
+                seeded["stats"] = stats
+        # A series that had already stopped when this copy was swept must not
+        # come back from disk either: a seed is on screen until the first sweep
+        # lands, which is exactly long enough for the reader who objected to
+        # ATKR to see it again after a restart. Judged against the copy's own
+        # `fetchedAt`, not against now -- bars swept last week were current when
+        # they were fetched (`recent.stale_gap`).
+        seeded["rows"], stale_rows = recent.drop_stale(seeded["rows"], fetched_at)
+        stale_lean: list[dict] = []
         if seeded.get("leaning"):
-            shelf = ondolist.saved()
+            seeded["leaning"], stale_lean = recent.drop_stale(
+                seeded["leaning"], fetched_at)
+        if stale_rows or stale_lean:
+            # Counted, so the note says what left the table -- and merged by
+            # ticker with whatever the stored stats already carry, because a
+            # copy swept under this rule has already named them.
+            us_stats = stats.setdefault("US", {})
+            if isinstance(us_stats, dict):
+                named = {entry.get("ticker")
+                         for entry in (us_stats.get("stale") or [])}
+                us_stats["stale"] = list(us_stats.get("stale") or []) + [
+                    entry for entry in (stale_rows + stale_lean)
+                    if entry.get("ticker") not in named]
+                seeded["stats"] = stats
+        if seeded.get("leaning"):
             seeded["leaning"] = recent.actionable(seeded["leaning"], shelf)
             # The page says which shelf the list was filtered against, and
             # when -- a seeded copy was swept at some earlier moment, so it
@@ -1503,10 +1565,17 @@ def recent_loop() -> None:
             # The Philippine rows are read from the sweep the server keeps
             # warm, not re-swept: see the note above this block.
             ph_state = bullish_state()
-            payload = recent.scan(ph_sweep_rows=ph_state.get("rows") or [],
-                                  fetch_us_bars=fetch_us_bars,
-                                  ph_sweep_leaning=ph_state.get("leaning") or [],
-                                  ondo_shelf=ondolist.shelf())
+            payload = recent.scan(
+                ph_sweep_rows=ph_state.get("rows") or [],
+                fetch_us_bars=fetch_us_bars,
+                ph_sweep_leaning=ph_state.get("leaning") or [],
+                ondo_shelf=ondolist.shelf(),
+                # What the Philippine sweep looked at, so the note can say
+                # "263 scanned (249 common shares, 11 preferred shares, ...)"
+                # instead of only counting the rows that turned bullish.
+                ph_sweep_stats={"universe": ph_state.get("universe"),
+                                "kinds": ph_state.get("kinds") or {},
+                                "missing": ph_state.get("missing") or []})
             payload["checkedAt"] = int(time.time())
             # The one-line summary of the sweep, drawn by the same module that
             # knows what was judged -- so the note and the rows cannot disagree
@@ -2436,6 +2505,36 @@ def session_close(meta: dict, quote: dict, index: int, stamp: int) -> float | No
     return float(price)
 
 
+def yahoo_meta(payload: dict) -> dict:
+    """The three things the recent table needs about a symbol, from its meta.
+
+    A name to print under the ticker, the instrument's kind in the words the
+    page already uses (`markets.KINDS`), and its currency. The table asks
+    Yahoo rather than a scanner because since 2026-11-07 its universe is the
+    Ondo shelf, which names tokens and not companies: `nvdaon` says nothing
+    about NVIDIA, and the chart's own payload does.
+
+    Anything missing falls through as an empty string or `USD` rather than a
+    guess, and a caller keeps its own fallback first.
+    """
+    result = ((payload.get("chart") or {}).get("result") or [None])[0] or {}
+    meta = result.get("meta") or {}
+    instrument = str(meta.get("instrumentType") or "").upper()
+    return {
+        "name": meta.get("longName") or meta.get("shortName") or "",
+        "kind": {
+            "EQUITY": "Common stock",
+            "ETF": "ETF",
+            "MUTUALFUND": "Mutual fund",
+            "INDEX": "Index",
+            "CRYPTOCURRENCY": "Crypto",
+            "CURRENCY": "Currency",
+            "FUTURE": "Future",
+        }.get(instrument, ""),
+        "currency": str(meta.get("currency") or "").upper(),
+    }
+
+
 def yahoo_bars(payload: dict, symbol: str):
     """Yahoo's chart payload -> (stamps, closes, volumes), aligned.
 
@@ -2501,6 +2600,27 @@ def yahoo_bars(payload: dict, symbol: str):
     return out_stamps, out_closes, out_volumes
 
 
+def history_tail(all_points: list[dict], drawn: list[dict],
+                 want: int | None = None) -> list[dict]:
+    """The bars immediately before a drawn window, oldest first.
+
+    The badge's steadiness reading (`onset.decorate`) asks the classifier the
+    same question of the previous few windows, and a window ending four bars ago
+    needs the four bars the trim just dropped. This hands them over: at most
+    `want` (default `onset.LEAN_HOLD_BARS`) bars, each `{t, c, v}` so a prefix
+    window is scored on the same numbers the table's walk would have used --
+    including its volume, which is a signal the classifier reads.
+
+    It rides in every chart payload, so it stays tiny: five bars, nothing drawn.
+    """
+    want = onset_module.LEAN_HOLD_BARS if want is None else want
+    if not all_points or not drawn or not want:
+        return []
+    first = drawn[0]["t"]
+    before = [point for point in all_points if point["t"] < first]
+    return before[-want:]
+
+
 def slim_chart(payload: dict, symbol: str, span: str | None = None,
                interval: str = "1d") -> dict:
     """Reduce Yahoo's chart payload to what the page actually draws.
@@ -2560,6 +2680,11 @@ def slim_chart(payload: dict, symbol: str, span: str | None = None,
     stamps, closes, volumes_used = yahoo_bars(payload, symbol)
     points = [{"t": stamp, "c": close}
               for stamp, close in zip(stamps, closes)]
+    # Every bar the payload holds, volumes included, before the trim: what is
+    # left out of the window becomes the badge's history (`history_tail`).
+    every_bar = [{"t": stamp, "c": close, "v": volume}
+                 for stamp, close, volume
+                 in zip(stamps, closes, volumes_used)]
 
     months = SPAN_MONTHS.get(span) if span else None
     if months and interval == "1d":
@@ -2567,6 +2692,14 @@ def slim_chart(payload: dict, symbol: str, span: str | None = None,
                                         months=months)
         points = [points[i] for i in keep]
         volumes_used = [volumes_used[i] for i in keep]
+
+    # The bars just before the drawn window, so the badge's lean can be checked
+    # over the previous few sessions (`onset.decorate`). Yahoo was asked for a
+    # longer range than the chart draws for exactly this (`chart_data`), so a
+    # 3-month chart still has bars behind its window; a chart whose payload
+    # starts at the window has no tail and keeps its lean unfiltered, which is
+    # the honest answer to "not enough history to judge".
+    tail = history_tail(every_bar, points)
 
     # The trend call is scored on the same bars the chart draws, volumes aligned
     # to them. Any failure here is non-fatal: the chart is the product, the badge
@@ -2593,6 +2726,10 @@ def slim_chart(payload: dict, symbol: str, span: str | None = None,
         "session": session_window(meta, stamps[-1]),
         "points": points,
         "trend": trend_call,
+        # The bars before the window, for the badge's steadiness reading. Not
+        # drawn; kept so `chart_data` can ask the same question of the previous
+        # few windows on every read, cached copies included.
+        "historyTail": tail,
         "source": "Yahoo",
     }
 
@@ -2661,8 +2798,12 @@ def last_bar_basis(data: dict, now: float | None = None) -> str:
       it yet (`live_point`): the point is today's date carrying the print of
       the session now trading, so it can be a pre-market or after-hours figure
       but never a settled close -- the session it belongs to has not settled.
+    * `live` also for a PSE bar dated today while the exchange is open
+      (`pse.session_window`): TradingView hands today's candle from the opening
+      bell, so that bar is the price trading now, not a close. It reads `close`
+      from 15:15 Manila, on a holiday, and from a disk fallback.
     * `close` -- everything else, including every payload whose source has no
-      session to speak of (a fund's NAVPU, a bond yield, a PSE row).
+      session to speak of (a fund's NAVPU, a bond yield).
 
     Two things keep this from over-claiming. The clock decides, not the price:
     once the extended session ends Yahoo stops folding the after-hours print in
@@ -2683,6 +2824,17 @@ def last_bar_basis(data: dict, now: float | None = None) -> str:
     # fallback is hours old by definition, so it never reads live.
     if points and data.get("liveLastBar") and not data.get("cached"):
         return "live"
+    # A bar the source is still writing, on a market whose clock we keep: the
+    # PSE hands today's candle from the opening bell (`pse.session_window`), so
+    # the newest point *is* the price trading now while the exchange is open.
+    # The exchange publishes its session, so the window is an absolute stamp
+    # that expires by itself -- tomorrow this same payload reads close, and a
+    # disk fallback never reads live at all.
+    forming = data.get("session") or {}
+    if points and forming.get("formingBar") and not data.get("cached"):
+        if _within(forming.get("regular"),
+                   time.time() if now is None else now):
+            return "live"
     # The newest bar is a weekend price for the peso pair: the FX week is shut,
     # and the number is Coins.ph's USDC/PHP close for that Manila day (see
     # `weekend_proxy`). It is neither an interbank close nor a live FX print, so
@@ -3262,13 +3414,18 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
         data = cached(chart_key(symbol, span, interval), pse_produce)
     else:
         url = chart_key(symbol, span, interval)
+        # What Yahoo is asked for, versus what the chart draws: one span wider,
+        # so the badge has bars behind its window (`FETCH_SPAN`). The cache key
+        # stays the requested span's URL, because that is the chart this entry
+        # holds -- and the entry is the trimmed chart, not Yahoo's answer.
+        fetch_url = chart_key(symbol, FETCH_SPAN.get(span, span), interval)
 
         def produce():
             # Yahoo's answer is the default, crypto or not.
             yahoo = None
             yahoo_error = None
             try:
-                yahoo = yahoo_chart(url, symbol, span, interval)
+                yahoo = yahoo_chart(fetch_url, symbol, span, interval)
             except LookupError as exc:
                 yahoo_error = exc          # Yahoo has no such instrument
             # A transport failure is not a verdict about the symbol, so let it
@@ -3285,8 +3442,10 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
                 alias = rates.chart_alias(symbol)
                 if alias:
                     try:
-                        yahoo = yahoo_chart(chart_key(alias, span, interval),
-                                            alias, span, interval)
+                        yahoo = yahoo_chart(
+                            chart_key(alias, FETCH_SPAN.get(span, span),
+                                      interval),
+                            alias, span, interval)
                     except LookupError:
                         pass
 
@@ -3395,6 +3554,32 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
         call = trend.classify([p["c"] for p in points])
     except (KeyError, TypeError, ValueError):
         call = None
+    # ... and then the one place the steady-lean rule is applied to a badge, so
+    # the chart, the watchlist tag and the leaning table agree about the same
+    # asset at the same moment (2026-11-07). The drawn window and the bars
+    # behind it (`historyTail`, shipped by every producer that has them) are
+    # handed over together; a series with no tail keeps its lean, because an
+    # unanswerable question is not a negative one.
+    if call is not None:
+        drawn = [p for p in points
+                 if isinstance(p, dict) and p.get("t") is not None
+                 and p.get("c") is not None]
+        tail = [p for p in (out.get("historyTail") or [])
+                if isinstance(p, dict) and p.get("t") is not None
+                and p.get("c") is not None]
+        # Only when every drawn point can be read: a payload this code cannot
+        # align is not one to decorate from, so the badge keeps its plain call.
+        if drawn and len(drawn) == len(points):
+            full = tail + drawn
+            stamps = [int(p["t"]) for p in full]
+            closes = [float(p["c"]) for p in full]
+            volumes = [p.get("v") or 0.0 for p in full]
+            yahoo_months = (SPAN_MONTHS.get(span)
+                            if out.get("source") == "Yahoo" else None)
+            call = onset_module.decorate(
+                call, stamps, closes, volumes,
+                months=yahoo_months,
+                days=pse.RANGE_DAYS.get(span, pse.RANGE_DAYS["3mo"]))
     if out.get("yieldSeries"):
         # A bond yield's badge reads as a bond price, not as the yield's own
         # direction -- the same reversal the recent table's row makes, applied
@@ -3404,6 +3589,32 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
         # inference drawn from it.
         out["yieldTrend"] = call
         call = tv.bond_price_call(call)
+    # A daily series the source has stopped printing is not a price now, and
+    # nothing on this payload may say otherwise -- the same rule the table
+    # applies before it judges a shelf name (see `recent.STALE_GAP_DAYS`, and
+    # ATKR as the case that made it visible: three weeks of a frozen $94.96
+    # charted as a close with a "leaning bullish" badge on it). The line is
+    # still drawn -- it is the history that exists -- but the verdict and the
+    # profit odds are withheld, because both are claims about now.
+    #
+    # Yahoo only, and daily only. The trading days of the US market are what
+    # makes five days of silence meaningful; the PSE, the funds and the bonds
+    # close for long holidays (see the constant), and a weekly bar is stamped
+    # at the start of its week, so its age is not a session's.
+    if interval == "1d" and out.get("source") == "Yahoo":
+        drawn_stamps = [p["t"] for p in points
+                        if isinstance(p, dict) and p.get("t") is not None]
+        gap = recent.stale_gap(drawn_stamps)
+        if gap is not None:
+            out["staleDays"] = int(round(gap))
+            out["staleBar"] = recent.utc_day(max(drawn_stamps))
+            call = None
+        elif "staleDays" in out:
+            # A copy cannot keep a staleness claim it did not earn on this read
+            # -- the same rule `lastBarBasis` follows: decided from the drawn
+            # bars and the clock, never carried.
+            out.pop("staleDays", None)
+            out.pop("staleBar", None)
     out["trend"] = call
     out["range"] = span
     out["interval"] = interval
@@ -3425,7 +3636,11 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
         out["tradedTurnover"] = traded_value
     # Separate from the descriptive badge: project the drawn daily returns,
     # including mean-estimation uncertainty and assumed round-trip costs.
-    out["profitProbability"] = probability.estimate(out)
+    # Withheld for a series that has stopped (`staleDays` above): an estimate
+    # about the next three months of an instrument the source no longer prints
+    # is an estimate about nothing.
+    out["profitProbability"] = (None if out.get("staleDays") is not None
+                                else probability.estimate(out))
     # What the newest bar's number is -- a live price, an extended-hours print
     # or a settled close -- decided from the payload and the clock *now*, so a
     # chart served from the memory memo or from a disk copy cannot claim to be

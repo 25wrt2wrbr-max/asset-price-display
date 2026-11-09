@@ -184,8 +184,15 @@ class ShippedPayloadTests(unittest.TestCase):
             out = server.chart_data("AAPL", "3mo", "1d")
         self.assertEqual(out["points"][-1], {"t": NOV3_OPEN, "c": 322.13})
         self.assertEqual(out["lastBarBasis"], "pre")
-        self.assertEqual(out["trend"],
-                         trend.classify([p["c"] for p in out["points"]]))
+        # The badge is the classifier's call on the drawn series, plus the
+        # steady-lean decoration every chart carries now (`onset.decorate`).
+        # The trading fields are compared as the classifier wrote them; the
+        # decoration is allowed to add its own and to withhold a lean.
+        call = trend.classify([p["c"] for p in out["points"]])
+        for field in ("label", "score", "significance", "progress", "bars"):
+            self.assertEqual(out["trend"][field], call[field], field)
+        self.assertEqual(out["trend"]["leanRaw"], call["lean"])
+        self.assertIn("steady", out["trend"])
 
 
 if __name__ == "__main__":

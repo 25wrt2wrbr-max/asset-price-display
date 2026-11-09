@@ -195,16 +195,35 @@ def onset(rows: list) -> dict | None:
 def _universe() -> list[dict]:
     """The PSE securities to scan, in index order.
 
-    Index entries are dropped: the request is for stocks, and an index has no
-    volume for the ensemble to read and no board lot to buy.
+    The index is scanned too (2026-11-09): the reader asked for the PSEi in the
+    tables when its own chart is bullish or leaning bullish, and the only way a
+    row and its chart can agree is for the index to go through the same walk as
+    the stocks. It has no volume and no board lot, so its rows carry neither --
+    see `_row_extras`.
     """
     index = pse.stocks_index()
-    return [record for record in index["ordered"]
-            if record.get("kind") != "INDEX"]
+    return list(index["ordered"])
+
+
+def _kinds(records: list[dict]) -> dict[str, int]:
+    """`{kind: count}` over the scanned universe, for the note under the table.
+
+    The point of the count is that a reader cannot otherwise tell 262 listings
+    from a handful: the note names how many of each thing was looked at, in a
+    fixed order (see `recent.kinds_line`).
+    """
+    counts: dict[str, int] = {}
+    for record in records:
+        kind = str(record.get("kind") or "UNKNOWN")
+        counts[kind] = counts.get(kind, 0) + 1
+    return counts
 
 
 def scan(count: int = pse.BATCH_BARS) -> dict:
-    """The bullish table: every PSE stock bullish now, newest onset first.
+    """The bullish table: every PSE security bullish now, newest onset first.
+
+    The index is one of them since 2026-11-09 (see `_universe`); the leaning
+    list is built in the same pass, so an index that leans is a leaning row.
 
     Raises `BullishError` only when the universe itself cannot be had or no bars
     arrive at all. A symbol that does not answer is left out of the table and
@@ -230,13 +249,21 @@ def scan(count: int = pse.BATCH_BARS) -> dict:
         record = by_symbol.get(symbol)
         if record is None:
             continue
+        # An index has no volume and no board lot. Its bars carry no volume
+        # column at all, so `onset` already answers None; the lot would be a
+        # fiction (the index is not purchasable in board lots), so it is not
+        # asked for. Everything else reads the exchange's own board lot.
+        is_index = record.get("kind") == "INDEX"
         call = onset(series)
         if call is None:
             # Neutral on its chart but in the bullish hold band: a near-miss,
             # listed apart and never as a bullish row (see `onset.leaning`).
-            lean = onset_module.leaning(*_series(series))
+            # `steady_lean` is the table's own filter on top of it -- clear of
+            # the drift line and held for days, not flickering (2026-11-07).
+            lean = onset_module.steady_lean(*_series(series))
             if lean is not None:
-                lot, lot_cost = markets.minimum_investment(lean["price"])
+                lot, lot_cost = ((None, None) if is_index
+                                 else markets.minimum_investment(lean["price"]))
                 leaning.append({
                     "symbol": symbol,
                     "chartSymbol": symbol,
@@ -246,16 +273,21 @@ def scan(count: int = pse.BATCH_BARS) -> dict:
                     "currency": CURRENCY,
                     "lot": lot,
                     "lotCost": lot_cost,
+                    # No traded value for an index: there are no shares to
+                    # trade, and `None` keeps it out of the peso floor rather
+                    # than reporting a zero the market never printed.
+                    "turnover": None if is_index else lean["turnover"],
                     **{k: lean[k] for k in
                        ("price", "score", "significance", "progress", "bars",
-                        "last", "turnover", "window")},
+                        "last", "window", "held", "holdBars")},
                 })
             continue
         # The minimum investment: the board lot for this price times the price,
         # in the currency the row is quoted in. The lot table is the exchange's,
         # and the arithmetic is shared with the leaderboards and the chart so
         # all three show the same figure for the same close.
-        lot, lot_cost = markets.minimum_investment(call["price"])
+        lot, lot_cost = ((None, None) if is_index
+                         else markets.minimum_investment(call["price"]))
         rows.append({
             "symbol": symbol,
             # The chart takes a PSE symbol with its venue attached -- bare `TEL`
@@ -268,9 +300,10 @@ def scan(count: int = pse.BATCH_BARS) -> dict:
             "currency": CURRENCY,
             "lot": lot,
             "lotCost": lot_cost,
+            "turnover": None if is_index else call["turnover"],
             **{k: call[k] for k in
                ("since", "run", "censored", "anchored", "manner", "turnMove",
-                "score", "bars", "last", "turnover", "window")},
+                "score", "bars", "last", "window", "windowFirst")},
         })
 
     # Newest onset first. Ties -- several names turning on the same session, which
@@ -292,6 +325,11 @@ def scan(count: int = pse.BATCH_BARS) -> dict:
         "leaning": sorted(leaning, key=lambda row: (-row["progress"],
                                                     row["ticker"])),
         "universe": len(universe),
+        # How many of each thing the universe holds -- common shares, preferred
+        # shares, an ETF, a closed-end fund, the index. The notes under both
+        # tables print this, so a reader can see the breadth of the scan rather
+        # than take a row count on trust.
+        "kinds": _kinds(universe),
         "fetched": len(bars),
         "missing": sorted(set(by_symbol) - set(bars)),
         # Rows where the anchored window and the badge's window disagreed about

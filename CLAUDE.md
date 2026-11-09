@@ -139,6 +139,27 @@ every row dated to the day its current run began, sorted **newest-turn first**.
 in `server.py`, which imports `recent.py`) — that keeps the module testable
 without a browser. Full sweep ≈ 29 s; the US browser leg dominates.
 
+### The PSEi, and the scan's makeup in both notes (2026-11-09)
+
+- **The PSEi is scanned with the stocks.** `bullish._universe` no longer drops
+  `kind == "INDEX"`; the index goes through the same `onset` walk, so it appears
+  on the recent table or the leaning one whenever its own chart says so. Its
+  rows carry **no board lot, no minimum investment, no turnover** (an index is
+  not bought and trades no shares); `pse.chart` withholds the "Min. investment"
+  readout for `type == "index"` in both chart builders. `PSE:PSEI` opens the
+  page's own chart.
+- **Both notes print what was scanned.** `bullish.scan` ships
+  `payload["kinds"]` (`{EQUITY, PREFERRED, ETF, CLOSEDEND, INDEX}` counts over
+  its universe); `server.recent_loop` passes the sweep's `universe`/`kinds` into
+  `recent.scan(ph_sweep_stats=...)`; `recent.kinds_line` writes
+  "249 common shares, 11 preferred shares, 1 ETF, 1 closed-end fund, 1 index".
+  `recent.summarize` puts it in the recent note, and the identical sentence
+  ships as `payload["phScan"]` for the leaning note (`drawLeaningNote`). One
+  string, so the two notes cannot disagree. An older disk copy has no `kinds`;
+  the note then drops the makeup rather than guessing it.
+- Counts drift with listings: 262 scanner securities on 2026-11-09, plus the
+  index added by hand = 263 scanned.
+
 ### Philippine funds (2026-10-31)
 
 A fund has no ticker, no exchange and no volume; it publishes one **NAVPU** a

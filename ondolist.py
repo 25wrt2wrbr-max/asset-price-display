@@ -8,12 +8,31 @@ on Ondo reads that list as a shortlist, and a row for an instrument the shelf
 does not carry is not a shortlist entry -- it is a number they cannot act on
 (asked for by name, 2026-11-06).
 
+Since 2026-11-07 the shelf is also the **universe** of both tables: the reader
+asked that the scan be "just what's available at app.ondo.finance -- no longer
+trading volume", and that it include "all stocks & ETFs, and intelligent
+portfolios". So this module answers two questions, not one: is a ticker listed
+(the filter), and what is listed at all (the scan).
+
 `app.ondo.finance/sitemap.xml` is the shelf: it publishes one URL per listed
 asset, `/assets/<ticker>on` (the token is the ticker plus `on`; `NVDA` ->
-`nvdaon`, `SPY` -> `spyon`, the USDY/OUSG funds under their bare names). That
-makes the membership question exact -- a ticker is on the shelf when
-`<ticker>on` is one of those slugs -- so no hand-kept list can drift from the
-site.
+`nvdaon`, `SPY` -> `spyon`, the USDY/OUSG funds under their bare names) and one
+per intelligent portfolio under `/intelligent-portfolios/<code>on`
+(`mag7xon` -> `MAG7X`). That makes both questions exact -- no hand-kept list can
+drift from the site.
+
+The scan's shelf, and the three shapes of slug
+----------------------------------------------
+* `nvdaon`, `spyon`, `von` -- a stock or an ETF, ticker plus `on`. `tickers()`
+  strips the suffix and answers `NVDA`, `SPY`, `V`; those are the symbols the
+  scan judges.
+* `mag7xon`, `blkgrwon` ... -- an **intelligent portfolio**, the same
+  construction under a different path. `portfolios()` answers `MAG7X`,
+  `BLKGRW`.
+* `ousg`, `usdy` -- the two yield funds, listed bare. They are neither a stock
+  nor an ETF nor a portfolio, so no scan takes them: a T-bill token accrues and
+  would sit in the bullish table forever, which is the money-market fund
+  property `phfunds` already documents, not a finding.
 
 Two rules
 ---------
@@ -41,7 +60,9 @@ import diskcache
 SITEMAP = "https://app.ondo.finance/sitemap.xml"
 
 # The disk key, versioned beside every other stored answer in this project.
-CACHE_KEY = "ondo:shelf:v1"
+# v2 reads the intelligent portfolios beside the assets; a v1 copy knows only
+# the assets, and the scan needs both, so it is not served as a current shelf.
+CACHE_KEY = "ondo:shelf:v2"
 
 # Fresh enough to skip the fetch: listings do not change minute to minute, and
 # this list is only consulted once per recent-table sweep.
@@ -57,6 +78,9 @@ TIMEOUT = 20
 
 # `/assets/<slug>` -- the only URLs on that sitemap that name an instrument.
 _ASSET = re.compile(r"/assets/([A-Za-z0-9][A-Za-z0-9.\-]*)")
+
+# `/intelligent-portfolios/<slug>` -- the baskets, same `<code>on` shape.
+_PORTFOLIO = re.compile(r"/intelligent-portfolios/([A-Za-z0-9][A-Za-z0-9.\-]*)")
 
 # Every listed token ends in these two letters; the ticker in front of them is
 # the instrument's own spelling.
@@ -79,6 +103,54 @@ def parse(text: str) -> set[str]:
     return {slug.lower() for slug in _ASSET.findall(text or "")}
 
 
+def parse_portfolios(text: str) -> set[str]:
+    """The intelligent-portfolio page names a sitemap lists, lower case.
+
+    A separate set from `parse`'s because they are a separate page path: the
+    assets are one instrument each, a portfolio is a basket the same shop
+    sells, and the scan treats the two differently (a stock's bars come from
+    Yahoo, a portfolio's from its own token price).
+    """
+    return {slug.lower() for slug in _PORTFOLIO.findall(text or "")}
+
+
+def token_ticker(slug: str) -> str | None:
+    """The instrument a slug names (`nvdaon` -> `NVDA`), or None.
+
+    A token is the ticker plus `on`, so the suffix is what is stripped -- and
+    only the suffix, which is why a real ticker that ends in those letters
+    survives (`onon` is ON Semiconductor, and strips to `ON`). A bare slug is
+    one of the two yield funds (`ousg`, `usdy`), which are neither a stock nor
+    a portfolio and are not offered to any scan.
+    """
+    text = (slug or "").strip().lower()
+    if len(text) < _MIN_SLUG or not text.endswith(TOKEN_SUFFIX):
+        return None
+    return text[:-len(TOKEN_SUFFIX)].upper()
+
+
+def tickers(shelf_record: dict | None) -> list[str]:
+    """Every stock and ETF on the shelf, in its own ticker spelling.
+
+    The scan's universe, alphabetically so a sweep's order does not depend on
+    the sitemap's. `BRK.B` keeps the dot the shelf uses; the caller that asks
+    Yahoo for bars converts it (`markets.yahoo_symbol`), exactly as it does for
+    a scanner row.
+    """
+    if not shelf_record:
+        return []
+    out = {token_ticker(slug) for slug in shelf_record.get("slugs") or ()}
+    return sorted(ticker for ticker in out if ticker)
+
+
+def portfolios(shelf_record: dict | None) -> list[str]:
+    """Every intelligent portfolio on the shelf (`MAG7X`, `BLKGRW`, ...)."""
+    if not shelf_record:
+        return []
+    out = {token_ticker(slug) for slug in shelf_record.get("portfolios") or ()}
+    return sorted(ticker for ticker in out if ticker)
+
+
 def _fetch() -> str:
     """The sitemap's text. Raises on any transport or status problem."""
     request = urllib.request.Request(SITEMAP, headers={
@@ -94,13 +166,26 @@ def _fetch() -> str:
         return answer.read().decode("utf-8", "replace")
 
 
-def _record(slugs: set[str], fetched_at: float, cached: bool) -> dict:
+def _record(slugs: set[str], fetched_at: float, cached: bool,
+            portfolios: set[str] | None = None) -> dict:
     return {
         "slugs": sorted(slugs),
+        "portfolios": sorted(portfolios or ()),
         "fetchedAt": float(fetched_at),
         "cached": bool(cached),
-        "count": len(slugs),
+        "count": len(slugs) + len(portfolios or ()),
     }
+
+
+def _read(value: dict | None) -> tuple[set[str], set[str]]:
+    """A stored shelf -> (asset slugs, portfolio slugs).
+
+    A copy stored before the portfolios were read has no `portfolios` key at
+    all; it answers an empty set, which is the truth about that copy rather
+    than a claim that none are listed.
+    """
+    value = value or {}
+    return set(value.get("slugs") or ()), set(value.get("portfolios") or ())
 
 
 def saved() -> dict | None:
@@ -113,10 +198,12 @@ def saved() -> dict | None:
     if not stored:
         return None
     fetched_at, value = stored
-    slugs = set((value or {}).get("slugs") or ())
-    if not slugs or time.time() - fetched_at > CACHE_KEEP:
+    slugs, portfolios = _read(value)
+    if not slugs and not portfolios:
         return None
-    return _record(slugs, fetched_at, cached=True)
+    if time.time() - fetched_at > CACHE_KEEP:
+        return None
+    return _record(slugs, fetched_at, cached=True, portfolios=portfolios)
 
 
 def shelf(now: float | None = None) -> dict | None:
@@ -131,23 +218,28 @@ def shelf(now: float | None = None) -> dict | None:
     now = time.time() if now is None else now
     stored = diskcache.load(CACHE_KEY)
     slugs: set[str] = set()
+    portfolios: set[str] = set()
     fetched_at = 0.0
     if stored:
         fetched_at, value = stored
-        slugs = set((value or {}).get("slugs") or ())
-        if slugs and now - fetched_at <= CACHE_TTL:
-            return _record(slugs, fetched_at, cached=False)
+        slugs, portfolios = _read(value)
+        if (slugs or portfolios) and now - fetched_at <= CACHE_TTL:
+            return _record(slugs, fetched_at, cached=False,
+                           portfolios=portfolios)
 
     try:
-        parsed = parse(_fetch())
+        text = _fetch()
+        parsed = parse(text)
+        baskets = parse_portfolios(text)
     except Exception:                      # noqa: BLE001 - any failure is an outage
-        parsed = set()
-    if parsed:
-        diskcache.store(CACHE_KEY, {"slugs": sorted(parsed)})
-        return _record(parsed, now, cached=False)
+        parsed, baskets = set(), set()
+    if parsed or baskets:
+        diskcache.store(CACHE_KEY, {"slugs": sorted(parsed),
+                                    "portfolios": sorted(baskets)})
+        return _record(parsed, now, cached=False, portfolios=baskets)
 
-    if slugs and now - fetched_at <= CACHE_KEEP:
-        return _record(slugs, fetched_at, cached=True)
+    if (slugs or portfolios) and now - fetched_at <= CACHE_KEEP:
+        return _record(slugs, fetched_at, cached=True, portfolios=portfolios)
     return None
 
 
@@ -167,7 +259,8 @@ def carries(ticker: str, shelf_record: dict | None) -> bool:
     # Separators are compared away on both sides, so a class share matches
     # whichever way either party spelled it (`BRK.B`, `BRK-B`, `brk.bon`).
     listed: set[str] = set()
-    for slug in shelf_record.get("slugs") or ():
+    for slug in (list(shelf_record.get("slugs") or ())
+                 + list(shelf_record.get("portfolios") or ())):
         listed.add(slug)
         listed.add(slug.replace(".", "").replace("-", ""))
     text = str(ticker).strip().lower()

@@ -30,10 +30,17 @@ moved into a shared module so that one question has one answer. See
 Every instrument is judged on its own source, and the sources are named in
 the payload so a reader can see them:
 
-* **US stocks** -- the most-traded United States listings from the TradingView
-  scanner (`markets.us_universe`), judged on Yahoo's daily bars, which are the
-  bars the page's own chart draws for a US ticker. The row and the chart its
-  click opens are the same series.
+* **Ondo stocks and ETFs** -- every stock and ETF listed at app.ondo.finance
+  (`ondolist.tickers`), judged on Yahoo's daily bars, which are the bars the
+  page's own chart draws for a US ticker. The row and the chart its click
+  opens are the same series. Since 2026-11-07 the shelf **is** the universe at
+  the reader's request ("the limit is just what's available at
+  app.ondo.finance -- no longer trading volume"), so a name outside it is not
+  scanned however heavily it trades, and a name inside it is scanned however
+  thinly it trades.
+* **Ondo intelligent portfolios** -- the seven baskets the same shop sells
+  (`mag7xon`, `blkgrwon`, ...), judged on the token's own daily price from
+  DeFiLlama, which is the series the chart a click opens draws (`ondo.py`).
 * **Philippine stocks** -- the rows of the Philippine sweep (`bullish.py`),
   read from the sweep the server already keeps warm. This module does not
   re-sweep the exchange: the sweep takes about half a minute, and doing it
@@ -106,10 +113,12 @@ it but the server.
 from __future__ import annotations
 
 import concurrent.futures
+import time
 
 import crypto
 import cryptobull
 import markets
+import ondo
 import ondolist
 import onset as onset_module
 import phfunds
@@ -117,42 +126,88 @@ import pse
 import rates
 import tv
 
-# How many US listings to judge. The universe is the most-traded one the
-# scanner can name, and the table keeps the ones that are bullish, so a
-# larger universe is a larger table and a slower sweep.
+# How many United States listings the **fallback** judges, when the Ondo shelf
+# could not be read at all.
 #
-# The cutoff is a coverage decision, not a verdict: a name outside it is never
-# fetched, so the table says nothing about it either way. Fifty was a
-# shortlist of the heaviest names, but it cut real ones off -- WMT ranked 57th
-# by turnover and KO 124th, and both were bullish on their own charts while
-# the table silently had no opinion, which reads like a bearish call. So the
-# universe is deep enough to hold the large caps a reader would name, at the
-# cost of a longer US leg: `RECENT_BATCH = 20` bars per browser run, so 130
-# names is seven runs instead of three.
-US_LIMIT = 130
+# The universe is normally the shelf (`ondolist.tickers`): every stock and ETF
+# the shop lists, and nothing else, at the reader's request of 2026-11-07. A
+# turnover ranking is still here for the one case it is the honest answer to --
+# an unreadable shelf. With no shelf there is no universe, and an outage must
+# not empty the table (invariant 3), so this leg falls back to the most-traded
+# names the scanner can name and says in the note that it did. It is a
+# fallback, not a limit: with a shelf in hand this number is never consulted.
+#
+# The cutoff used to be the product itself (50, then 130), and it cut real
+# names off -- WMT ranked 57th by turnover and KO 124th. That is the defect the
+# shelf replaces: neither ranking is what the reader can buy.
+US_FALLBACK_LIMIT = 130
 
-# How many coins to walk. The crypto table's own walk stops at ten rows,
-# because that table is about the top of the book; this one is about the
-# whole chartable ranking, and the ranking's depth is what the top-250
-# CoinGecko index `crypto.coin` resolves against already caps.
+# How many of the heaviest coins are also read for **leaning** rows. The
+# bullish rows are judged over the whole chartable ranking (`crypto_rows` says
+# why); the leaning list is a curated side-table, and widening it would change a
+# table the merge did not touch. Twenty-five is the depth that list has always
+# had.
 CRYPTO_LIMIT = 25
 
-# The smallest peso turnover a row must show to stay on the table. A run in a
-# name nobody traded is not a fact the reader can act on; the threshold is the
-# scan's own, in pesos, applied to the converted figure (`turnoverPhp`). Rows
-# with no traded volume at all -- the bond yields, and every fund -- are exempt:
-# the floor tests traded volume, and none is not "too little".
+# The window a coin's chart draws, in **calendar months** -- the same rule the
+# Yahoo chart is trimmed with, and now the same rule Binance's chart is trimmed
+# with (`crypto.RANGE_MONTHS`). It is not 90 days: three months back from
+# 2026-11-07 is 92 days, and a table that judged 90 while the chart drew 92 was
+# measuring a different window from the one it opens. Asked for by name:
+# "if there are 93 bars in yahoo, there should also be 93 data points from
+# Binance not just 90 ... for uniformity and fairness".
+CRYPTO_WINDOW_MONTHS = 3
+
+# The smallest peso turnover a **Philippine stock** must show to stay on the
+# table, and the only market that has a floor. Asked for by name, 2026-11-07:
+# "there should still be a volume floor for philippines stocks. PHP1M".
+#
+# The live case it produces: PAL was bullish at +0.77 with a 14-bar run on
+# ₱311,040 of turnover, so the sweep judges it and the table hides it -- and the
+# note says how many it hid, so a name that is bullish on its own chart is never
+# silently missing (the reader's own complaint, and the reason the count is
+# printed rather than the filter being silent).
+#
+# Two markets are deliberately outside it:
+#
+# * the **Ondo** rows, because the reader's rule is that the shelf is the limit;
+#   a volume floor on top of it would be a second limit they did not ask for;
+# * the **crypto** rows, whose ranking already stops at `CRYPTO_LIMIT`.
+#
+# A row with no traded volume at all -- a bond yield, a fund, a portfolio -- is
+# exempt from the test: it never had a peso figure to fail it with.
 MIN_TURNOVER_PHP = 1_000_000
+FLOOR_MARKETS = ("Philippines",)
+
+# What the Philippine universe is made of, in the order the note prints it
+# (2026-11-09). The reader asked why they should believe 262 listings were
+# looked at rather than ten: the note now says how many of each kind, from the
+# sweep's own `kinds` count. An index is scanned too, so it is named here --
+# else "249 + 11 + 1 + 1" would not add up to the scanned figure beside it.
+# `pse._kind` is the vocabulary: EQUITY, PREFERRED, ETF, CLOSEDEND, INDEX,
+# MUTUALFUND, plus UNKNOWN for a shape it did not name.
+PH_KIND_WORDS = (
+    ("EQUITY", "common share", "common shares"),
+    ("PREFERRED", "preferred share", "preferred shares"),
+    ("ETF", "ETF", "ETFs"),
+    ("CLOSEDEND", "closed-end fund", "closed-end funds"),
+    ("INDEX", "index", "indexes"),
+    ("MUTUALFUND", "fund", "funds"),
+    ("UNKNOWN", "unclassified listing", "unclassified listings"),
+)
 
 # What the leaning table is allowed to show, at the reader's request
 # (2026-11-06): only what can be bought at app.ondo.finance. A United States
 # row must have an Ondo token (`ondolist`), and a leg whose instruments that
 # shelf does not carry at all -- the Philippine funds -- keeps no leaning rows.
 #
-# The filter is on the leaning list alone. The bullish table above it is a
-# statement about what turned, not a shopping list, and no market was asked to
-# leave it.
-ONDO_CHECKED_MARKETS = ("US",)
+# Since 2026-11-07 the same shelf is the scan's **universe** for both tables,
+# so for these two markets this filter can only ever confirm what the leg
+# already did. It stays because it is also applied to a table read back from
+# disk (`server.seed_recent`), where the universe that swept it may have been
+# a different, wider one -- and because "is it for sale" and "was it scanned"
+# are two questions that should not have to agree by luck.
+ONDO_CHECKED_MARKETS = ("US", "Ondo portfolio")
 ONDO_ABSENT_MARKETS = ("Philippine fund",)
 
 # The Philippine government bond yields, and what they are called. Two-year,
@@ -171,6 +226,40 @@ BONDS = tv.BONDS
 # censored rather than dated to a bar that only happens to be the oldest one.
 WALK_SPAN = "1y"
 WALK_INTERVAL = "1d"
+
+# How far behind the clock a daily series may be before it stops being a price.
+#
+# The case it exists for, measured 2026-11-07 so the standing is on the record:
+# **ATKR** (Atkore Inc) was the first row of "Leaning bullish - not
+# confirmed", priced $94.96, and its newest bar was **2026-10-16** -- three
+# weeks dead, because the company had been taken over and the source had
+# stopped printing. Nothing in the scan could tell: the series answered, the
+# classifier read 51 bars of a frozen price, `onset.steady_lean` found the lean
+# steady (held 5 of 5), and a stopped stock was put on the table as a near-miss
+# to buy. The reader's words: "ATKR last price was October. wtf. don't show me
+# this."
+#
+# A United States listing's newest daily bar is the last session's close, so on
+# any evening it is hours old, across a weekend two or three days, and across a
+# holiday weekend at most four. Five days is not a long weekend. It is also
+# `crypto.STALE_BAR_DAYS`'s number for a pair Binance has stopped trading --
+# the same idea at the same tolerance, and deliberately the same number, so
+# "five days of silence" means one thing in this project. Measured that day:
+# 473 of the shelf's 474 names answered with a bar 0.3 days old, and ATKR with
+# one 21.3 days old. There was no middle ground to tune against.
+#
+# **What it is not applied to, and why.** The Philippine sweep, the funds and
+# the bonds are read from sources whose markets close for long holidays -- the
+# PSE shuts from 23 December to 4 January -- so a calendar gap there is a
+# calendar fact, not a dead series. Crypto has its own test (`crypto.py`), and
+# the Ondo tokens are priced by DeFiLlama at the moment of the request.
+STALE_GAP_DAYS = 5
+
+# The markets `drop_stale` re-filters in a table read back from disk: the leg
+# this rule is written for, and the only one whose bars come from a market that
+# never closes for more than a holiday weekend plus one day.
+STALE_MARKETS = ("US",)
+
 
 # How many coins are fetched at once. Binance is a public endpoint and this
 # is a handful of plain HTTPS calls; eight at a time is well inside what it
@@ -214,6 +303,90 @@ class RecentError(RuntimeError):
     """The table could not be assembled."""
 
 
+def utc_day(stamp: int) -> str:
+    """A bar's calendar date, as `YYYY-MM-DD`, in UTC.
+
+    UTC because a daily US bar is stamped at the session's open -- 13:30 or
+    14:30 UTC -- so the UTC date is the session's own date in every case that
+    matters, and every other date this table prints is that shape.
+    """
+    return time.strftime("%Y-%m-%d", time.gmtime(int(stamp)))
+
+
+def stale_gap(stamps, reference: float | None = None) -> float | None:
+    """How many days the newest bar falls behind `reference`, if it is stale.
+
+    `None` means "not stale", and it means two other things as well, on
+    purpose: a series with no bars at all is not a stopped series -- that is
+    `missing`, and it is counted there (invariant 3) -- and a series within
+    `STALE_GAP_DAYS` of the reference is current.
+
+    `reference` is what the series is read *against*, and the two callers want
+    different things from it:
+
+    * a **live read** -- the sweep, or one chart -- compares against the clock,
+      because the question is "is this a price now?";
+    * a **copy read back from disk** compares against the moment it was swept,
+      because a table swept six days ago holds six-day-old bars that were
+      current when they were fetched. Judged against today, such a copy would
+      read as a table of dead series -- a fetch-age fact dressed up as a
+      stock's.
+    """
+    if not stamps:
+        return None
+    try:
+        newest = max(int(stamp) for stamp in stamps)
+    except (TypeError, ValueError):
+        return None
+    now = time.time() if reference is None else float(reference)
+    gap = (now - newest) / 86_400.0
+    return gap if gap > STALE_GAP_DAYS else None
+
+
+def stale_entry(ticker: str, stamps, gap: float, symbol: str | None = None) -> dict:
+    """The `stats` record of one series left off the table for having stopped."""
+    try:
+        newest = max(int(stamp) for stamp in stamps)
+    except (TypeError, ValueError):
+        newest = None
+    entry = {
+        "ticker": ticker,
+        "chartSymbol": symbol or ticker,
+        "lastBar": utc_day(newest) if newest is not None else None,
+        "days": int(round(gap)),
+    }
+    return entry
+
+
+def drop_stale(rows: list[dict],
+               reference: float | None = None) -> tuple[list[dict], list[dict]]:
+    """Split rows into the ones still worth showing and the ones that stopped.
+
+    For a table read back from disk (`server.seed_recent`): a copy swept before
+    this rule existed can hold a row whose series had already stopped, and a
+    seed is on screen until the first sweep lands -- long enough for the reader
+    who objected to ATKR to see it again after a restart. Only `STALE_MARKETS`
+    is re-filtered; every other leg keeps its own freshness rules.
+
+    The second answer is in `stats` shape (`stale_entry`), so the note can say
+    what was dropped instead of the row simply disappearing.
+    """
+    kept: list[dict] = []
+    stale: list[dict] = []
+    for row in rows or []:
+        if row.get("market") not in STALE_MARKETS:
+            kept.append(row)
+            continue
+        last = row.get("last")
+        gap = stale_gap([last] if last is not None else [], reference)
+        if gap is None:
+            kept.append(row)
+        else:
+            stale.append(stale_entry(row.get("ticker") or row.get("symbol"),
+                                     [last], gap, row.get("chartSymbol")))
+    return kept, stale
+
+
 def _series(points: list, volumes: list | None = None) -> tuple[list[int], list[float], list]:
     """A chart payload's points -> (stamps, closes, volumes), aligned.
 
@@ -241,6 +414,25 @@ def _series(points: list, volumes: list | None = None) -> tuple[list[int], list[
     return stamps, closes, vols
 
 
+def _window_move(row: dict) -> float | None:
+    """The window's relative move: first drawn close to the newest.
+
+    `onset` ships the pair as raw closes (`windowFirst`, `price`) because a
+    price moves in per cent and a yield in percentage points; this is the
+    price-side reading of it. The chart prints the same pair under the price
+    ("+12.95% three-month move, since Jul 31"), so a row and its chart cannot
+    disagree about how the window went.
+    """
+    first = row.get("windowFirst")
+    last = row.get("price")
+    if not first or last is None:
+        return None
+    try:
+        return round(float(last) / float(first) - 1.0, 6)
+    except (TypeError, ValueError, ZeroDivisionError):
+        return None
+
+
 def _price_row(market: str, symbol: str, chart_symbol: str, ticker: str,
                name: str, kind: str, currency: str,
                call: dict, score=None) -> dict:
@@ -264,6 +456,9 @@ def _price_row(market: str, symbol: str, chart_symbol: str, ticker: str,
         "bars": call["bars"],
         "last": call["last"],
         "turnover": call["turnover"],
+        # The three-month move the row prints: the window's first close to the
+        # newest, the same pair the chart's hero delta uses.
+        "windowMove": _window_move(call),
         "chartable": True,
     }
 
@@ -293,6 +488,11 @@ def _lean_row(market: str, symbol: str, chart_symbol: str, ticker: str,
         "bars": lean["bars"],
         "last": lean["last"],
         "turnover": lean["turnover"],
+        # How steady the lean is: the same call on the last `holdBars` bars, and
+        # how many of them answered "leaning". Present on every row produced by
+        # `onset.steady_lean`; None on anything that reached here another way.
+        "held": lean.get("held"),
+        "holdBars": lean.get("holdBars"),
         "chartable": True,
     }
 
@@ -326,17 +526,64 @@ def actionable(leaning: list[dict], shelf: dict | None) -> list[dict]:
     return kept
 
 
-def us_rows(fetch_us_bars) -> tuple[list[dict], dict]:
-    """The bullish United States listings, and what the scan could not say.
+def shelf_universe(shelf: dict | None) -> tuple[list[dict], bool]:
+    """The Ondo shelf as bar-fetch records, and whether the shelf was readable.
+
+    One record per stock and ETF the shop lists, in the shape `us_universe`
+    rows have (`ticker`, `chartSymbol`, `name`, `kind`, `currency`) so the walk
+    below never has to know where its universe came from. Two fields are
+    placeholders: the shelf names a token, not a company, so `name` starts as
+    the ticker and `kind` as a common stock, and Yahoo's own meta replaces both
+    the moment the bars answer (`fetch_us_bars`).
+
+    A shelf that could not be read answers the scanner's turnover ranking
+    instead, with the flag set to False so the note can say the leg fell back.
+    That is the only case a turnover limit still decides what is scanned.
+    """
+    if shelf:
+        records = []
+        seen: set[str] = set()
+        for ticker in ondolist.tickers(shelf):
+            symbol = markets.yahoo_symbol(ticker)
+            if not symbol or symbol in seen:
+                continue
+            seen.add(symbol)
+            records.append({
+                "ticker": ticker,
+                "chartSymbol": symbol,
+                "name": ticker,
+                "kind": "Common stock",
+                "currency": "USD",
+            })
+        return records, True
+
+    universe = markets.us_universe(US_FALLBACK_LIMIT)
+    records = []
+    for row in universe:
+        ticker = row.get("ticker")
+        if ticker:
+            records.append(row)
+    return records, False
+
+
+def us_rows(fetch_us_bars, shelf: dict | None = None) -> tuple[list[dict], dict]:
+    """The bullish Ondo stocks and ETFs, and what the scan could not say.
 
     `fetch_us_bars` is called with the tickers to judge and answers
-    `{ticker: (stamps, closes, volumes)}` -- the bars the page's own chart
-    draws for that ticker. It is injected because the fetch is a browser one
-    and the browser lives in `server.py`.
+    `{ticker: (stamps, closes, volumes, meta)}` -- the bars the page's own
+    chart draws for that ticker, plus Yahoo's name for it. It is injected
+    because the fetch is a browser one and the browser lives in `server.py`.
 
     A ticker whose bars did not arrive is left out and counted in `missing`:
     the alternative, treating it as "not bullish", would put a fetch failure
     into the table as a fact about the stock.
+
+    A ticker whose bars *did* arrive but stopped weeks ago is left out too, and
+    counted in `stale` with the date of its last bar: a frozen price is not a
+    price now, and a verdict read off it is a verdict about the month it
+    stopped in (see `STALE_GAP_DAYS`, and ATKR as the case that made it
+    visible). The note prints those names, so a row that is absent is never
+    unexplained.
 
     The window is Yahoo's own three *calendar* months, not ninety days,
     because that is the window the chart route asks Yahoo for and so the
@@ -348,19 +595,21 @@ def us_rows(fetch_us_bars) -> tuple[list[dict], dict]:
 
     The bars are asked for under the row's `chartSymbol`, which is the
     spelling the chart route draws -- a class share carries Yahoo's dash
-    (`BRK-B`), not the scanner's dot (`BRK.B`). Judging the scanner's spelling
-    would report the name as a fetch failure on every sweep, which is a wrong
-    fact about a stock that answers perfectly well under its own name.
+    (`BRK-B`), not the shelf's dot (`brk.bon`, `BRK.B`). Judging the shelf's
+    spelling would report the name as a fetch failure on every sweep, which is
+    a wrong fact about a stock that answers perfectly well under its own name.
     """
-    universe = markets.us_universe(US_LIMIT)
-    by_symbol: dict[str, dict] = {}
-    for row in universe:
-        ticker = row.get("ticker")
-        if ticker:
-            by_symbol[row.get("chartSymbol") or ticker] = row
-    symbols = list(by_symbol)
+    records, from_shelf = shelf_universe(shelf)
+    symbols = [record.get("chartSymbol") or record.get("ticker")
+               for record in records]
+    symbols = [symbol for symbol in symbols if symbol]
     if not symbols:
-        raise RecentError("the US universe is empty")
+        raise RecentError("the Ondo shelf is empty")
+
+    by_symbol: dict[str, dict] = {}
+    for record in records:
+        by_symbol.setdefault(record.get("chartSymbol") or record.get("ticker"),
+                             record)
 
     try:
         bars = fetch_us_bars(symbols) or {}
@@ -369,6 +618,7 @@ def us_rows(fetch_us_bars) -> tuple[list[dict], dict]:
 
     rows: list[dict] = []
     missing: list[str] = []
+    stale: list[dict] = []
     for symbol in symbols:
         record = by_symbol[symbol]
         ticker = record.get("ticker") or symbol
@@ -376,27 +626,99 @@ def us_rows(fetch_us_bars) -> tuple[list[dict], dict]:
         if not series:
             missing.append(ticker)
             continue
-        stamps, closes, volumes = series
+        stamps, closes, volumes = series[:3]
+        meta = series[3] if len(series) > 3 and isinstance(series[3], dict) else {}
+        # A series the source stopped printing is not judged at all, in either
+        # table: a verdict read off a frozen price is a verdict about the month
+        # it stopped in, and the row would carry that month's price as though it
+        # were today's. Counted, not swallowed -- the note prints the names and
+        # their last bar, because a name that vanished without a word is the
+        # thing the reader objected to about the peso floor (see
+        # `STALE_GAP_DAYS`).
+        gap = stale_gap(stamps)
+        if gap is not None:
+            stale.append(stale_entry(ticker, stamps, gap, symbol))
+            continue
         call = onset_module.onset(stamps, closes, volumes, want="bullish",
                                   months=onset_module.WINDOW_MONTHS)
+        name = meta.get("name") or record.get("name") or ticker
+        kind = meta.get("kind") or record.get("kind") or "Common stock"
+        currency = meta.get("currency") or record.get("currency") or "USD"
         if call is None:
-            lean = onset_module.leaning(stamps, closes, volumes,
-                                        months=onset_module.WINDOW_MONTHS)
+            lean = onset_module.steady_lean(
+                stamps, closes, volumes, months=onset_module.WINDOW_MONTHS)
             if lean is not None:
                 rows.append(_lean_row(
-                    "US", ticker, symbol, ticker,
-                    record.get("name") or ticker,
-                    record.get("kind") or "Stock",
-                    record.get("currency") or "USD", lean))
+                    "US", ticker, symbol, ticker, name, kind, currency, lean))
             continue
         rows.append(_price_row(
-            "US", ticker, symbol, ticker,
-            record.get("name") or ticker,
-            record.get("kind") or "Stock",
-            record.get("currency") or "USD",
-            call,
-        ))
-    return rows, {"universe": len(universe), "missing": sorted(missing)}
+            "US", ticker, symbol, ticker, name, kind, currency, call))
+    return rows, {"universe": len(records), "missing": sorted(missing),
+                  "stale": stale, "shelf": from_shelf}
+
+
+def ondo_portfolio_rows(shelf: dict | None = None) -> tuple[list[dict], dict]:
+    """The bullish Ondo intelligent portfolios, and what the scan could not say.
+
+    The seven baskets are tokens on the same shelf, so they belong in the same
+    two tables -- asked for by name, 2026-11-07: "include all stocks & ETFs,
+    and intelligent portfolios". Their bars are the token's own daily price
+    from DeFiLlama (`ondo.bars_for`), which is exactly what the chart a click
+    opens draws, so a row and its chart are one series as everywhere else.
+
+    The window is the chart's: `ondo` trims to ninety calendar days for `3mo`
+    (`RANGE_DAYS`), so this walk asks for the default ninety-day window rather
+    than Yahoo's calendar-month one. They are different shops with different
+    trims, and the rule is that a row is the verdict its own chart shows.
+
+    A portfolio that did not answer is counted in `missing`, never judged: a
+    token six weeks old has 43 bars, and an empty fetch is an outage, not a
+    neutral basket.
+
+    Two things are deliberately plain:
+
+    * **No turnover.** A portfolio token is bought and redeemed, not traded on
+      an exchange, so its bars carry no volume and the row carries none either
+      -- the peso floor does not apply, and the column says so.
+    * **A fixed list, and the shelf decides which of it is on sale.** The
+      tokens live in `ondo.py` (a chart needs an identity); the shelf says
+      which are still listed, and `actionable` filters the leaning half.
+    """
+    tokens = ondo.portfolio_tokens()
+    listed = set(ondolist.portfolios(shelf)) if shelf else None
+    rows: list[dict] = []
+    missing: list[str] = []
+    judged = 0
+    for token in tokens:
+        ticker = token["ticker"]
+        if listed is not None and ticker not in listed:
+            # No longer on sale. Not a fetch failure and not a verdict, so it
+            # is not counted as either: the shop stopped listing it.
+            continue
+        try:
+            bars = ondo.bars_for(token, WALK_SPAN)
+        except ondo.OndoError:
+            missing.append(ticker)
+            continue
+        judged += 1
+        stamps, closes, volumes = _series(bars)
+        call = onset_module.onset(stamps, closes, volumes, want="bullish")
+        symbol = ondo.symbol_for(ticker)
+        hint = ondo.price_hint(bars)
+        if call is None:
+            lean = onset_module.steady_lean(stamps, closes, volumes)
+            if lean is not None:
+                row = _lean_row("Ondo portfolio", symbol, symbol, ticker,
+                                token["name"], token.get("kind"), "USD", lean)
+                row.update({"turnover": None, "turnoverPhp": None,
+                            "priceHint": hint})
+                rows.append(row)
+            continue
+        row = _price_row("Ondo portfolio", symbol, symbol, ticker,
+                         token["name"], token.get("kind"), "USD", call)
+        row.update({"turnover": None, "turnoverPhp": None, "priceHint": hint})
+        rows.append(row)
+    return rows, {"universe": judged + len(missing), "missing": sorted(missing)}
 
 
 def rate_rows(fetch_us_bars) -> tuple[list[dict], dict]:
@@ -422,8 +744,8 @@ def rate_rows(fetch_us_bars) -> tuple[list[dict], dict]:
       no yield here to read.
     * **No turnover.** A contract's volume counts contracts, and close times
       contracts is not a traded value in any currency, so the row carries
-      `turnover: None` -- exempt from the peso-volume floor the way a bond
-      yield and a fund are, and printed as a dash. The price carries its own
+      `turnover: None` -- a dash, the way a bond yield and a fund print one.
+      The price carries its own
       precision (`rates.price_hint`), because a Treasury quote's fraction is a
       32nd and two decimals would round it away.
 
@@ -451,13 +773,13 @@ def rate_rows(fetch_us_bars) -> tuple[list[dict], dict]:
         if not series:
             missing.append(contract["ticker"])
             continue
-        stamps, closes, volumes = series
+        stamps, closes, volumes = series[:3]
         call = onset_module.onset(stamps, closes, volumes, want="bullish",
                                   months=onset_module.WINDOW_MONTHS)
         hint = rates.price_hint(closes)
         if call is None:
-            lean = onset_module.leaning(stamps, closes, volumes,
-                                        months=onset_module.WINDOW_MONTHS)
+            lean = onset_module.steady_lean(
+                stamps, closes, volumes, months=onset_module.WINDOW_MONTHS)
             if lean is not None:
                 row = _lean_row(
                     "US Treasury", contract["symbol"], contract["symbol"],
@@ -481,12 +803,29 @@ def rate_rows(fetch_us_bars) -> tuple[list[dict], dict]:
 def crypto_rows() -> tuple[list[dict], dict]:
     """The bullish coins of the chartable USDT ranking.
 
-    The ranking is the one the crypto table walks -- the chartable coins,
+    The ranking is the one the crypto table walked -- the chartable coins,
     heaviest twenty-four-hour turnover first -- and the bars are Binance's,
     the same ones the crypto chart draws. A coin whose bars did not arrive
     is counted in `missing` rather than judged bearish.
+
+    The walk reads the **whole** ranking, not a top slice: every other market
+    on this table is judged exhaustively (the Ondo shelf, the PSE universe, all
+    47 funds), and a coin that is bullish on its own chart is a row however
+    thinly it trades. A top-25 cut used to be enough when the crypto table sat
+    below this one with its own deeper walk; with that table merged in, the cut
+    would silently lose rows it was showing -- measured 2026-11-07, the one
+    bullish coin of the day (BEAMUSDT, $0.74M traded) ranked around 200th.
+
+    The day condition the crypto table kept is **not** applied. That table was
+    a list of what was heavy *and* up today, and a red row under its heading
+    read as a fault; this table is the three-month verdict, and the reader asked
+    for the three-month reading only -- so the rolling day is not a filter and
+    not a figure on the row either.
+
+    Leaning rows are still read only from the first `CRYPTO_LIMIT` candidates,
+    so the leaning table is exactly what it was.
     """
-    ranked = cryptobull.candidates(CRYPTO_LIMIT)
+    ranked = cryptobull.candidates(cryptobull.MAX_CANDIDATES)
     rows: list[dict] = []
     missing: list[str] = []
     scanned = 0
@@ -498,26 +837,38 @@ def crypto_rows() -> tuple[list[dict], dict]:
             max_workers=min(CRYPTO_WORKERS, max(1, len(ranked)))) as pool:
         charts = list(pool.map(probe, ranked))
 
-    for candidate, chart in zip(ranked, charts):
+    for index, (candidate, chart) in enumerate(zip(ranked, charts)):
         scanned += 1
         if chart is None:
             missing.append(candidate["symbol"])
             continue
         stamps, closes, volumes = _series(chart.get("points"),
                                           chart.get("volumes"))
-        call = onset_module.onset(stamps, closes, volumes, want="bullish")
-        if call is None:
-            lean = onset_module.leaning(stamps, closes, volumes)
-            if lean is not None:
-                rows.append(_lean_row(
-                    "Crypto", chart["symbol"], chart["symbol"],
-                    candidate["ticker"], candidate["name"], "Coin", "USD",
-                    lean))
+        call = onset_module.onset(stamps, closes, volumes, want="bullish",
+                                  months=CRYPTO_WINDOW_MONTHS)
+        if call is not None:
+            row = _price_row(
+                "Crypto", chart["symbol"], chart["symbol"],
+                candidate["ticker"], candidate["name"], "Coin", "USD", call,
+            )
+            # The rolling day's change is not carried: this table reports the
+            # three-month verdict and the window's own figures, and the reader
+            # asked for the three-month reading only (2026-11-07).
+            # Decimals the price is drawn at, by magnitude: at the table's
+            # default two, a sub-cent coin prints "$0.00", which is a figure
+            # that says nothing. The chart's own readout uses the same hint.
+            row["priceHint"] = chart.get("priceHint")
+            rows.append(row)
             continue
-        rows.append(_price_row(
-            "Crypto", chart["symbol"], chart["symbol"], candidate["ticker"],
-            candidate["name"], "Coin", "USD", call,
-        ))
+        if index >= CRYPTO_LIMIT:
+            continue
+        lean = onset_module.steady_lean(stamps, closes, volumes,
+                                        months=CRYPTO_WINDOW_MONTHS)
+        if lean is not None:
+            rows.append(_lean_row(
+                "Crypto", chart["symbol"], chart["symbol"],
+                candidate["ticker"], candidate["name"], "Coin", "USD",
+                lean))
     return rows, {"universe": len(ranked), "scanned": scanned,
                   "missing": sorted(missing)}
 
@@ -605,7 +956,8 @@ def bond_rows() -> tuple[list[dict], dict]:
         if label != "bearish":
             # A yield in the falling side's hold band is a bond price leaning
             # bullish: same window, same reversal as the row below.
-            lean = (onset_module.leaning(stamps, closes, volumes, want="bearish")
+            lean = (onset_module.steady_lean(stamps, closes, volumes,
+                                             want="bearish")
                     if label == "neutral" else None)
             if lean is not None:
                 row = _lean_row("Philippine bond", symbol, symbol,
@@ -658,6 +1010,13 @@ def bond_rows() -> tuple[list[dict], dict]:
             "bars": call["bars"],
             "last": stamps[-1],
             "turnover": None,
+            # No three-month move: for a yield the level is the figure, and the
+            # direction beside it already says how a bond price read the move.
+            # A points change over the window is a figure about a figure, so
+            # the table prints none for a yield (asked for by name, 2026-11-07:
+            # "for bonds, the most important thing is yield. changes don't mean
+            # shit. + the bearish or bullish judgment").
+            "windowMove": None,
             "chartable": True,
             # The bars are stamped at the close of the Manila session -- five
             # in the morning, which is 21:00 the day before in UTC. So the
@@ -693,9 +1052,7 @@ def fund_rows() -> tuple[list[dict], dict]:
     Three things are worth knowing about what comes out:
 
     * **No turnover.** A fund is not traded, so the row carries `turnover:
-      None` and the peso-volume floor that keeps thin names off this table
-      cannot apply -- the same exemption a bond yield gets, for a different
-      reason. The volume column prints a dash rather than a zero.
+      None`, and the volume column prints a dash rather than a zero.
     * **A money market fund is always bullish.** Its NAVPU accrues interest
       every day and never marks to a loss, so the three-month window on one is
       essentially always "bullish", and its run is always *censored* ("at least
@@ -729,7 +1086,7 @@ def fund_rows() -> tuple[list[dict], dict]:
         volumes = [0.0] * len(closes)
         call = onset_module.onset(stamps, closes, volumes, want="bullish")
         if call is None:
-            lean = onset_module.leaning(stamps, closes, volumes)
+            lean = onset_module.steady_lean(stamps, closes, volumes)
             if lean is not None:
                 fund = phfunds.record(code)
                 row = _lean_row(
@@ -773,6 +1130,8 @@ def fund_rows() -> tuple[list[dict], dict]:
             "last": call["last"],
             "turnover": None,
             "turnoverPhp": None,
+            # The window's move, like every other price row's.
+            "windowMove": _window_move(call),
             # A four-decimal NAVPU printed at two would round away the only
             # digits that moved this month, so the row carries its own
             # precision for the table to honour.
@@ -818,6 +1177,7 @@ def ph_rows(sweep_rows: list[dict]) -> list[dict]:
             "bars": row.get("bars"),
             "last": row.get("last"),
             "turnover": row.get("turnover"),
+            "windowMove": _window_move(row),
             "chartable": True,
         })
     return rows
@@ -844,6 +1204,8 @@ def ph_lean_rows(sweep_leaning: list[dict]) -> list[dict]:
             "bars": row.get("bars"),
             "last": row.get("last"),
             "turnover": row.get("turnover"),
+            "held": row.get("held"),
+            "holdBars": row.get("holdBars"),
             "chartable": True,
         })
     return rows
@@ -851,20 +1213,28 @@ def ph_lean_rows(sweep_leaning: list[dict]) -> list[dict]:
 
 def scan(ph_sweep_rows: list[dict] | None = None,
          fetch_us_bars=None, ph_sweep_leaning: list[dict] | None = None,
-         ondo_shelf: dict | None = None) -> dict:
+         ondo_shelf: dict | None = None,
+         ph_sweep_stats: dict | None = None) -> dict:
     """The whole table: every bullish instrument, the falling bond yields, the
     United States Treasury futures, and the funds.
 
     `ph_sweep_rows` are the rows of the Philippine sweep the server already
-    keeps warm; `fetch_us_bars` fetches the United States bars (see
-    `us_rows`), and the Treasury futures leg pays it a second call for the
-    curve's seven symbols. Both are arguments because the server owns both.
-    The fund leg needs nothing injected: its sources answer plain HTTPS, so
-    `phfunds.py` fetches them itself.
+    keeps warm, and `ph_sweep_stats` is that sweep's own account of what it
+    looked at (`universe`, `kinds`, `missing`) -- so the note can say "263
+    scanned (249 common shares, 11 preferred shares, ...)" instead of only
+    counting the rows that came out bullish. `fetch_us_bars` fetches the
+    United States bars (see `us_rows`), and the Treasury futures leg pays it a
+    second call for the curve's seven symbols. Both are arguments because the
+    server owns both. The fund leg needs nothing injected: its sources answer
+    plain HTTPS, so `phfunds.py` fetches them itself.
 
     `ondo_shelf` is the list of assets app.ondo.finance carries (see
-    `ondolist.shelf`), or None when it could not be read. It filters the
-    leaning list only, through `actionable`.
+    `ondolist.shelf`), or None when it could not be read. It does two jobs
+    now: it is the **universe** of the United States leg and of the Ondo
+    portfolio leg (a stock, an ETF or a basket the shop does not list is not
+    scanned at all), and it filters the leaning list through `actionable`.
+    With no shelf the United States leg falls back to the turnover ranking and
+    says so in the note -- an outage must not empty the table.
 
     Raises `RecentError` when the table could not be assembled at all. One
     leg failing does not lose the others: a leg that failed is reported in
@@ -880,14 +1250,28 @@ def scan(ph_sweep_rows: list[dict] | None = None,
     rows.extend(ph)
     rows.extend(ph_lean_rows(ph_sweep_leaning or []))
     stats["Philippines"] = {"count": len(ph)}
+    if isinstance(ph_sweep_stats, dict):
+        # The universe the sweep actually read, with its makeup. Carried onto
+        # the stats, which travel in the payload, so both notes and the seeded
+        # copy describe the same scan.
+        if ph_sweep_stats.get("universe"):
+            stats["Philippines"]["universe"] = int(ph_sweep_stats["universe"])
+        if ph_sweep_stats.get("kinds"):
+            stats["Philippines"]["kinds"] = dict(ph_sweep_stats["kinds"])
+        if ph_sweep_stats.get("missing"):
+            stats["Philippines"]["missing"] = list(ph_sweep_stats["missing"])
 
     if fetch_us_bars is not None:
         # The two Yahoo legs, each with its own error: a browser leg that
         # answers one market's symbols and not the other's must not take both
-        # down, and the note names whichever failed.
+        # down, and the note names whichever failed. The Ondo stocks and ETFs
+        # are drawn from the shelf when it was read (see `shelf_universe`).
         for market, leg in (("US", us_rows), ("US Treasury", rate_rows)):
             try:
-                found, leg_stats = leg(fetch_us_bars)
+                if market == "US":
+                    found, leg_stats = leg(fetch_us_bars, ondo_shelf)
+                else:
+                    found, leg_stats = leg(fetch_us_bars)
                 rows.extend(found)
                 stats[market] = leg_stats
             except Exception as exc:
@@ -895,6 +1279,15 @@ def scan(ph_sweep_rows: list[dict] | None = None,
     else:
         errors["US"] = "no bar fetcher was given"
         errors["US Treasury"] = "no bar fetcher was given"
+
+    # The Ondo intelligent portfolios: plain HTTPS to DeFiLlama, so unlike the
+    # two legs above this one needs nothing injected and fails alone.
+    try:
+        baskets, basket_stats = ondo_portfolio_rows(ondo_shelf)
+        rows.extend(baskets)
+        stats["Ondo portfolio"] = basket_stats
+    except Exception as exc:
+        errors["Ondo portfolio"] = str(exc)
 
     try:
         coins, coin_stats = crypto_rows()
@@ -952,18 +1345,32 @@ def scan(ph_sweep_rows: list[dict] | None = None,
         else:
             row["turnoverPhp"] = None
 
-    # The volume floor, applied to the converted figure. A row with no peso
-    # figure (a bond yield, or a name whose currency could not be converted)
-    # is kept: the floor tests traded volume, and none is not "too little".
-    # `stats` still counts what was scanned, so the note keeps saying where
-    # the rows came from -- the table just shows fewer of them.
-    rows[:] = [row for row in rows
-               if row.get("turnoverPhp") is None
-               or row["turnoverPhp"] >= MIN_TURNOVER_PHP]
+    # The volume floor, applied to the converted figure and only to the
+    # markets that have one (`FLOOR_MARKETS`): a Philippine stock under
+    # ₱1,000,000 of turnover is not a row. A row with no peso figure at all
+    # (a bond yield, a fund, a portfolio) is kept -- the floor tests traded
+    # volume, and none is not "too little".
+    #
+    # What it hides is counted, not swallowed: the reader found PAL missing from
+    # this table with nothing on screen to explain it, so `stats` carries the
+    # number and the note prints it. The judged count keeps saying what was
+    # looked at.
+    dropped = [row for row in rows
+               if row.get("market") in FLOOR_MARKETS
+               and row.get("turnoverPhp") is not None
+               and row["turnoverPhp"] < MIN_TURNOVER_PHP]
+    if dropped:
+        # By identity, not equality: two different rows can hold equal fields,
+        # and dropping the wrong one would hide a name twice over.
+        hidden_ids = {id(row) for row in dropped}
+        rows[:] = [row for row in rows if id(row) not in hidden_ids]
+        ph_stats = stats.setdefault("Philippines", {})
+        if isinstance(ph_stats, dict):
+            ph_stats["hidden"] = len(dropped)
 
-    # The near-misses leave the bullish table here, after the same peso
-    # conversion and volume floor, into a list of their own: neutral on their
-    # own charts, in the bullish hold band, closest to the entry bar first.
+    # The near-misses leave the bullish table here, into a list of their own:
+    # neutral on their own charts, in the bullish hold band, closest to the
+    # entry bar first.
     leaning = sorted((row for row in rows if row.get("lean")),
                      key=lambda row: (-(row.get("progress") or 0.0),
                                       row.get("ticker") or ""))
@@ -985,12 +1392,54 @@ def scan(ph_sweep_rows: list[dict] | None = None,
             "cached": bool(ondo_shelf.get("cached")),
         },
         "stats": stats,
+        # The Philippine scan, spelled out once, in the same words both notes
+        # print. The page appends it under "Leaning bullish"; `summarize` puts
+        # it under "Recently bullish assets". One string, so the two cannot
+        # describe the same sweep differently.
+        "phScan": ph_scan_line(stats.get("Philippines") or {}),
         "fx": fx,
         "fxError": fx_error,
         "errors": errors,
         "checkedAt": None,
         "error": None,
     }
+
+
+def kinds_line(kinds: dict) -> str:
+    """`{kind: count}` -> "249 common shares, 11 preferred shares, 1 ETF, ...".
+
+    Fixed order and empty kinds dropped, so two sweeps that differ only in
+    whether an ETF listed read as one sentence with one clause changed.
+    """
+    parts = []
+    for kind, singular, plural in PH_KIND_WORDS:
+        count = (kinds or {}).get(kind)
+        if not count:
+            continue
+        parts.append(f"{count} {singular if count == 1 else plural}")
+    # Anything the vocabulary above did not name is still counted: an
+    # unlisted kind must not vanish from a figure whose whole job is honesty
+    # about coverage.
+    named = {kind for kind, _, _ in PH_KIND_WORDS}
+    others = sum(count for kind, count in (kinds or {}).items()
+                 if kind not in named)
+    if others:
+        parts.append(f"{others} other listing{'s' if others != 1 else ''}")
+    return ", ".join(parts)
+
+
+def ph_scan_line(detail: dict) -> str | None:
+    """The Philippine scan as one sentence: "263 scanned (249 common shares...)".
+
+    None when the sweep's own account of its universe did not travel (a table
+    read from an older disk copy): a made-up count would be worse than the
+    shorter line this note had before.
+    """
+    universe = detail.get("universe")
+    if not universe:
+        return None
+    line = kinds_line(detail.get("kinds") or {})
+    return f"Philippines: {universe} scanned" + (f" ({line})" if line else "")
 
 
 def summarize(payload: dict) -> str:
@@ -1004,24 +1453,56 @@ def summarize(payload: dict) -> str:
         # `actionable`), so the note says so -- and says when it could not be,
         # rather than letting an outage read like a shelf that carries none.
         if payload.get("ondoShelf"):
-            parts.append("leaning rows are Ondo-listed only")
+            parts.append("United States rows are Ondo-listed only")
         elif payload["leaning"]:
             parts.append("Ondo list unavailable — leaning rows unfiltered")
     for market, detail in stats.items():
         count = detail.get("count")
         universe = detail.get("universe")
         missing = len(detail.get("missing") or [])
+        stale = detail.get("stale") or []
+        # The United States leg's universe is the Ondo shelf when it was read,
+        # and the scanner's turnover ranking only when it was not. Which one it
+        # was is a fact about the sweep, so the note says it instead of letting
+        # "478 scanned" imply the shelf when it was a ranking.
+        label = market
+        if market == "US" and detail.get("shelf") is False:
+            label = "US (turnover universe)"
+        # The makeup of the Philippine universe, when the sweep sent it: the
+        # leg's own line already says "263 scanned", and this says of what.
+        breakdown = kinds_line(detail.get("kinds") or {})
         if count is not None and universe:
             # A leg that judged a fixed list and kept only the bullish ones --
             # the bond yields -- says both numbers, so a leg with no rows reads
             # as "nothing turned" and not as "nothing was looked at".
-            parts.append(f"{market}: {universe} scanned"
+            parts.append(f"{label}: {universe} scanned"
+                         + (f" ({breakdown})" if breakdown else "")
                          + ("" if count >= universe else f", {count} bullish"))
         elif count is not None:
-            parts.append(f"{market}: {count}")
+            parts.append(f"{label}: {count}")
         elif universe:
-            parts.append(f"{market}: {universe} scanned"
+            parts.append(f"{label}: {universe} scanned"
+                         + (f" ({breakdown})" if breakdown else "")
                          + (f", {missing} did not answer" if missing else ""))
+        hidden = detail.get("hidden")
+        if hidden:
+            # The floor hides rows, so the note says how many it hid --
+            # across both tables, since it applies to a market and not to
+            # one of them. A name that is bullish on its own chart and
+            # absent from the table has to be explained on the page.
+            parts.append(f"{hidden} below ₱{MIN_TURNOVER_PHP:,} volume hidden")
+        if stale:
+            # A series whose source stopped printing is not judged, so the note
+            # names it and dates its last bar: the alternative is a name that
+            # was in the table yesterday and is gone today with no word, which
+            # is exactly what the reader objected to about the peso floor.
+            # Three names at most -- this is a one-line note, and the count
+            # carries the rest.
+            named = ", ".join(
+                "%s (last bar %s)" % (entry.get("ticker"), entry.get("lastBar"))
+                for entry in stale[:3] if entry.get("ticker"))
+            more = "" if len(stale) <= 3 else f" and {len(stale) - 3} more"
+            parts.append(f"{len(stale)} stale series hidden: {named}{more}")
     errors = payload.get("errors") or {}
     for market, message in errors.items():
         parts.append(f"{market} unavailable")
@@ -1030,5 +1511,4 @@ def summarize(payload: dict) -> str:
         parts.append(f"Converted at USDPHP {fx['phpPerUsd']}")
     elif payload.get("fxError"):
         parts.append("no peso-dollar rate — peso volume figures unavailable")
-    parts.append(f"below ₱{MIN_TURNOVER_PHP:,} volume hidden")
     return " · ".join(parts)

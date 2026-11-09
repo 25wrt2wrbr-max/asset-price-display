@@ -161,5 +161,60 @@ class ActionableTests(unittest.TestCase):
         self.assertEqual(recent.actionable(self.rows, None), self.rows)
 
 
+class ScanUniverseTests(unittest.TestCase):
+    """What the scan reads off the shelf (2026-11-07).
+
+    The shelf stopped being only a filter: the reader asked that both tables be
+    "just what's available at app.ondo.finance", all stocks and ETFs plus the
+    intelligent portfolios. So the module now answers *what is listed* as well
+    as *is this listed*, and the three slug shapes have to survive the trip.
+    """
+
+    def shelf(self):
+        return ondolist._record(
+            {"nvdaon", "spyon", "von", "brk.bon", "onon", "ousg", "usdy"},
+            1_800_000_000.0, False,
+            portfolios={"mag7xon", "blkgrwon", "yld5on"})
+
+    def test_the_portfolios_are_read_from_their_own_path(self):
+        self.assertEqual(ondolist.parse_portfolios(SITEMAP), {"mag7xon"})
+
+    def test_a_portfolio_page_is_not_an_asset_and_vice_versa(self):
+        self.assertNotIn("mag7xon", ondolist.parse(SITEMAP))
+        self.assertNotIn("nvdaon", ondolist.parse_portfolios(SITEMAP))
+
+    def test_the_stocks_and_etfs_are_tickers_with_the_suffix_stripped(self):
+        self.assertEqual(ondolist.tickers(self.shelf()),
+                         ["BRK.B", "NVDA", "ON", "SPY", "V"])
+
+    def test_a_bare_slug_is_not_a_stock(self):
+        # `ousg` and `usdy` are the two yield funds. They are not stocks, not
+        # ETFs and not portfolios, and a T-bill token would sit in the bullish
+        # table forever -- the money-market property, not a finding.
+        self.assertNotIn("OUSG", ondolist.tickers(self.shelf()))
+        self.assertNotIn("USDY", ondolist.tickers(self.shelf()))
+
+    def test_a_ticker_that_ends_in_on_survives_the_strip(self):
+        # `onon` is ON Semiconductor; only the suffix goes.
+        self.assertIn("ON", ondolist.tickers(self.shelf()))
+        self.assertEqual(ondolist.token_ticker("onon"), "ON")
+
+    def test_the_portfolios_are_tickers_too(self):
+        self.assertEqual(ondolist.portfolios(self.shelf()),
+                         ["BLKGRW", "MAG7X", "YLD5"])
+
+    def test_no_shelf_lists_nothing(self):
+        for record in (None, {}):
+            self.assertEqual(ondolist.tickers(record), [])
+            self.assertEqual(ondolist.portfolios(record), [])
+
+    def test_a_portfolio_is_carried_by_the_shelf(self):
+        self.assertTrue(ondolist.carries("MAG7X", self.shelf()))
+        self.assertFalse(ondolist.carries("BRAIN", self.shelf()))
+
+    def test_the_count_names_both_kinds(self):
+        self.assertEqual(self.shelf()["count"], 10)
+
+
 if __name__ == "__main__":
     unittest.main()

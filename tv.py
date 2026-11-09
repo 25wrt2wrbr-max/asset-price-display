@@ -232,11 +232,16 @@ def _chart_payload(symbol: str, bars: list[dict], span: str,
     if not points:
         raise TvNotFound("No yield data for %s." % symbol)
 
+    # The bars before the window, so the badge's lean can be checked over the
+    # previous sessions (`server.chart_data` -> `onset.decorate`); the socket
+    # brings a year of them, so this is exact.
+    tail: list[dict] = []
     if interval == "1d":
         keep = onset_module.window_now([p["t"] for p in points],
                                        len(points) - 1,
                                        days=pse.RANGE_DAYS.get(
                                            span, pse.RANGE_DAYS["3mo"]))
+        tail = points[:keep[0]][-onset_module.LEAN_HOLD_BARS:]
         points = [points[i] for i in keep]
     if not points:
         raise TvNotFound("No yield data for %s in this window." % symbol)
@@ -261,6 +266,7 @@ def _chart_payload(symbol: str, bars: list[dict], span: str,
         "previousClose": points[-2]["c"] if len(points) > 1 else None,
         "marketPrice": last,
         "points": points,
+        "historyTail": tail,
         # The page must be able to say what it is drawing and why the badge
         # reads the way it does -- see `bond_price_call`.
         "yieldSeries": True,
