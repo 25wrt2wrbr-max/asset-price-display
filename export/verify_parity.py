@@ -68,6 +68,14 @@ def main() -> int:
     cases.append({"closes": [10.0 * 1.01 ** i for i in range(50)]
                   + [10.0 * 1.01 ** 49 * 0.995 ** i for i in range(1, 8)],
                   "volumes": None})
+    # A long rise whose last two weeks fell: still labelled, tagged a pullback
+    # (and its mirror, a long fall that bounced).
+    cases.append({"closes": [10.0 * 1.01 ** i for i in range(50)]
+                  + [10.0 * 1.01 ** 49 * 0.994 ** i for i in range(1, 13)],
+                  "volumes": None})
+    cases.append({"closes": [10.0 * 0.99 ** i for i in range(50)]
+                  + [10.0 * 0.99 ** 49 * 1.006 ** i for i in range(1, 13)],
+                  "volumes": None})
 
     cases_path = os.path.join(HERE, ".cases.json")
     js_out_path = os.path.join(HERE, ".js_out.json")
@@ -112,6 +120,7 @@ fs.writeFileSync(process.argv[3], JSON.stringify(out));
         if abs(py["score"] - js["score"]) > 1e-9 or py["confidence"] != js["confidence"] \
                 or py["bars"] != js["bars"] or py["agreement"] != js["agreement"] \
                 or py["held"] != js["held"] \
+                or py["pullback"] != js.get("pullback") \
                 or py["lean"] != js.get("lean") \
                 or abs(py["progress"] - js["progress"]) > 1e-9 \
                 or (py["significance"] is None) != (js["significance"] is None) \
@@ -150,7 +159,7 @@ const cases = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const out = cases.map(c => {
   const r = T.onset(c.stamps, c.closes, c.volumes, 'bullish');
   return r === null ? null : {since: r.since, run: r.run, censored: r.censored,
-                              anchored: r.anchored, manner: r.manner,
+                              anchored: r.anchored, manner: r.manner, pullback: r.pullback,
                               turnMove: r.turnMove, score: r.score, window: r.window,
                               windowFirst: r.windowFirst};
 });
@@ -175,7 +184,7 @@ fs.writeFileSync(process.argv[3], JSON.stringify(out));
             continue
         if py is None:
             continue
-        for k in ("since", "run", "censored", "anchored", "manner",
+        for k in ("since", "run", "censored", "anchored", "manner", "pullback",
               "turnMove", "window", "windowFirst"):
             if py[k] != js[k]:
                 print("ONSET MISMATCH", k, py[k], js[k])
@@ -208,7 +217,7 @@ const cases = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const out = cases.map(c => {
   const r = T.onset(c.stamps, c.closes, c.volumes, 'bullish', undefined, 3);
   return r === null ? null : {since: r.since, run: r.run, censored: r.censored,
-                              anchored: r.anchored, manner: r.manner,
+                              anchored: r.anchored, manner: r.manner, pullback: r.pullback,
                               turnMove: r.turnMove, score: r.score, window: r.window,
                               windowFirst: r.windowFirst};
 });
@@ -234,7 +243,7 @@ fs.writeFileSync(process.argv[3], JSON.stringify(out));
             continue
         if py is None:
             continue
-        for k in ("since", "run", "censored", "anchored", "manner",
+        for k in ("since", "run", "censored", "anchored", "manner", "pullback",
               "turnMove", "window", "windowFirst"):
             if py[k] != js[k]:
                 print("MONTH ONSET MISMATCH", k, py[k], js[k])

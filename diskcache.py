@@ -40,6 +40,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import sys
 import threading
 import time
@@ -56,12 +57,20 @@ MAX_AGE = 30 * 24 * 3600
 # retrieved) are the least likely to be asked for again.
 MAX_FILES = 2000
 
+# And a ceiling on the bytes they take, whatever their number: a few very large
+# payloads (a five-year chart, a whole-universe sweep) could stay under the file
+# cap and still fill a disk. Oldest go first, as with the file cap.
+MAX_BYTES = 256 * 1024 * 1024
+
 # The sweep runs on this cadence from `store`, so pruning costs one directory
 # listing per few hundred writes rather than per request.
 _PRUNE_EVERY = 200
 
 _state_lock = threading.Lock()
 _writes = 0
+
+# A duplicate of a cache file: the 64-character hash, a space, a number.
+_STRAY = re.compile(r"^[0-9a-f]{64} \d+\.json$")
 
 
 def dir() -> str:
@@ -94,7 +103,8 @@ def count() -> int:
     client told us is not an upstream copy we are holding for a rainy day."""
     try:
         return sum(1 for name in os.listdir(dir())
-                   if name.endswith(".json") and not name.endswith(PLAIN_SUFFIX))
+                   if name.endswith(".json") and not name.endswith(PLAIN_SUFFIX)
+                   and not _STRAY.match(name))
     except OSError:
         return 0
 
@@ -141,7 +151,7 @@ def store(key: str, value: object) -> None:
 
 def prune() -> None:
     """Drop copies past `MAX_AGE`, leftovers of interrupted writes, and the
-    oldest entries once the directory passes `MAX_FILES`.
+    oldest entries once the directory passes `MAX_FILES` or `MAX_BYTES`.
 
     Called from `store` every few hundred writes and once at server startup,
     so a folder of months-old symbols shrinks itself without a request ever
@@ -154,13 +164,23 @@ def prune() -> None:
     except OSError:
         return
     kept: list[tuple[float, str]] = []
+    sizes: dict[str, int] = {}
     for name in names:
         path = os.path.join(dir(), name)
         try:
-            mtime = os.stat(path).st_mtime
+            info = os.stat(path)
+            mtime = info.st_mtime
         except OSError:
             continue  # raced with its own deletion
         if name.endswith(".tmp"):
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
+            continue
+        if _STRAY.match(name):
+            # "<hash> 2.json": a copy the Finder or a sync made of a cache
+            # file. No key hashes to that name, so nothing can ever read it.
             try:
                 os.unlink(path)
             except OSError:
@@ -177,13 +197,23 @@ def prune() -> None:
                 pass
             continue
         kept.append((mtime, path))
+        sizes[path] = info.st_size
+    kept.sort()
+    doomed = set()
     if len(kept) > MAX_FILES:
-        kept.sort()
-        for _mtime, path in kept[:len(kept) - MAX_FILES]:
-            try:
-                os.unlink(path)
-            except OSError:
-                pass
+        doomed.update(path for _mtime, path in kept[:len(kept) - MAX_FILES])
+    total = sum(size for path, size in sizes.items() if path not in doomed)
+    for _mtime, path in kept:
+        if total <= MAX_BYTES:
+            break
+        if path not in doomed:
+            doomed.add(path)
+            total -= sizes[path]
+    for path in doomed:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
 
 
 def store_plain(key: str, value: object) -> None:

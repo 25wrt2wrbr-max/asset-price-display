@@ -85,6 +85,7 @@ import re
 import time
 import urllib.request
 
+import faults
 import diskcache
 import onset as onset_module
 import pse
@@ -155,6 +156,12 @@ TOAP_URL = ("https://www.uitf.com.ph/daily_navpu_details_json.php"
             "?from=%s&to=%s&bank_id=3&fund_id=%s&verification_id=1&btn=Filter")
 
 PIFA_URL = "https://pifa.com.ph/facts-figures/nav-history/?fund_id=%s"
+
+# Money-market and short-term funds. Their NAVPU only accrues, so a bearish
+# reading is not a run to date. The bullish table still lists them.
+ACCRUAL_FUNDS = frozenset({
+    "BPI-PERA-MM", "ALFM-MM", "ALFM-MM-U", "BPI-ST", "BPI-MM", "BPI-USDST",
+})
 
 # `code, name, category, source, key, currency`.
 #
@@ -451,8 +458,8 @@ def store_bars(code: str, bars: list[dict]) -> None:
     a cache that could not be written costs the next fetch, not this answer."""
     try:
         diskcache.store(CACHE_PREFIX + code.upper(), bars)
-    except Exception:
-        pass
+    except Exception as exc:
+        faults.note("fund cache write", exc)
 
 
 def cached_bars(code: str) -> tuple[list[dict] | None, float]:

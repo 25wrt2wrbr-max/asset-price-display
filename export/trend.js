@@ -78,6 +78,9 @@
   var HOLD_BARS = 10;
   var CALL_THRESHOLD = ENTER_SCORE;
   var STRONG_THRESHOLD = 0.45;
+  // A label whose last two weeks ran against it is tagged, never changed.
+  var PULLBACK_BARS = 10;
+  var PULLBACK_AVG = 20;
 
   // The share of the window, oldest first, that phases in.
   var FADE_IN = 0.25;
@@ -250,6 +253,18 @@
     return 0;
   }
 
+  // True when a labelled window's newest bars ran against its label
+  // (trend.pullback): a tag beside the label, never a change to it.
+  function pullback(closes, sign) {
+    var n = closes.length;
+    if (!sign || n < Math.max(PULLBACK_BARS + 1, PULLBACK_AVG)) return false;
+    var last = closes[n - 1];
+    var total = 0.0;
+    for (var i = n - PULLBACK_AVG; i < n; i++) total += closes[i];
+    return (last - closes[n - 1 - PULLBACK_BARS]) * sign < 0 &&
+           (last - total / PULLBACK_AVG) * sign < 0;
+  }
+
   // Share of the entry bar met on the score's side (trend.progress).
   function progress(score, t) {
     if (t === null || t === undefined || !score) return 0.0;
@@ -330,6 +345,7 @@
       held: held,
       lean: !sign && zoneNow === 1 ? "bullish" : !sign && zoneNow === -1 ? "bearish" : null,
       progress: progress(score, t),
+      pullback: pullback(closes, sign),
       components: components,
     };
   }
@@ -475,9 +491,11 @@
       cs.push(closes[used[i]]);
       vs.push(volumes ? volumes[used[i]] : 0);
     }
-    var score = null;
+    var score = null, pulling = null;
     try {
-      score = classify(cs, vs).score;
+      var nowCall = classify(cs, vs);
+      score = nowCall.score;
+      pulling = nowCall.pullback;
     } catch (e) {
       score = null;
     }
@@ -502,6 +520,7 @@
       anchored: anchored,
       manner: why.manner,
       turnMove: why.move === null ? null : round4(why.move),
+      pullback: pulling,
       score: score,
       bars: n,
       last: stamps[last],
@@ -558,6 +577,8 @@
       WEIGHTS: WEIGHTS,
       CALL_THRESHOLD: CALL_THRESHOLD,
       STRONG_THRESHOLD: STRONG_THRESHOLD,
+      PULLBACK_BARS: PULLBACK_BARS,
+      PULLBACK_AVG: PULLBACK_AVG,
       WINDOW_DAYS: WINDOW_DAYS,
       WINDOW_MONTHS: WINDOW_MONTHS,
       TURN_BARS: TURN_BARS,

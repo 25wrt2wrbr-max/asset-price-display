@@ -128,6 +128,12 @@ HOLD_BARS = 10
 CALL_THRESHOLD = ENTER_SCORE
 STRONG_THRESHOLD = 0.45
 
+# A label whose last two weeks ran against it is tagged, never changed (see
+# `pullback`): the newest close against the one PULLBACK_BARS bars ago, and
+# against the mean of the last PULLBACK_AVG closes.
+PULLBACK_BARS = 10
+PULLBACK_AVG = 20
+
 # The share of the window, oldest first, that phases in (see "Fix 5").
 FADE_IN = 0.25
 
@@ -297,6 +303,28 @@ def progress(score, t) -> float:
     return round(min(score * side / ENTER_SCORE, t_part), 4)
 
 
+def pullback(closes, sign) -> bool:
+    """True when a labelled window's newest bars ran against its label.
+
+    Both must hold, on the label's side (`sign` +1 bullish, -1 bearish): the
+    newest close is past the close `PULLBACK_BARS` bars ago the wrong way, and
+    on the wrong side of the mean of the last `PULLBACK_AVG` closes. A tag
+    beside the label ("Bullish, pulling back" / "Bearish, bouncing"), read from
+    the drawn bars only; it never earns, removes or delays a label. Measured
+    2026-11-16 on the saved history (74 instruments, 179,183 windows): true on
+    21% of labelled windows. False for a neutral window or one too short.
+    """
+    n = len(closes)
+    if not sign or n < max(PULLBACK_BARS + 1, PULLBACK_AVG):
+        return False
+    last = closes[-1]
+    total = 0.0
+    for c in closes[n - PULLBACK_AVG:]:
+        total += c
+    return ((last - closes[n - 1 - PULLBACK_BARS]) * sign < 0
+            and (last - total / PULLBACK_AVG) * sign < 0)
+
+
 def classify(closes, volumes=None):
     """Score a daily close series; the whole series is the window.
 
@@ -318,6 +346,8 @@ def classify(closes, volumes=None):
                      A reading of the same zone, never a label.
     * `progress`     the share of the entry bar met on the score's side
                      (see `progress`); 1.0 or more for an entered window.
+    * `pullback`     True when a labelled window's last two weeks ran against
+                     the label (see `pullback`). A tag; never changes it.
 
     Raises ValueError only for unusable input -- an empty series or a
     non-positive price.
@@ -392,5 +422,6 @@ def classify(closes, volumes=None):
         "lean": ({1: "bullish", -1: "bearish"}.get(zone_now)
                  if not label_sign else None),
         "progress": progress(score, t),
+        "pullback": pullback(closes, label_sign),
         "components": components,
     }

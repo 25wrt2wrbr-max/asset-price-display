@@ -55,6 +55,7 @@ import re
 import time
 import urllib.request
 
+import faults
 import diskcache
 
 SITEMAP = "https://app.ondo.finance/sitemap.xml"
@@ -231,7 +232,8 @@ def shelf(now: float | None = None) -> dict | None:
         text = _fetch()
         parsed = parse(text)
         baskets = parse_portfolios(text)
-    except Exception:                      # noqa: BLE001 - any failure is an outage
+    except Exception as exc:                      # noqa: BLE001 - any failure is an outage
+        faults.note("Ondo shelf read", exc)
         parsed, baskets = set(), set()
     if parsed or baskets:
         diskcache.store(CACHE_KEY, {"slugs": sorted(parsed),

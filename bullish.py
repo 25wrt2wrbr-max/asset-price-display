@@ -160,6 +160,22 @@ def _series(rows: list) -> tuple[list[int], list[float], list]:
             [volumes[i] for i in order])
 
 
+def _finished_turnover(series: list, fallback):
+    """Value traded in the last *finished* session, else `fallback`.
+
+    The sweep's newest bar is today's forming candle while the PSE is open, so
+    close times volume on it is a half-day figure (PAL on 2026-11-16 at noon:
+    95,000 shares, about 0.4M pesos, against 1.7M pesos the Friday before).
+    The peso floor must judge a finished session, the way the chart's own
+    readout does (`pse.completed_trade`). No finished bar with a volume
+    keeps `fallback` (the latest bar's figure), never a made-up zero.
+    """
+    stamps, closes, volumes = _series(series)
+    points = [{"t": s, "c": c} for s, c in zip(stamps, closes)]
+    _, _, value = pse.completed_trade(points, volumes)
+    return fallback if value is None else value
+
+
 def onset(rows: list) -> dict | None:
     """When the current bullish run began, or None if the name is not bullish now.
 
@@ -219,6 +235,36 @@ def _kinds(records: list[dict]) -> dict[str, int]:
     return counts
 
 
+def _sweep_order(row: dict):
+    """Newest onset first, then the heaviest session, then the longer run."""
+    return (-row["since"], -(row["turnover"] or 0.0), -row["run"], row["ticker"])
+
+
+def _swept_row(symbol: str, record: dict, series, call: dict, is_index: bool) -> dict:
+    """One dated PSE name, bullish or bearish, in the sweep's row shape."""
+    lot, lot_cost = ((None, None) if is_index
+                     else markets.minimum_investment(call["price"]))
+    return {
+        "symbol": symbol,
+        # The chart takes a PSE symbol with its venue attached -- bare `TEL`
+        # is TE Connectivity -- so the row's own symbol is what it loads.
+        "chartSymbol": symbol,
+        "ticker": record["ticker"],
+        "name": record["name"],
+        "kind": record["kind"],
+        "price": call["price"],
+        "currency": CURRENCY,
+        "lot": lot,
+        "lotCost": lot_cost,
+        "turnover": (None if is_index else
+                     _finished_turnover(series, call["turnover"])),
+        "pullback": call.get("pullback"),
+        **{k: call[k] for k in
+           ("since", "run", "censored", "anchored", "manner", "turnMove",
+            "score", "bars", "last", "window", "windowFirst")},
+    }
+
+
 def scan(count: int = pse.BATCH_BARS) -> dict:
     """The bullish table: every PSE security bullish now, newest onset first.
 
@@ -244,6 +290,7 @@ def scan(count: int = pse.BATCH_BARS) -> dict:
         raise BullishError("no bars arrived for any PSE symbol")
 
     rows = []
+    bearish = []
     leaning = []
     for symbol, series in bars.items():
         record = by_symbol.get(symbol)
@@ -256,6 +303,12 @@ def scan(count: int = pse.BATCH_BARS) -> dict:
         is_index = record.get("kind") == "INDEX"
         call = onset(series)
         if call is None:
+            # Same bars, the other run. Asked only when the name is not
+            # bullish, so one name cannot land on both lists.
+            down = onset_module.onset(*_series(series), want="bearish")
+            if down is not None:
+                bearish.append(_swept_row(symbol, record, series, down, is_index))
+                continue
             # Neutral on its chart but in the bullish hold band: a near-miss,
             # listed apart and never as a bullish row (see `onset.leaning`).
             # `steady_lean` is the table's own filter on top of it -- clear of
@@ -276,7 +329,8 @@ def scan(count: int = pse.BATCH_BARS) -> dict:
                     # No traded value for an index: there are no shares to
                     # trade, and `None` keeps it out of the peso floor rather
                     # than reporting a zero the market never printed.
-                    "turnover": None if is_index else lean["turnover"],
+                    "turnover": (None if is_index else
+                                 _finished_turnover(series, lean["turnover"])),
                     **{k: lean[k] for k in
                        ("price", "score", "significance", "progress", "bars",
                         "last", "window", "held", "holdBars")},
@@ -286,25 +340,7 @@ def scan(count: int = pse.BATCH_BARS) -> dict:
         # in the currency the row is quoted in. The lot table is the exchange's,
         # and the arithmetic is shared with the leaderboards and the chart so
         # all three show the same figure for the same close.
-        lot, lot_cost = ((None, None) if is_index
-                         else markets.minimum_investment(call["price"]))
-        rows.append({
-            "symbol": symbol,
-            # The chart takes a PSE symbol with its venue attached -- bare `TEL`
-            # is TE Connectivity -- so the row's own symbol is what it loads.
-            "chartSymbol": symbol,
-            "ticker": record["ticker"],
-            "name": record["name"],
-            "kind": record["kind"],
-            "price": call["price"],
-            "currency": CURRENCY,
-            "lot": lot,
-            "lotCost": lot_cost,
-            "turnover": None if is_index else call["turnover"],
-            **{k: call[k] for k in
-               ("since", "run", "censored", "anchored", "manner", "turnMove",
-                "score", "bars", "last", "window", "windowFirst")},
-        })
+        rows.append(_swept_row(symbol, record, series, call, is_index))
 
     # Newest onset first. Ties -- several names turning on the same session, which
     # is what a market-wide move looks like -- are broken by that session's traded
@@ -313,14 +349,15 @@ def scan(count: int = pse.BATCH_BARS) -> dict:
     # last among its own date whatever its run: silence about liquidity is not
     # evidence of it. The longer run and then the ticker finish the order, so two
     # scans agree on a total one.
-    rows.sort(key=lambda row: (-row["since"], -(row["turnover"] or 0.0),
-                               -row["run"], row["ticker"]))
+    rows.sort(key=_sweep_order)
+    bearish.sort(key=_sweep_order)
 
     return {
         "label": "Bullish Philippine stocks",
         "currency": CURRENCY,
         "source": "TradingView",
         "rows": rows,
+        "bearish": bearish,
         # Closest to the entry bar first.
         "leaning": sorted(leaning, key=lambda row: (-row["progress"],
                                                     row["ticker"])),

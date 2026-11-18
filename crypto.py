@@ -157,6 +157,14 @@ class CryptoError(RuntimeError):
     """A coin could not be resolved, or its bars could not be fetched."""
 
 
+class CryptoNotTrading(CryptoError):
+    """The venue answered, and the pair has stopped trading (stale bars).
+
+    A definite answer about the coin, not an outage: a sweep leaves such a
+    coin out of its universe instead of counting it as "did not answer".
+    """
+
+
 def set_http_fallback(fn) -> None:
     """Register a `fn(url) -> (status, body)` used if plain HTTP fails."""
     global _fallback
@@ -530,7 +538,7 @@ def chart(symbol: str, span: str, interval: str) -> dict:
         # have it either. Drawing what is left would put a 2024 window under
         # today's date, so this refuses instead and the caller keeps Yahoo --
         # which is current for XMR, and, for BTT, honest about having nothing.
-        raise CryptoError(
+        raise CryptoNotTrading(
             f"{resolved['symbol']} is not trading on Binance or Kraken "
             f"(newest bar {last_bar_date(rows) or 'missing'})")
 

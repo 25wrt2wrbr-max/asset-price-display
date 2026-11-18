@@ -559,10 +559,15 @@ def onset(stamps: list[int], closes: list[float], volumes: list,
 
     used = window_now(stamps, last, days=days, months=months)
     try:
-        score = trend.classify([closes[i] for i in used],
-                               [volumes[i] for i in used])["score"]
+        now_call = trend.classify([closes[i] for i in used],
+                                  [volumes[i] for i in used])
+        score = now_call["score"]
+        # The badge's own tag for a label whose last two weeks ran against it
+        # (`trend.pullback`), so a row and its chart say it together.
+        pulling = now_call["pullback"]
     except (ValueError, IndexError):
         score = None
+        pulling = None
 
     # The window's first bar's close, shipped as a raw price rather than as a
     # move: a price's move is a percentage and a yield's is a number of
@@ -594,6 +599,7 @@ def onset(stamps: list[int], closes: list[float], volumes: list,
         "anchored": anchored,
         "manner": manner,
         "turnMove": round(turn_move, 4) if turn_move is not None else None,
+        "pullback": pulling,
         "score": score,
         "bars": n,
         "last": stamps[last],

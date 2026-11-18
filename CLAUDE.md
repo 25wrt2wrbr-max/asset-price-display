@@ -10,9 +10,10 @@ because Yahoo's chart API answers plain HTTP clients with a 429.
 python3 server.py        # started from the project folder; http://127.0.0.1:8000/
 ```
 
-`README.md` is the full reference — architecture, sources, every table's rules.
+`README.md` is the short guide; `docs/` is the full reference, one page per topic.
 This file is the working notes: the invariants that must not drift, and what was
-just built.
+just built. `AGENTS.md` is a link to this file, so keep it under 24,000 bytes;
+the older dated notes are in `docs/agent-notes-history.md`.
 
 
 ## Classifier version 2 (2026-10-31) — read this first
@@ -32,11 +33,17 @@ threshold describe version 1.
 - **Whole window**: every drawn bar is scored (`RETURN_WINDOW` is gone; a
   coin's 93 bars all count). Short windows face the Student-t critical value
   for their size; positive lag-1 autocorrelation widens the standard error.
-  Under 4 bars reads neutral. `MIN_BARS` now only names the chart fallback.
+  Fewer than 3 closes read neutral (no drift t). A perfectly straight run gets a
+  label from 4 closes; noisy series need more. `MIN_BARS` now only names the chart fallback.
 - **Real time**: Binance keeps the forming day as its newest bar
   (`liveLastBar` → `lastBarBasis: "live"`, never from a disk copy); the page
   re-reads the chart every 60 s while `lastBarBasis` is live/pre/after
   (`CHART_LIVE_TTL`), 15 min otherwise, and at once when the tab returns.
+- **Pullback tag (2026-11-16)**: `trend.pullback` → payload/row field
+  `pullback`: a labelled window whose close is past the close 10 bars ago the
+  wrong way and on the wrong side of its 20-bar mean. The badge and the recent
+  row read "Bullish, pulling back" / "Bearish, bouncing". A tag only: it never
+  changes a label (21% of labelled windows). See `docs/trend-call.md`.
 - New payload fields: `significance` (drift t; ±99 for a series every bar
   of which moved one way), `held`, confidence `holding`.
 - **`trend_v1.py` is frozen** and used only by the research modules
@@ -48,8 +55,50 @@ threshold describe version 1.
 - Measured v1 → v2 on `research/market-history.json`: label changes per 100
   bars 8.1 → 0.8; a one-sigma nudge to the newest close flips 9.3% → 0.4%.
   The cost is strictness: ~5% of real windows carry a label.
-- `export/trend.js` mirrors it; `python3 export/verify_parity.py` → 406
-  cases, 0 mismatches. Suite: 188 tests OK.
+- `export/trend.js` mirrors it; `python3 export/verify_parity.py` → 408
+  cases, 0 mismatches.
+
+## Layout (2026-11-16) — read this before looking for a file
+
+- `server.py` was split. It is still the core (caches, Yahoo proxy, chart building,
+  the Philippine and recent sweeps) and **re-exports** the moved names, so
+  `server.<name>` and `mock.patch.object(server, ...)` still work. Moved out:
+  `moli_client.py`, `warm.py`, `netwatch.py`, `watchlist.py`, `http_handler.py`
+  (handler + `main`). The moved modules reach back through `import server as S`;
+  run as a script, `server.py` registers itself as `server` so there is one copy.
+  A name a moved module *rebinds* (`_watch_online`, `_watch_union`, `_row_thread`)
+  is **not** re-exported; read it from its own module (`netwatch._watch_online`).
+- **Second pass, same day.** Out of `server.py`: `sweeps.py` (both background
+  sweeps and their state), `yahoo_chart.py` (bars, sessions, live print,
+  `yahoo_is_wrong`), `fx_charts.py`, `search_rank.py`. Out of `recent.py`:
+  `recent_rows.py` (one function per market) and `recent_note.py`, through
+  `import recent as R`. In these six, every function body reads the old module's
+  names as `S.x` / `R.x` and rebinds state as `S._bullish_thread = ...`, so all
+  their names **are** re-exported and `patch.object(server, ...)` reaches them.
+  `server.py` keeps the caches and the warm-up.
+- **Third pass, 2026-11-18**, same `S.x` / `P.x` pattern, all re-exported:
+  `chart_route.py` (`chart_key`, `chart_data`) out of `server.py`; `pse_bars.py`
+  (socket scripts, `history_many`, chart builders) out of `pse.py`, which keeps
+  the universe, search, constants and runners.
+- `faults.note(where, exc)` goes in any `except` that carries on past a failure:
+  one console line per kind of failure per ten minutes. No bare `pass`.
+- `research/market-history*.json` are kept gzipped; `lab/bigjson.BigJson` reads
+  and writes them (first read ~13 s, once per server run).
+- `index.html` is markup only. Code is in `static/*.js` (plain scripts, order
+  matters, see the tags) and `static/app.css`. The handler serves only the page
+  and `static/`.
+- Research code is in `lab/`, all tests in `tests/`, data in `research/`.
+  `labpath.py` / `lab/_paths.py` / `tests/__init__.py` put the folders on
+  `sys.path`. **Run tests with `python3 run_tests.py`** (552 tests + parity).
+- Do not run a `lab/` script to "see what it does": it rewrites its report in `research/`.
+- `quality.py` flags bad bars on rows and charts (informational only). `nasdaq_bars.py`
+  is the US fallback when Yahoo/Moli gives no answer at all (never for Yahoo's 404);
+  such rows carry `source: "Nasdaq"`. `payload["markets"]` is the per-market status
+  (live / partial / fallback / offline). `diskcache` is capped by files and bytes.
+- `check_publish.py` scans for the account name without containing it.
+- Port 8000 may already be held by the user's own server (a copy under Documents).
+  Do not kill it; test on another port, `python3 server.py 8123`, and kill by
+  `pkill -f "server.py 8123"`.
 
 ## Start the server only to check something, and stop it afterwards
 
@@ -76,7 +125,7 @@ port it is on.
 
 | File | Role |
 |---|---|
-| `server.py` | Static server + Yahoo proxy + all sweeps. Routes: `/api/chart`, `/api/search`, `/api/top`, `/api/bullish`, `/api/cryptobull`, `/api/recent`, `/api/health`, `POST /api/watch`. |
+| `server.py` | Core: caches, Yahoo proxy, warm-up (`chart_data` is in `chart_route.py`; see Layout above for what moved out). `http_handler.py` has the routes: `/api/chart`, `/api/search`, `/api/top`, `/api/bullish`, `/api/cryptobull`, `/api/recent`, `/api/health`, `POST /api/watch`. |
 | `trend.py` | The classifier. `classify(closes, volumes)` → bullish/bearish/neutral + score. Version 2: enter score ≥ 0.25 and t ≥ 1.96, hold ≥ 0.15 / t ≥ 1.0 for 10 bars, whole window, ramp-weighted. `trend_v1.py` is the frozen research copy. |
 | `onset.py` | **The shared "since when" walk.** One window, one label, one answer to *when did this turn?* |
 | `recent.py` | **The combined "recently bullish assets" table** — US stocks, Philippine stocks, crypto, US Treasury futures, Philippine bond yields, Philippine funds, each dated. |
@@ -88,8 +137,13 @@ port it is on.
 | `markets.py` | The two most-traded tables and the PSE board-lot table; `us_universe()` is the US universe for the recent table. |
 | `crypto.py` / `cryptobull.py` | Coin identity (CoinGecko) and bars (Binance); the 24-hour most-traded crypto table. |
 | `ecb.py` | ECB reference rates (via Frankfurter) for currency crosses Yahoo fabricates. |
+| `coinsph.py` | Coins.ph USDC/PHP daily bars: the peso pair's Saturdays and Sundays. |
+| `ondo.py` / `ondolist.py` | The Ondo token Yahoo cannot spell (OUSG) and its `ONDO:` chart; which assets app.ondo.finance lists, the shelf both tables scan. |
+| `us_bars.py` | The stored year of US daily bars: the month-over-year merge and the closed-market check. |
+| `faults.py` | `note(where, exc)`: quiet failures said once on the console. |
+| `market_days.py` | NYSE and PSE holidays; only the sweep paces read them. |
 | `diskcache.py` | Durable on-disk copy of every upstream answer under `.cache/`. |
-| `index.html` | The whole frontend — markup, CSS, charts, tables. |
+| `index.html` + `static/` | The frontend: markup, then `app.css` and the plain scripts. |
 
 ## Invariants — do not break these
 
@@ -128,7 +182,7 @@ every row dated to the day its current run began, sorted **newest-turn first**.
 
 | Market | Source | Note |
 |---|---|---|
-| US stocks | Yahoo daily bars **through Moli** | `server.fetch_us_bars()`, `RECENT_BATCH = 20` per browser run, `US_LIMIT = 130` tickers, one year of bars (`RECENT_SPAN = "1y"`). Plain HTTP clients get a 429 — never replace Moli with `curl`/`urllib` here. |
+| US stocks | Yahoo daily bars **through Moli** | `server.fetch_us_bars()`, `RECENT_BATCH = 20` per browser run, the Ondo shelf (474 names, 24 runs, ~22–28 s), judged on one year of bars. The year is stored (`us_bars.py`); see below. Plain HTTP clients get a 429 — never replace Moli with `curl`/`urllib` here. |
 | Philippine stocks | the existing bullish sweep's rows | Reused from the sweep `server.py` already keeps warm (`bullish_state().get("rows")`). **No second sweep** — re-sweeping would make this table fresher than the sweep it is built from. |
 | Crypto | Binance daily bars | `crypto.try_chart`, `CRYPTO_LIMIT = 25`, `CRYPTO_WORKERS = 8`. Plain HTTPS to Binance works. |
 | Philippine bonds | TradingView chart socket | `TVC:PH02Y`, `TVC:PH05Y`, `TVC:PH10Y` via `tv.py` → `pse.history_many`. |
@@ -137,7 +191,30 @@ every row dated to the day its current run began, sorted **newest-turn first**.
 
 `recent.scan` takes `fetch_us_bars` as an **injected callable** (the browser lives
 in `server.py`, which imports `recent.py`) — that keeps the module testable
-without a browser. Full sweep ≈ 29 s; the US browser leg dominates.
+without a browser. Full sweep ≈ 47 s (measured 2026-11-16); the US leg is about half.
+
+### Stored US year, and the closed-market pace (2026-11-16)
+
+- `us_bars.py` keeps each name's year of bars (one disk record,
+  `recent:usbars:v1`, ~3.4 MB). A sweep asks Yahoo for `1mo` and
+  `us_bars.merge` lays it over the stored year **by exchange day**; the full
+  `1y` is asked once a day, or at once when the overlap's closes differ, a day
+  is missing, or fewer than 3 stored bars are confirmed. Bars are stored, never
+  rows: the walk re-runs every sweep.
+- This saves **download (~7x), not time**: a browser run costs ~1 s whatever
+  the span. A failed month is still an outage (Nasdaq fallback or missing) —
+  stored bars are never served in place of an answer that did not come.
+- While New York is closed (outside 04:00–20:00 weekdays), a name read 15 min
+  or more after the close is re-read **hourly**, not every sweep
+  (`us_bars.settled`). Futures (`=F`) are always read.
+- The Philippine sweep waits `bullish_pause()`: `BULL_TTL` from the bell to 20
+  min past the close, else hourly (never past the next 9:30).
+- Holidays (`market_days.py`, 2026-11-18) only slow these two paces. NYSE by
+  fixed rules (tested against nyse.com 2026–28); PSE from TradingView's
+  `session_holidays`, saved from any PSE socket read. An unlisted day reads open.
+- `diskcache.prune` deletes `<hash> 2.json` duplicates (Finder/sync copies).
+- `run_tests.py` points `APD_CACHE_DIR` at a temp folder; tests that call
+  `fetch_us_bars` start with `us_bars.reset()`.
 
 ### The PSEi, and the scan's makeup in both notes (2026-11-09)
 
@@ -210,9 +287,8 @@ the usual price movement of an existing fixed-rate bond:
 - Bond rows follow the same rule as every other market: only a falling yield is
   a row (changed 2026-10-31 — a rising yield is a falling bond price, and a flat
   one has no run to date).
-- Bond yields have **no chart on this page** (Yahoo quotes no PH yield, and the
-  chart route draws what Yahoo draws), so those rows are not links: they carry the
-  `no-chart` class and a tooltip saying so.
+- Bond rows open a chart (since 2026-10-31): `tv.chart` draws the same yield
+  series the row was judged on, with the badge reversed to the bond price.
 
 ### The bond socket: browser, not a raw websocket
 
@@ -252,8 +328,10 @@ the data — the timezone belongs on the row.
   mid-render.
 - The row warmer (`warm_rows_loop`) reads the recent table too, through
   `due_rows(..., recent=...)`, so a row it lists stays retrievable offline like any
-  other table's row. Bond rows carry no `chartSymbol`, so they have no chart to
-  warm and are skipped.
+  other table's row. Bond charts are warmed too (`_warm_batch_bonds`).
+- **The sweeps keep running with no page open, on purpose** (user rule
+  2026-11-16: "there is a reason that's there"). Do not pause, slow or gate
+  them on page activity, and do not propose it.
 - `seed_recent()` hydrates from disk at startup, so an offline start still has rows
   (the note then reads "— source offline").
 - A failed refresh leaves the previous rows on screen with the failure in the note;

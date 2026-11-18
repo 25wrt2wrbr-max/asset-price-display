@@ -68,6 +68,7 @@ from __future__ import annotations
 
 import time
 
+import faults
 import diskcache
 import onset as onset_module
 import pse
@@ -175,8 +176,8 @@ def store_bars(symbol: str, bars: list[dict]) -> None:
     a cache that could not be written costs the next fetch, not this answer."""
     try:
         diskcache.store(BOND_CACHE_PREFIX + symbol, bars)
-    except Exception:
-        pass
+    except Exception as exc:
+        faults.note("bond cache write", exc)
 
 
 def bond_price_call(call: dict | None) -> dict | None:
@@ -208,6 +209,9 @@ def bond_price_call(call: dict | None) -> dict | None:
     out["significance"] = -sig if isinstance(sig, (int, float)) else sig
     lean = call.get("lean")
     out["lean"] = {"bullish": "bearish", "bearish": "bullish"}.get(lean, lean)
+    if "leanRaw" in call:
+        raw = call["leanRaw"]
+        out["leanRaw"] = {"bullish": "bearish", "bearish": "bullish"}.get(raw, raw)
     return out
 
 
@@ -470,7 +474,8 @@ def histories(symbols: list[str], count: int = BARS,
         return {}
     try:
         rows = pse.history_many(symbols, count=count, timeframe=interval)
-    except Exception:
+    except Exception as exc:
+        faults.note("bond bars fetch", exc)
         return {}
     out: dict[str, list[dict]] = {}
     for symbol, series in (rows or {}).items():

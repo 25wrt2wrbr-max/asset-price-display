@@ -65,6 +65,7 @@ import threading
 import time
 import urllib.request
 
+import faults
 import diskcache
 
 PAIR = "USDCPHP"
@@ -225,7 +226,8 @@ def daily() -> tuple[dict[int, float], float, bool]:
         _cache = (now, bars)
     try:
         diskcache.store(CACHE_KEY, {str(k): v for k, v in bars.items()})
-    except Exception:
+    except Exception as exc:
+        faults.note("Coins.ph cache write", exc)
         pass                      # a cache that cannot be written costs a fetch
     return bars, 0.0, False
 
