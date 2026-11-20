@@ -23,6 +23,7 @@ import time
 import urllib.parse
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import faults
+import live_quote
 import bullish
 import crypto
 import cryptobull
@@ -34,6 +35,7 @@ import pse
 import rates
 import recent
 import research_judgment
+import sourcestats
 
 import server as S
 import moli_client
@@ -70,7 +72,7 @@ class Handler(SimpleHTTPRequestHandler):
 
     # The only files this server hands out. It used to serve the whole project
     # folder, source and cache included; the page needs just these.
-    PUBLIC_PAGES = ("/", "/index.html", "/jpy-php.html")
+    PUBLIC_PAGES = ("/", "/index.html", "/jpy-php.html", "/status.html")
 
     def app_page(self):
         # Multiple project copies can run at the same localhost address. Dates
@@ -141,6 +143,8 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             if route.path == "/api/chart":
                 return self.api_chart(route.query)
+            if route.path == "/api/quote":
+                return self.api_quote(route.query)
             if route.path == "/api/research-judgment":
                 return self.api_research_judgment(route.query)
             if route.path == "/api/search":
@@ -153,6 +157,12 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.api_cryptobull()
             if route.path == "/api/recent":
                 return self.api_recent()
+            if route.path == "/api/watch":
+                return self.send_json(200, {"ok": True, "watchlist": S.saved_watchlist()})
+            if route.path == "/api/sources":
+                # Each outside source's last answer, failures and speed
+                # (`sourcestats`); `status.html` draws it.
+                return self.send_json(200, {"ok": True, **sourcestats.snapshot()})
             if route.path == "/api/health":
                 return self.send_json(200, {
                     "ok": True,
@@ -238,6 +248,18 @@ class Handler(SimpleHTTPRequestHandler):
         except (LookupError, pse.PseNotFound) as exc:
             return self.fail(404, str(exc))
         return self.send_json(200, data)
+
+    def api_quote(self, query: str) -> None:
+        """Newest price only, for the chart's fast clock (see `live_quote`)."""
+        symbol = (urllib.parse.parse_qs(query).get("symbol") or [""])[0].strip()
+        if not symbol or len(symbol) > 32:
+            return self.fail(400, "Missing or invalid ?symbol=")
+        if not live_quote.is_yahoo_symbol(symbol):
+            return self.fail(404, "No fast quote for this symbol")
+        try:
+            return self.send_json(200, live_quote.quote(symbol))
+        except LookupError as exc:
+            return self.fail(404, str(exc))
 
     def api_research_judgment(self, query: str) -> None:
         """Separate request: slow research inputs never hold up chart loading."""
@@ -700,5 +722,6 @@ def main() -> int:
         print("\nshutting down…")
         server.server_close()
         kill_running_moli()
+        sourcestats.flush()
         print("stopped — port released")
     return 0

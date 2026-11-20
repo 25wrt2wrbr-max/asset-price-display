@@ -51,6 +51,33 @@ import server as S
 
 _watch_lock = threading.Lock()
 _watch_union: list[str] = []
+_watch_items: list[dict[str, str]] = []
+
+
+def _clean_watch_items(value) -> list[dict[str, str]]:
+    """Validate a declared list into normalized `{symbol, name}` dicts.
+
+    Accepts either `{symbol, name}` objects or plain ticker strings (including
+    older disk copies saved before names were kept).
+    """
+    if not isinstance(value, list):
+        return []
+    out: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for item in value:
+        if isinstance(item, dict):
+            symbol = str(item.get("symbol") or "").strip().upper()
+            name = str(item.get("name") or symbol).strip()
+        elif isinstance(item, str):
+            symbol = item.strip().upper()
+            name = symbol
+        else:
+            continue
+        if not symbol or len(symbol) > 32 or symbol in seen:
+            continue
+        seen.add(symbol)
+        out.append({"symbol": symbol, "name": (name or symbol)[:120]})
+    return out
 
 
 def _clean_watch(value) -> list[str]:
@@ -65,22 +92,7 @@ def _clean_watch(value) -> list[str]:
     drag-sortable, and the warmer reads the head of the list first -- so it
     survives untouched.
     """
-    if not isinstance(value, list):
-        return []
-    out: list[str] = []
-    seen: set[str] = set()
-    for item in value:
-        if isinstance(item, dict):
-            symbol = str(item.get("symbol") or "").strip().upper()
-        elif isinstance(item, str):
-            symbol = item.strip().upper()
-        else:
-            continue
-        if not symbol or len(symbol) > 32 or symbol in seen:
-            continue
-        seen.add(symbol)
-        out.append(symbol)
-    return out
+    return [it["symbol"] for it in _clean_watch_items(value)]
 
 
 def record_watchlist(symbols) -> None:
@@ -89,18 +101,22 @@ def record_watchlist(symbols) -> None:
     warmer pass sees either the old world or the new one, never a splice.
     The disk write lives inside the lock too -- outside it, two simultaneous
     declarations could land out of order."""
-    global _watch_union
-    cleaned = _clean_watch(symbols)
+    global _watch_union, _watch_items
+    items = _clean_watch_items(symbols)
+    cleaned = [it["symbol"] for it in items]
     with _watch_lock:
+        _watch_items = items
         _watch_union = cleaned
-        diskcache.store_plain(S.WATCHLIST_KEY, _watch_union)
+        diskcache.store_plain(S.WATCHLIST_KEY, _watch_items)
 
 
 def adopt_watchlist(union) -> None:
     """Re-adopt the durable union at startup (see `main`)."""
-    global _watch_union
-    cleaned = _clean_watch(union)
+    global _watch_union, _watch_items
+    items = _clean_watch_items(union)
+    cleaned = [it["symbol"] for it in items]
     with _watch_lock:
+        _watch_items = items
         _watch_union = cleaned
     if cleaned:
         sys.stderr.write(f"  watchlist: remembering {len(cleaned)} declared symbols\n")
@@ -111,3 +127,10 @@ def union_watchlist() -> list[str]:
     while a route thread may be swapping the real list."""
     with _watch_lock:
         return list(_watch_union)
+
+
+def saved_watchlist() -> list[dict[str, str]]:
+    """The saved watchlist entries (`{symbol, name}`) so a new or cleared
+    browser can restore them from the local server."""
+    with _watch_lock:
+        return [dict(it) for it in _watch_items]

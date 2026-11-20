@@ -10,6 +10,7 @@
  * ------------------------------------------------------------------ */
 const WATCH_KEY = "apd-watchlist";
 const watchQuoteSeq = new WeakMap();
+let watchHadLocal = false;
 
 /* The page only ever draws daily closes over three months, so a watchlist
    quote is the same `/api/chart` payload the main chart uses.
@@ -42,7 +43,9 @@ function quoteSummary(data) {
 
 function loadWatch() {
   try {
-    const raw = JSON.parse(localStorage.getItem(WATCH_KEY) || "[]");
+    const stored = localStorage.getItem(WATCH_KEY);
+    watchHadLocal = stored !== null;
+    const raw = JSON.parse(stored || "[]");
     if (!Array.isArray(raw)) return;
     state.watch = raw
       .filter((it) => it && typeof it.symbol === "string" && it.symbol.trim())
@@ -51,8 +54,88 @@ function loadWatch() {
 }
 
 function saveWatch() {
+  watchHadLocal = true;
   try { localStorage.setItem(WATCH_KEY, JSON.stringify(state.watch)); } catch {}
   declareWatch();
+}
+
+function parseWatchItems(raw) {
+  const list = Array.isArray(raw) ? raw
+    : raw && Array.isArray(raw.watchlist) ? raw.watchlist
+    : raw && Array.isArray(raw.symbols) ? raw.symbols
+    : null;
+  if (!list) return null;
+  const out = [];
+  const seen = new Set();
+  for (const it of list) {
+    const symbol = typeof it === "string" ? it.trim()
+      : it && typeof it.symbol === "string" ? it.symbol.trim() : "";
+    if (!symbol || symbol.length > 32) continue;
+    const key = symbol.toUpperCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const name = it && typeof it === "object" && typeof it.name === "string" && it.name.trim()
+      ? it.name.trim() : symbol;
+    out.push({ symbol, name });
+  }
+  return out;
+}
+
+async function restoreWatchFromServer() {
+  if (watchHadLocal || state.watch.length) return;
+  let payload;
+  try {
+    payload = await requestJSON("/api/watch");
+  } catch { return; }
+  const items = parseWatchItems(payload);
+  if (!items || !items.length) return;
+  state.watch = items;
+  saveWatch();
+  drawWatchList();
+  refreshWatchQuotes();
+  setStatus(`Restored ${items.length} watchlist symbol${items.length === 1 ? "" : "s"} from the local server.`);
+}
+
+function exportWatch() {
+  if (!state.watch.length) {
+    setStatus("Watchlist is empty — nothing to export.");
+    return;
+  }
+  downloadBlob("watchlist.json", JSON.stringify(state.watch, null, 2) + "\n", "application/json;charset=utf-8");
+  setStatus(`Exported ${state.watch.length} watchlist symbol${state.watch.length === 1 ? "" : "s"}.`);
+}
+
+async function importWatchFile(file) {
+  if (!file) return;
+  let parsed;
+  try {
+    parsed = JSON.parse(await file.text());
+  } catch {
+    setStatus("Could not read watchlist file — expected valid JSON.", true);
+    return;
+  }
+  const items = parseWatchItems(parsed);
+  if (!items) {
+    setStatus("Watchlist file must contain a JSON list of symbols.", true);
+    return;
+  }
+  const existing = new Set(state.watch.map((it) => it.symbol.toUpperCase()));
+  const added = [];
+  for (const it of items) {
+    const key = it.symbol.toUpperCase();
+    if (existing.has(key)) continue;
+    existing.add(key);
+    state.watch.push(it);
+    added.push(it);
+  }
+  if (!added.length) {
+    setStatus("All symbols from that file are already on the watchlist.");
+    return;
+  }
+  saveWatch();
+  drawWatchList();
+  added.forEach((it) => fetchWatchQuote(it.symbol));
+  setStatus(`Imported ${added.length} symbol${added.length === 1 ? "" : "s"} to the watchlist.`);
 }
 
 /* Hand the server the list it must keep warm. Up to this page existing, the
@@ -267,6 +350,7 @@ async function fetchWatchQuote(symbol) {
     );
     if (!state.watch.includes(item)) return;      // removed while in flight
     setWatchQuote(item.symbol, quoteSummary(data), data, readSeq);
+    if (typeof checkAlarms === "function") checkAlarms(data);
   } catch (err) {
     if (!state.watch.includes(item)) return;
     setWatchQuote(item.symbol, { error: err.message }, null, readSeq);

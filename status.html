@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Source status — asset price display</title>
+<link rel="stylesheet" href="static/app.css">
+<link rel="stylesheet" href="static/status.css">
+</head>
+<body>
+<div class="status-page">
+  <h1>Source status</h1>
+  <p class="status-note">Every outside source this page reads from: when it last
+    answered, when it last failed and why, how often it fails, and how slow it is.
+    The counts are kept for 30 days. The page re-reads itself every 30 seconds.
+    <a href="./">Back to the chart</a></p>
+  <p id="statusSummary" class="status-note" aria-live="polite">Loading…</p>
+  <table class="status-table">
+    <thead>
+      <tr>
+        <th scope="col">Source</th>
+        <th scope="col">State</th>
+        <th scope="col">Last answer</th>
+        <th scope="col">Last failure</th>
+        <th scope="col">Today</th>
+        <th scope="col">7 days</th>
+        <th scope="col">30 days</th>
+        <th scope="col">Avg time</th>
+        <th scope="col">Slowest</th>
+      </tr>
+    </thead>
+    <tbody id="statusRows"></tbody>
+  </table>
+</div>
+<script src="static/status.js"></script>
+</body>
+</html>

@@ -58,6 +58,13 @@ threshold describe version 1.
 - `export/trend.js` mirrors it; `python3 export/verify_parity.py` → 408
   cases, 0 mismatches.
 
+## Fast price clock (2026-11-21)
+
+`live_quote.py` + `/api/quote?symbol=`: newest Yahoo 1m print, 1 s memo. While a
+Yahoo chart's `lastBarBasis` is live/pre/after, `main.js` polls it every 2 s and
+patches only the newest point's close (hero, alarms). The badge is not re-scored
+until the next full chart re-read (60 s), which replaces the patched point.
+
 ## Layout (2026-11-16) — read this before looking for a file
 
 - `server.py` was split. It is still the core (caches, Yahoo proxy, chart building,
@@ -80,6 +87,10 @@ threshold describe version 1.
   `chart_route.py` (`chart_key`, `chart_data`) out of `server.py`; `pse_bars.py`
   (socket scripts, `history_many`, chart builders) out of `pse.py`, which keeps
   the universe, search, constants and runners.
+- **2026-11-20**: `memo.py` (`cached`, `_stamp_copy`, `is_transient`) out of
+  `server.py`, same `S.x` pattern; the memo's state stays in `server.py`.
+  `sourcestats.py` tallies every source call (wrap new fetches in
+  `sourcestats.timed(url)`); `/api/sources` + `status.html`. See `docs/source-status.md`.
 - `faults.note(where, exc)` goes in any `except` that carries on past a failure:
   one console line per kind of failure per ten minutes. No bare `pass`.
 - `research/market-history*.json` are kept gzipped; `lab/bigjson.BigJson` reads
@@ -299,11 +310,9 @@ sessions it accepts**: a session is told `series_loading` and the series never
 comes, a coin flip per attempt, worse for `TVC:PH05Y`, and bursty. Retrying hard
 enough to win took ~40 s for three symbols with one often missing.
 
-Driving the same protocol from the browser (via `pse.history_many`) is reliable:
-all three tenors, every time, in **~1.1 s**, with identical values. `tv.py` was
-therefore rewritten **thin** — it owns the bond symbols and names, and borrows
-`pse.py`'s socket (`BATCH_SYMBOLS = 40`/socket, 4 workers, 3 attempts;
-`create_series` once per `chart_create_session`).
+Driving the same protocol from the browser (`pse.history_many`) is reliable:
+all three tenors in ~1.1 s. `tv.py` is thin: it owns the bond symbols and
+borrows `pse.py`'s socket.
 
 ### Bond cache, and the two ages
 

@@ -58,6 +58,7 @@ const el = {
   emptyPlot: document.getElementById("emptyPlot"),
   tableWrap: document.getElementById("tableWrap"),
   tableToggle: document.getElementById("tableToggle"),
+  csvExport: document.getElementById("csvExport"),
   theme: document.getElementById("theme"),
   watchToggle: document.getElementById("watchToggle"),
   watchGlyph: document.getElementById("watchGlyph"),
@@ -65,6 +66,9 @@ const el = {
   watchList: document.getElementById("watchList"),
   watchCount: document.getElementById("watchCount"),
   watchHint: document.getElementById("watchHint"),
+  watchExport: document.getElementById("watchExport"),
+  watchImport: document.getElementById("watchImport"),
+  watchImportFile: document.getElementById("watchImportFile"),
   recentGrid: document.getElementById("recentGrid"),
   recentNote: document.getElementById("recentNote"),
   recentStatus: document.getElementById("recentStatus"),
@@ -176,6 +180,31 @@ function retrievedAt(ts) {
     : fullFmt.format(d) + " at " + time;
 }
 
+function csvCell(v) {
+  if (v === null || v === undefined) return "";
+  let s = String(v);
+  if (/^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+(?:\.\d+)?%?$/.test(s)) s = "'" + s;
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function downloadBlob(filename, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function downloadCsv(filename, headers, rows) {
+  const lines = [headers.map(csvCell).join(",")];
+  for (const row of rows) lines.push(row.map(csvCell).join(","));
+  downloadBlob(filename, "\uFEFF" + lines.join("\r\n") + "\r\n", "text/csv;charset=utf-8");
+}
+
 /* ------------------------------------------------------------------ *
  * Data access
  * ------------------------------------------------------------------ */
@@ -243,6 +272,7 @@ async function loadChart(symbol, { quiet = false, pushHistory = true } = {}) {
     // ticker is found; the payload then canonicalises it.
     setWatchQuote(wanted, quoteSummary(data), data, readSeq);  // selecting an asset refreshes its quote
     renderAll();
+    if (typeof checkAlarms === "function") { checkAlarms(data); drawAlarmForm(); }  // armed alarms read every fresh price
     drawWatchList();                            // repaint the active-row highlight
     if (!quiet) scheduleReveal();               // and bring it into view if it is below the fold
     // A disk fallback arrives over a successful HTTP response — the server

@@ -9,6 +9,7 @@
 <body>
 <div class="wrap">
 
+  <div class="alarm-banner" id="alarmBanner" role="alert" hidden></div>
   <header>
     <div>
       <h1>Asset price display</h1>
@@ -82,12 +83,22 @@
           <span class="stat-value" id="lastVolumeValue">—</span>
           <span class="stat-note" id="lastVolumeNote"></span>
         </p>
+        <!-- Price alarm: a level on the charted asset. Fires once when a live
+             reading crosses it, up or down, and stays armed when another
+             asset is opened. See static/alarms.js. -->
+        <form class="alarm-box" id="alarmBox" hidden>
+          <label for="alarmPrice" class="stat-label">Price alarm</label>
+          <input id="alarmPrice" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="alarmNote">
+          <button class="ghost-btn" type="submit">Set alarm</button>
+          <span class="stat-note" id="alarmNote" role="status"></span>
+        </form>
         <p class="trend-note" id="trendNote" hidden></p>
         <p class="trend-note quality-note" id="qualityNote" role="status" hidden></p>
         <p class="trend-note" id="outlookNote" hidden></p>
 
         <div class="toggle-row">
           <button class="ghost-btn" id="tableToggle" type="button" aria-pressed="false" hidden>Table view</button>
+          <button class="ghost-btn" id="csvExport" type="button" hidden>Download CSV</button>
         </div>
 
         <div class="plot" id="plot">
@@ -119,7 +130,12 @@
       <section class="watch">
         <div class="watch-head">
           <h2 id="watchHeading">Watchlist</h2>
-          <span class="watch-count" id="watchCount"></span>
+          <div class="watch-io">
+            <span class="watch-count" id="watchCount"></span>
+            <button class="watch-io-btn" id="watchExport" type="button" title="Save watchlist to a JSON file">Export</button>
+            <button class="watch-io-btn" id="watchImport" type="button" title="Load symbols from a saved watchlist file">Import</button>
+            <input id="watchImportFile" type="file" accept=".json,application/json" hidden>
+          </div>
         </div>
 
         <ul class="watch-list" id="watchList" aria-label="Watchlist"></ul>
@@ -128,6 +144,11 @@
           <h3 id="watchChangesTitle">Changes since your last visit</h3>
           <ul id="watchChangeList"></ul>
           <p class="watch-hint" id="watchChangeNote"></p>
+        </section>
+        <section id="alarmSection" aria-labelledby="alarmHeading" hidden>
+          <h3 id="alarmHeading">Price alarms</h3>
+          <ul class="alarm-list" id="alarmList"></ul>
+          <p class="watch-hint">Checked every minute, even while you look at other assets. Saved in this browser.</p>
         </section>
       </section>
     </aside>
@@ -175,6 +196,7 @@
     yields in the table above also come from TradingView. Prices are 15 minutes
     delayed and for information only — not investment advice. Data is fetched
     through a local <code>moli</code>-backed proxy (<code>server.py</code>).
+    <a href="status.html">Source status</a> shows which sources are answering.
   </footer>
 </div>
 
@@ -186,6 +208,7 @@
 <script src="static/compare.js"></script>
 <script src="static/watchlist.js"></script>
 <script src="static/watch-changes.js"></script>
+<script src="static/alarms.js"></script>
 <script src="static/events.js"></script>
 <script src="static/tables.js"></script>
 <script src="static/main.js"></script>

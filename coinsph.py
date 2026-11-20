@@ -64,6 +64,7 @@ import json
 import threading
 import time
 import urllib.request
+import sourcestats
 
 import faults
 import diskcache
@@ -127,6 +128,12 @@ def set_http_fallback(fn) -> None:
 
 
 def _get_json(url: str):
+    """`_get_json_untimed`, timed and tallied in `sourcestats`."""
+    with sourcestats.timed(url):
+        return _get_json_untimed(url)
+
+
+def _get_json_untimed(url: str):
     """Fetch JSON, plain HTTP first, then the registered fallback."""
     last: Exception | None = None
     for via_plain in (True, False):

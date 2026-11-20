@@ -68,6 +68,7 @@ import json
 import threading
 import time
 import urllib.request
+import sourcestats
 
 
 SCANNER = "https://scanner.tradingview.com"
@@ -258,6 +259,12 @@ def _run_batch(page: str, script: str) -> str:
 
 
 def post_json(url: str, body: dict):
+    """`_post_json_untimed`, timed and tallied in `sourcestats`."""
+    with sourcestats.timed(url):
+        return _post_json_untimed(url, body)
+
+
+def _post_json_untimed(url: str, body: dict):
     """POST JSON, plain HTTP, then the browser path if it is refused.
 
     Public because a scanner POST is not PSE-specific: the same endpoint answers

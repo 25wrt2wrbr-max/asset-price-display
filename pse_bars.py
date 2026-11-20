@@ -21,6 +21,7 @@ import faults
 import market_days
 import onset
 import pse_outlook
+import sourcestats
 import trend
 
 import pse as P
@@ -305,6 +306,20 @@ def _fetch_chunk(symbols: list[str], timeframe: str, count: int) -> dict[str, li
 
 
 def _fetch_chunk_raw(symbols: list[str], timeframe: str,
+                     count: int) -> tuple[dict[str, list], dict[str, dict]]:
+    """`_fetch_chunk_raw_untimed`, timed and tallied in `sourcestats`."""
+    start = time.monotonic()
+    bars, meta = _fetch_chunk_raw_untimed(symbols, timeframe, count)
+    # A chunk that brought back no bars at all is a failed run; one that
+    # brought some is an answer (a symbol it lacks is not the socket's fault).
+    sourcestats.record("TradingView chart socket", ok=1 if bars else 0,
+                       failed=0 if bars else 1,
+                       seconds=time.monotonic() - start,
+                       error=None if bars else "socket run returned no bars")
+    return bars, meta
+
+
+def _fetch_chunk_raw_untimed(symbols: list[str], timeframe: str,
                      count: int) -> tuple[dict[str, list], dict[str, dict]]:
     """`_fetch_chunk`, plus the `symbol_resolved` meta it now captures.
 

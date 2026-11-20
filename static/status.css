@@ -1,0 +1,14 @@
+/* Source status page. Uses the tokens from app.css. */
+.status-page { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+.status-page h1 { font-size: 1.4rem; margin: 0 0 8px; }
+.status-note { color: var(--text-secondary); margin: 0 0 12px; }
+.status-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.status-table th, .status-table td {
+  text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--gridline);
+}
+.status-table th { color: var(--text-secondary); font-weight: 600; }
+.status-table .state { font-weight: 600; }
+.status-table .state-ok .state { color: var(--delta-up); }
+.status-table .state-failing .state { color: var(--delta-down); }
+.status-table .state-unused { color: var(--text-muted); }
+.status-table .status-why td { color: var(--delta-down); font-size: 0.85rem; padding-top: 0; }

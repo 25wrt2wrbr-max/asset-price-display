@@ -84,6 +84,7 @@ import json
 import re
 import time
 import urllib.request
+import sourcestats
 
 import faults
 import diskcache
@@ -407,6 +408,12 @@ def clean(bars: list[dict], now: float | None = None) -> list[dict]:
 # -- fetching --------------------------------------------------------------
 
 def _get(url: str) -> str:
+    """`_get_untimed`, timed and tallied in `sourcestats`."""
+    with sourcestats.timed(url):
+        return _get_untimed(url)
+
+
+def _get_untimed(url: str) -> str:
     """Read a public document as text. Raises `FundError` on any transport
     failure or non-JSON/HTML refusal, because neither is a fact about a fund."""
     request = urllib.request.Request(url, headers=HEADERS)

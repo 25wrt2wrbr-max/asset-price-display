@@ -16,6 +16,7 @@ import time
 import urllib.parse
 import crypto
 import pse
+import sourcestats
 
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -33,6 +34,7 @@ MOLI_TIMEOUT_MS = 25_000
 SUBPROCESS_TIMEOUT = 40
 WARM_BATCH_TIMEOUT_MS = 45_000
 WARM_BATCH_SUBPROCESS_TIMEOUT = 75
+BATCH_CONCURRENCY = 20
 # The sweep needs a longer browser budget than one chart: a forty-symbol chunk
 # answers in about ten seconds, but a chunk that has to be retried runs twice that.
 BATCH_TIMEOUT_MS = 60_000
@@ -47,25 +49,33 @@ EVAL_SCRIPT = """(async () => {
 
 # The same fetch, widened to a batch: one Moli run, many chart URLs. The
 # browser launch and the Yahoo origin page are the fixed cost of every
-# `moli_get` -- roughly a second each -- so a row warmer that fetched one URL
-# per run spent most of its pass paying for Chrome, not for data. Fetching N
-# URLs inside the page they share amortises that cost N-fold: the page is
-# already loaded, the fetches are same-origin like `EVAL_SCRIPT`'s, and each
-# result keeps its own HTTP status so a 404 verdict is not promoted to an
-# outage. One URL's transport failure (a rejected promise, a non-JSON body)
-# is recorded per URL rather than failing the batch -- the caller decides,
-# per symbol, whether what came back is an answer or an outage.
+# `moli_get` -- roughly a second each -- so a row warmer or US sweep that
+# fetched twenty URLs per run spent most of its pass paying for Chrome, not
+# for data. Fetching N URLs inside one page with a bounded worker pool
+# (`BATCH_CONCURRENCY` in flight at a time) amortises that startup cost across
+# the whole batch while keeping request concurrency identical to the old
+# twenty-at-a-time chunks. Each result keeps its own HTTP status so a 404
+# verdict is not promoted to an outage. One URL's transport failure (a rejected
+# promise, a non-JSON body) is recorded per URL rather than failing the batch
+# -- the caller decides, per symbol, whether what came back is an answer or an
+# outage.
 BATCH_EVAL_SCRIPT = """(async () => {
   const urls = %s;
+  const limit = Math.max(1, Math.min(%d, urls.length));
   const results = {};
-  await Promise.all(urls.map(async (url) => {
-    try {
-      const r = await fetch(url, { headers: { Accept: "application/json" } });
-      results[url] = { status: r.status, body: await r.text() };
-    } catch (e) {
-      results[url] = { status: 0, body: String(e && e.message || e) };
+  let next = 0;
+  async function worker() {
+    while (next < urls.length) {
+      const url = urls[next++];
+      try {
+        const r = await fetch(url, { headers: { Accept: "application/json" } });
+        results[url] = { status: r.status, body: await r.text() };
+      } catch (e) {
+        results[url] = { status: 0, body: String(e && e.message || e) };
+      }
     }
-  }));
+  }
+  await Promise.all(Array.from({ length: limit }, worker));
   return JSON.stringify(results);
 })()"""
 
@@ -89,13 +99,42 @@ def moli_run(page: str, script: str,
              timeout_ms: int = MOLI_TIMEOUT_MS,
              wall_timeout: float = SUBPROCESS_TIMEOUT) -> str:
     """`_moli_run`, recording whether the browser leg is working."""
+    start = time.monotonic()
     try:
         text = _moli_run(page, script, timeout_ms, wall_timeout)
     except UpstreamError as exc:
         health.update(ok=False, error=str(exc)[:200], at=time.time())
+        sourcestats.record("Moli browser", failed=1,
+                           seconds=time.monotonic() - start, error=str(exc))
         raise
     health.update(ok=True, error=None, at=time.time())
+    sourcestats.record("Moli browser", ok=1, seconds=time.monotonic() - start)
     return text
+
+
+# A Yahoo status that is an answer: 200, or a 404 "no such symbol" verdict.
+# Anything else (429, 5xx, 0 for a fetch the page could not make) is the
+# source not answering.
+YAHOO_ANSWERS = (200, 404)
+
+
+def _tally_yahoo(results: dict, seconds: float) -> None:
+    """Count one Moli run's Yahoo URLs in `sourcestats` (other hosts are
+    counted by the module that asked, so they are skipped here)."""
+    ok = failed = 0
+    error = None
+    for url, (status, _body) in results.items():
+        if sourcestats.name_for(url) != "Yahoo Finance":
+            continue
+        if status in YAHOO_ANSWERS:
+            ok += 1
+        else:
+            failed += 1
+            error = "HTTP %s" % status
+    if ok or failed:
+        sourcestats.record("Yahoo Finance", ok=ok, failed=failed,
+                           seconds=seconds, error=error)
+
 
 
 def _moli_run(page: str, script: str,
@@ -150,23 +189,31 @@ def _moli_run(page: str, script: str,
 
 def moli_get(url: str, page: str = ORIGIN_PAGE) -> tuple[int, str]:
     """Fetch `url` through Moli. Returns (http_status, response_body)."""
+    # A run that fails outright is the browser's failure, tallied as
+    # "Moli browser" in `moli_run`: Yahoo was never asked, so it is not
+    # blamed. Only the statuses Yahoo itself sent are counted for it.
+    start = time.monotonic()
     text = moli_run(page, EVAL_SCRIPT % json.dumps(url))
     try:
         outer = json.loads(text)
-        return int(outer["status"]), outer["body"]
+        answer = int(outer["status"]), outer["body"]
     except (ValueError, KeyError, TypeError) as exc:
         raise UpstreamError(f"unexpected moli output ({exc}): {text[:200]}")
+    _tally_yahoo({url: answer}, time.monotonic() - start)
+    return answer
 
 
 def moli_batch_get(urls: list[str],
-                   page: str = ORIGIN_PAGE) -> dict[str, tuple[int, str]]:
+                   page: str = ORIGIN_PAGE,
+                   concurrency: int = BATCH_CONCURRENCY) -> dict[str, tuple[int, str]]:
     """Fetch several same-origin URLs in one Moli run; `{url: (status, body)}`.
 
-    The row warmer's Yahoo leg. One browser launch, one origin page, N fetches
-    -- the per-URL contract matches `moli_get`'s, so a caller can treat each
-    result exactly as it would have treated that URL fetched alone: a 404 with
-    a `chart.error` body is still a verdict about the symbol, still not
-    promoted to an outage by its neighbours.
+    The row warmer's and US sweep's Yahoo leg. One browser launch, one origin
+    page, N fetches (at most `concurrency` in flight at once) -- the per-URL
+    contract matches `moli_get`'s, so a caller can treat each result exactly as
+    it would have treated that URL fetched alone: a 404 with a `chart.error`
+    body is still a verdict about the symbol, still not promoted to an outage
+    by its neighbours.
 
     A URL whose fetch *rejected* in the page -- connection refused, TLS failure
     -- comes back with status 0 rather than disappearing from the dict, so the
@@ -176,21 +223,26 @@ def moli_batch_get(urls: list[str],
     caller's to handle -- every URL it wanted is an outage at once, which is
     the same sentence `moli_get` would have spoken one URL at a time.
 
-    Runs on the longer batch budget (`WARM_BATCH_*`): twenty fetches inside one
-    page take longer than one, and a wall timeout that fit a single chart
-    would kill a healthy batch's last few responses.
+    The timeout scales with the URL count so a large sweep batch has enough
+    headroom while a small batch keeps the existing `WARM_BATCH_*` budget.
     """
-    text = moli_run(page, BATCH_EVAL_SCRIPT % json.dumps(urls),
-                    WARM_BATCH_TIMEOUT_MS, WARM_BATCH_SUBPROCESS_TIMEOUT)
+    if not urls:
+        return {}
+    timeout_ms = max(WARM_BATCH_TIMEOUT_MS, 25_000 + len(urls) * 500)
+    wall_timeout = max(WARM_BATCH_SUBPROCESS_TIMEOUT, timeout_ms / 1000.0 + 30.0)
+    start = time.monotonic()
+    text = moli_run(page, BATCH_EVAL_SCRIPT % (json.dumps(urls), max(1, int(concurrency))),
+                    timeout_ms, wall_timeout)
     try:
         outer = json.loads(text)
         out = {}
         for url in urls:
             entry = outer[url]
             out[url] = (int(entry["status"]), entry["body"])
-        return out
     except (ValueError, KeyError, TypeError) as exc:
         raise UpstreamError(f"unexpected moli batch output ({exc}): {text[:200]}")
+    _tally_yahoo(out, time.monotonic() - start)
+    return out
 
 
 def moli_eval(page: str, script: str) -> str:

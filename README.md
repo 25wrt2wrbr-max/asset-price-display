@@ -168,6 +168,7 @@ To install Moli, see `~/.claude/skills/moli-webfetch/SKILL.md`.
 The full reference is in `docs/`, one page per topic:
 
 - [The chart on screen](docs/chart.md) — what the chart draws, the live price, the newest bar and how it refreshes
+- [Source status](docs/source-status.md) — the `status.html` page: which outside sources answer, how often they fail, how slow they are
 - [Crypto that Yahoo gets wrong](docs/crypto-sources.md) — coins whose Yahoo ticker is a different coin, and where their bars come from
 - [Currency crosses](docs/currency-crosses.md) — ECB reference rates for crosses with no dollar leg, and the peso's weekend
 - [Philippine stocks](docs/philippine-stocks.md) — the PSE source and the bullish sweep

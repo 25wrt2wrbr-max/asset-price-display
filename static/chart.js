@@ -342,6 +342,9 @@ function drawTable() {
   const d = state.data;
   const pts = d.points;
   const proxyStamps = new Set((d.weekendProxy && d.weekendProxy.stamps) || []);
+  const hasPts = Boolean(pts && pts.length);
+  el.tableToggle.hidden = !hasPts;
+  el.csvExport.hidden = !hasPts;
 
   el.tableWrap.textContent = "";
   const table = document.createElement("table");
@@ -399,4 +402,21 @@ function drawTable() {
   table.append(tbody);
 
   el.tableWrap.append(table);
+}
+
+function exportChartCsv() {
+  const d = state.data;
+  if (!d || !d.points || !d.points.length) return;
+  const pts = d.points;
+  const proxyStamps = new Set((d.weekendProxy && d.weekendProxy.stamps) || []);
+  const unit = d.unit || d.currency || "";
+  const rows = pts.map((p, i) => {
+    const change = i === 0 ? "" : Number((p.c - pts[i - 1].c).toFixed(8));
+    let note = "";
+    if (proxyStamps.has(p.t)) note = basisWord("weekend", d);
+    else if (i === pts.length - 1 && BASIS_WORDS[d.lastBarBasis]) note = basisWord(d.lastBarBasis, d);
+    return [sessionDate(p.t), p.c, change, unit, note];
+  });
+  const slug = String(d.symbol || "chart").replace(/[^A-Za-z0-9._-]+/g, "_");
+  downloadCsv(`${slug}-${RANGE}.csv`, ["Date", "Close", "Change", "Unit", "Note"], rows);
 }

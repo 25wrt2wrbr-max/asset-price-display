@@ -35,7 +35,8 @@ def main() -> int:
         parity = subprocess.run([sys.executable, str(ROOT / "export" / "verify_parity.py")])
         phrases = subprocess.run(["node", str(ROOT / "tests" / "test_verdict_words.js")])
         visits = subprocess.run(["node", str(ROOT / "tests" / "test_watch_changes.js")])
-        ok = ok and parity.returncode == 0 and phrases.returncode == 0 and visits.returncode == 0
+        alarms = subprocess.run(["node", str(ROOT / "tests" / "test_alarms.js")])
+        ok = ok and parity.returncode == 0 and phrases.returncode == 0 and visits.returncode == 0 and alarms.returncode == 0
     return 0 if ok else 1
 
 

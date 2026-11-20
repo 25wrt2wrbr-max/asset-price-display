@@ -54,6 +54,7 @@ from __future__ import annotations
 import re
 import time
 import urllib.request
+import sourcestats
 
 import faults
 import diskcache
@@ -153,6 +154,12 @@ def portfolios(shelf_record: dict | None) -> list[str]:
 
 
 def _fetch() -> str:
+    """`_fetch_untimed`, timed and tallied in `sourcestats`."""
+    with sourcestats.timed(SITEMAP):
+        return _fetch_untimed()
+
+
+def _fetch_untimed() -> str:
     """The sitemap's text. Raises on any transport or status problem."""
     request = urllib.request.Request(SITEMAP, headers={
         # A plain UA: the sitemap is a public document, but an empty one reads

@@ -10,6 +10,16 @@ el.tableToggle.addEventListener("click", () => {
   el.tableToggle.textContent = show ? "Hide table" : "Table view";
 });
 
+el.csvExport.addEventListener("click", () => exportChartCsv());
+
+el.watchExport.addEventListener("click", () => exportWatch());
+el.watchImport.addEventListener("click", () => el.watchImportFile.click());
+el.watchImportFile.addEventListener("change", () => {
+  const file = el.watchImportFile.files && el.watchImportFile.files[0];
+  el.watchImportFile.value = "";
+  if (file) importWatchFile(file);
+});
+
 /* theme toggle: stamp data-theme so it wins over the OS setting both ways */
 function applyTheme(mode) {
   document.documentElement.setAttribute("data-theme", mode);

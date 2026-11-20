@@ -289,10 +289,12 @@ RECENT_TTL = 900  # seconds
 # rather than dated to the oldest bar fetched.
 RECENT_SPAN, RECENT_INTERVAL = "1y", "1d"
 
-# How many tickers go into one browser run. The row warmer's batch size, and
-# for the same reason: twenty fetches inside one page is a comfortable load,
-# and more than that starts to time out the page's own budget.
-RECENT_BATCH = 20
+# How many tickers go into one browser run. `moli_batch_get` keeps at most
+# `BATCH_CONCURRENCY` (20) fetches in flight at once inside the page, so one
+# browser launch can handle a large slice of the US shelf without restarting
+# Chrome every twenty tickers, while still isolating any single browser crash
+# to that slice.
+RECENT_BATCH = 160
 
 _recent_state = {
     "payload": None,

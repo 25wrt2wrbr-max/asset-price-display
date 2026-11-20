@@ -4,10 +4,10 @@
 loadWatch();
 drawWatchList();
 refreshWatchQuotes();
-// Declares the list to the server and files the reconnect baseline. This is
-// the *load-time* declaration: `saveWatch` only fires on a change, so without
-// this a page that merely opens and reads never tells the server anything.
-pollHealth();
+// Restore from the local server first when this browser has no saved list yet,
+// then declare and file the reconnect baseline so a fresh browser does not wipe
+// the server's copy.
+restoreWatchFromServer().finally(() => pollHealth());
 
 function symbolFromUrl() {
   const hash = location.hash.replace(/^#/, "");
@@ -30,6 +30,12 @@ window.addEventListener("popstate", () => {
     loadChart(sym, { pushHistory: false });
   }
 });
+loadAlarms();
+bindAlarmForm();
+drawAlarms();
+// Alarms are checked whether or not the tab is visible: they exist to speak up
+// while the reader is looking elsewhere.
+setInterval(pollAlarms, ALARM_POLL);
 loadRecent();
 // Kept current while the tab is open, but only while it is visible -- a
 // background tab polling upstream every fifteen minutes is waste, and the
@@ -57,6 +63,30 @@ setInterval(() => {
     loadChart(state.chartSymbol, { quiet: true });
   }
 }, CHART_LIVE_TTL);
+// The fast clock. The chart above is re-read once a minute and the server
+// keeps it for a minute, so the headline price could trail the market by two.
+// While a Yahoo price is moving, ask `/api/quote` (one-minute bars, a 3 s
+// server memo) every two seconds and move only the newest point and the
+// figures read from it. The badge is not re-scored here: it changes with the
+// next full re-read, which also replaces this patched point.
+const QUOTE_POLL = 2 * 1000;
+let quoteBusy = false;
+setInterval(async () => {
+  const d = state.data;
+  if (quoteBusy || document.hidden || !d || state.loading || !chartIsLive()) return;
+  if (d.source !== "Yahoo" || d.cached || !d.points || !d.points.length) return;
+  const seq = state.chartSeq, sym = state.chartSymbol;
+  quoteBusy = true;
+  try {
+    const q = await requestJSON("/api/quote?symbol=" + encodeURIComponent(sym));
+    if (seq !== state.chartSeq || sym !== state.chartSymbol || state.data !== d) return;
+    const last = d.points[d.points.length - 1];
+    if (!Number.isFinite(q.price) || q.price <= 0 || q.price === last.c) return;
+    last.c = q.price;
+    renderAll();
+    if (typeof checkAlarms === "function") { checkAlarms(d); drawAlarmForm(); }
+  } catch {} finally { quoteBusy = false; }
+}, QUOTE_POLL);
 // A tab brought back to the front re-reads at once rather than showing a
 // verdict up to fifteen minutes old.
 document.addEventListener("visibilitychange", () => {

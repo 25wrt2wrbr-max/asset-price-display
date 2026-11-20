@@ -127,10 +127,16 @@ class WatchlistAndWarmTests(unittest.TestCase):
     def test_record_watchlist_replaces_instead_of_appending(self):
         server.record_watchlist(["AAPL", "MSFT"])
         self.assertEqual(server.union_watchlist(), ["AAPL", "MSFT"])
-        server.record_watchlist(["MSFT"])
+        self.assertEqual(
+            server.saved_watchlist(),
+            [{"symbol": "AAPL", "name": "AAPL"}, {"symbol": "MSFT", "name": "MSFT"}],
+        )
+        server.record_watchlist([{"symbol": "msft", "name": "Microsoft"}])
         self.assertEqual(server.union_watchlist(), ["MSFT"])
+        self.assertEqual(server.saved_watchlist(), [{"symbol": "MSFT", "name": "Microsoft"}])
         server.record_watchlist([])
         self.assertEqual(server.union_watchlist(), [])
+        self.assertEqual(server.saved_watchlist(), [])
 
     def test_due_rows_includes_leaning_and_watch_rows(self):
         server._warm_due.clear()
@@ -138,6 +144,23 @@ class WatchlistAndWarmTests(unittest.TestCase):
         rec = {"rows": [{"chartSymbol": "AAPL"}], "bearish": [{"chartSymbol": "NVDA"}], "leaning": [{"chartSymbol": "MSFT"}]}
         queue = server.due_rows(bull, ["BTC-USD"], 1000.0, rec)
         self.assertEqual([sym for _key, sym in queue], ["BTC-USD", "PSE:TEL", "PSE:BDO", "AAPL", "NVDA", "MSFT"])
+
+    def test_moli_batch_get_empty_and_timeout_scaling(self):
+        import moli_client
+        with mock.patch.object(moli_client, "moli_run") as run:
+            self.assertEqual(moli_client.moli_batch_get([]), {})
+            run.assert_not_called()
+
+        urls = [f"https://query1.finance.yahoo.com/v8/finance/chart/SYM{i}" for i in range(100)]
+        fake = json.dumps({u: {"status": 200, "body": "{}"} for u in urls})
+        with mock.patch.object(moli_client, "moli_run", return_value=fake) as run:
+            out = moli_client.moli_batch_get(urls)
+        self.assertEqual(len(out), 100)
+        self.assertTrue(all(st == 200 for st, _ in out.values()))
+        _page, script, timeout_ms, wall_timeout = run.call_args.args
+        self.assertIn("Math.min(20, urls.length)", script)
+        self.assertGreater(timeout_ms, moli_client.WARM_BATCH_TIMEOUT_MS)
+        self.assertGreater(wall_timeout, timeout_ms / 1000.0)
 
 
 if __name__ == "__main__":

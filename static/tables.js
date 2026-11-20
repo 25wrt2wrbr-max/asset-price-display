@@ -363,14 +363,33 @@ function drawRecent(payload, listKey, view) {
   search.value = view.text;
   search.setAttribute("autocomplete", "off");
   searchLabel.append(search);
+
+  const hidePullLabel = document.createElement("label");
+  hidePullLabel.className = "check-filter";
+  const hidePullCheck = document.createElement("input");
+  hidePullCheck.type = "checkbox";
+  hidePullCheck.checked = Boolean(view.hidePullback);
+  hidePullLabel.append(hidePullCheck, listKey === "bearish" ? "Hide bouncing" : "Hide pulling back");
+
+  const freshLabel = document.createElement("label");
+  freshLabel.className = "check-filter";
+  const freshCheck = document.createElement("input");
+  freshCheck.type = "checkbox";
+  freshCheck.checked = Boolean(view.freshOnly);
+  freshLabel.append(freshCheck, "Fresh turns only");
+
   const reset = document.createElement("button");
   reset.type = "button";
   reset.className = "ghost";
   reset.textContent = "Reset";
+  const csvBtn = document.createElement("button");
+  csvBtn.type = "button";
+  csvBtn.className = "ghost";
+  csvBtn.textContent = "Download CSV";
   const count = document.createElement("span");
   count.className = "view-count";
   count.setAttribute("role", "status");
-  controls.append(marketLabel, searchLabel, reset, count);
+  controls.append(marketLabel, searchLabel, hidePullLabel, freshLabel, reset, csvBtn, count);
 
   const SORTS = {
     Market: ["market", 1, (r) => r.market || ""],
@@ -397,10 +416,13 @@ function drawRecent(payload, listKey, view) {
     th.dataset.sort = spec[0];
   });
 
+  let lastShown = [];
   function render() {
     const text = view.text.trim().toLowerCase();
     let shown = built.filter(({ row }) =>
       (!view.market || (row.market || "") === view.market) &&
+      (!view.hidePullback || !row.pullback) &&
+      (!view.freshOnly || Boolean(row.since && row.since === latest[row.market || ""])) &&
       (!text || [row.ticker, row.symbol, row.name].some(
         (v) => String(v || "").toLowerCase().includes(text))));
     const spec = Object.values(SORTS).find((s) => s[0] === view.key);
@@ -417,6 +439,7 @@ function drawRecent(payload, listKey, view) {
     } else {
       shown = shown.slice().sort((a, b) => a.index - b.index);
     }
+    lastShown = shown;
     tbody.textContent = "";
     shown.forEach(({ tr }) => tbody.append(tr));
     heads.forEach((th) => {
@@ -428,14 +451,44 @@ function drawRecent(payload, listKey, view) {
     });
     count.textContent = shown.length === built.length
       ? `${built.length} rows` : `Showing ${shown.length} of ${built.length} rows`;
-    reset.hidden = !(view.key || view.market || view.text);
+    reset.hidden = !(view.key || view.market || view.text || view.hidePullback || view.freshOnly);
+    csvBtn.disabled = !shown.length;
   }
   select.addEventListener("change", () => { view.market = select.value; render(); });
   search.addEventListener("input", () => { view.text = search.value; render(); });
+  hidePullCheck.addEventListener("change", () => { view.hidePullback = hidePullCheck.checked; render(); });
+  freshCheck.addEventListener("change", () => { view.freshOnly = freshCheck.checked; render(); });
   reset.addEventListener("click", () => {
-    view.market = ""; view.text = ""; view.key = null; view.dir = 1;
-    select.value = ""; search.value = "";
+    view.market = ""; view.text = ""; view.hidePullback = false; view.freshOnly = false; view.key = null; view.dir = 1;
+    select.value = ""; search.value = ""; hidePullCheck.checked = false; freshCheck.checked = false;
     render();
+  });
+  csvBtn.addEventListener("click", () => {
+    const headers = [
+      "Market", "Ticker", "Symbol", "Name", "Direction", "Pullback",
+      "Since", "Run (bars)", "Price", "Currency", "3-month (%)", "Trading volume (PHP)",
+    ];
+    const dataRows = lastShown.map(({ row }) => {
+      const phrase = rowDirectionPhrase(row);
+      const move = row.currency === "%" || !Number.isFinite(row.windowMove)
+        ? "" : Number((row.windowMove * 100).toFixed(2));
+      return [
+        row.market || "",
+        row.ticker || row.symbol || "",
+        row.symbol || "",
+        row.name || "",
+        phrase.text || "",
+        phrase.pull || "",
+        row.since ? rowDate(row.since, row.tz) : "",
+        Number.isFinite(row.run) ? row.run : "",
+        Number.isFinite(row.price) ? row.price : "",
+        row.currency || "",
+        move,
+        Number.isFinite(row.turnoverPhp) ? Math.round(row.turnoverPhp) : "",
+      ];
+    });
+    const name = listKey === "bearish" ? "recently-bearish.csv" : "recently-bullish.csv";
+    downloadCsv(name, headers, dataRows);
   });
   render();
 
@@ -447,8 +500,8 @@ function drawRecent(payload, listKey, view) {
 }
 
 // The reader's sort and filter on the tables.
-const recentView = { market: "", text: "", key: null, dir: 1 };
-const bearishView = { market: "", text: "", key: null, dir: 1 };
+const recentView = { market: "", text: "", hidePullback: false, freshOnly: false, key: null, dir: 1 };
+const bearishView = { market: "", text: "", hidePullback: false, freshOnly: false, key: null, dir: 1 };
 const leaningView = { market: "", text: "", key: null, dir: 1 };
 
 /* One chip per market: did it answer, and how fresh are its bars? An outage
@@ -632,10 +685,14 @@ function drawLeaning(payload) {
   reset.type = "button";
   reset.className = "ghost";
   reset.textContent = "Reset";
+  const csvBtn = document.createElement("button");
+  csvBtn.type = "button";
+  csvBtn.className = "ghost";
+  csvBtn.textContent = "Download CSV";
   const count = document.createElement("span");
   count.className = "view-count";
   count.setAttribute("role", "status");
-  controls.append(marketLabel, searchLabel, reset, count);
+  controls.append(marketLabel, searchLabel, reset, csvBtn, count);
 
   const SORTS = {
     Market: ["market", 1, (r) => r.market || ""],
@@ -662,6 +719,7 @@ function drawLeaning(payload) {
     th.dataset.sort = spec[0];
   });
 
+  let lastShown = [];
   function render() {
     const text = view.text.trim().toLowerCase();
     let shown = built.filter(({ row }) =>
@@ -682,6 +740,7 @@ function drawLeaning(payload) {
     } else {
       shown = shown.slice().sort((a, b) => a.index - b.index);
     }
+    lastShown = shown;
     tbody.textContent = "";
     shown.forEach(({ tr }) => tbody.append(tr));
     heads.forEach((th) => {
@@ -694,6 +753,7 @@ function drawLeaning(payload) {
     count.textContent = shown.length === built.length
       ? `${built.length} rows` : `Showing ${shown.length} of ${built.length} rows`;
     reset.hidden = !(view.key || view.market || view.text);
+    csvBtn.disabled = !shown.length;
   }
   select.addEventListener("change", () => { view.market = select.value; render(); });
   search.addEventListener("input", () => { view.text = search.value; render(); });
@@ -701,6 +761,25 @@ function drawLeaning(payload) {
     view.market = ""; view.text = ""; view.key = null; view.dir = 1;
     select.value = ""; search.value = "";
     render();
+  });
+  csvBtn.addEventListener("click", () => {
+    const headers = [
+      "Market", "Ticker", "Symbol", "Name", "Toward bullish (%)",
+      "Score", "Drift t", "Price", "Currency", "Trading volume (PHP)",
+    ];
+    const dataRows = lastShown.map(({ row }) => [
+      row.market || "",
+      row.ticker || row.symbol || "",
+      row.symbol || "",
+      row.name || "",
+      Number.isFinite(row.progress) ? Math.round(row.progress * 100) : "",
+      Number.isFinite(row.score) ? Number(row.score.toFixed(4)) : "",
+      Number.isFinite(row.significance) ? Number(row.significance.toFixed(2)) : "",
+      Number.isFinite(row.price) ? row.price : "",
+      row.currency || "",
+      Number.isFinite(row.turnoverPhp) ? Math.round(row.turnoverPhp) : "",
+    ]);
+    downloadCsv("leaning-bullish.csv", headers, dataRows);
   });
   render();
 

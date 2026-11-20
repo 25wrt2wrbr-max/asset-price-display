@@ -26,6 +26,7 @@ import re
 import urllib.error
 import urllib.parse
 import urllib.request
+import sourcestats
 from concurrent.futures import ThreadPoolExecutor
 import faults
 
@@ -41,6 +42,12 @@ SOURCE = "Nasdaq"
 
 
 def fetch_json(url: str) -> dict:
+    """`_fetch_json_untimed`, timed and tallied in `sourcestats`."""
+    with sourcestats.timed(url):
+        return _fetch_json_untimed(url)
+
+
+def _fetch_json_untimed(url: str) -> dict:
     """One GET, parsed. Separate so tests can replace the network."""
     request = urllib.request.Request(url, headers=HEADERS)
     with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
