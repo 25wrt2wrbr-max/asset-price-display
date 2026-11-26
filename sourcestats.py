@@ -56,6 +56,9 @@ HOSTS = {
     "www.pifa.com.ph": "PIFA",
     "www.bpi.com.ph": "BPI Wealth",
     "www.pse.com.ph": "PSE",
+    "edge.pse.com.ph": "PSE Edge",
+    "www.bsp.gov.ph": "BSP",
+    "www.treasury.gov.ph": "Treasury.gov.ph",
 }
 
 # Shown on the status page even before their first call, so a source that has

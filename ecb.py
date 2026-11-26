@@ -50,6 +50,7 @@ import re
 import threading
 import time
 import urllib.request
+import crypto
 import sourcestats
 
 import trend
@@ -237,7 +238,8 @@ def chart(symbol: str, span: str, interval: str) -> dict:
         "currency": quote,
         "exchange": "ECB",
         "type": "CURRENCY",
-        "priceHint": 4,
+        # Same magnitude rule as micro coins: a flat 4 collapses IDR/PHP ~0.0035.
+        "priceHint": crypto.price_hint(last),
         "previousClose": previous,
         "marketPrice": last,
         "points": points,

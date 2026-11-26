@@ -41,6 +41,98 @@ function quoteSummary(data) {
   };
 }
 
+/* Shorter moves inside the same bars the chart draws: the newest close
+   against the last close at least 7 and 30 calendar days earlier (calendar,
+   so a coin's weekend bars and a stock's weekday bars mean the same week),
+   and how far the newest close sits from the window's highest and lowest.
+   Plain arithmetic on drawn closes -- it describes, it never predicts. A
+   period the series does not reach is null, never a guess. */
+const PERIODS = [["1W", 7], ["1M", 30]];
+function periodChanges(points) {
+  const pts = (points || []).filter((p) => p && Number.isFinite(p.c) && Number.isFinite(p.t));
+  if (pts.length < 2) return null;
+  const last = pts[pts.length - 1];
+  const pct = (from) => (from && from.c !== 0 ? (last.c / from.c - 1) * 100 : null);
+  const out = { periods: [] };
+  for (const [name, days] of PERIODS) {
+    const cutoff = last.t - days * 86400;
+    let base = null;
+    for (let i = pts.length - 2; i >= 0; i--) {
+      if (pts[i].t <= cutoff) { base = pts[i]; break; }
+    }
+    out.periods.push({ name, pct: pct(base) });
+  }
+  const closes = pts.map((p) => p.c);
+  const hi = Math.max(...closes), lo = Math.min(...closes);
+  out.fromHigh = hi !== 0 ? (last.c / hi - 1) * 100 : null;
+  out.fromLow = lo !== 0 ? (last.c / lo - 1) * 100 : null;
+  return out;
+}
+function signedPct(v) {
+  return `${v >= 0 ? "+" : "−"}${Math.abs(v).toFixed(1)}%`;
+}
+
+/* A tiny line of the same closes the chart draws, so a row shows the shape of
+   its three months at a glance. Decoration only (aria-hidden): the figure
+   beside it and the chart a click opens carry the numbers. Coloured with the
+   row's own move, so line and percentage always agree.
+   Canvas, not SVG: hundreds of table rows each used to build a polyline DOM
+   tree; one bitmap per spark keeps scroll and first paint cheaper. */
+const SPARK_H = 18;
+let sparkInk = null;   // cached theme strokes; cleared on theme change
+function sparkStroke(up) {
+  if (!sparkInk) {
+    const css = getComputedStyle(document.documentElement);
+    sparkInk = {
+      muted: css.getPropertyValue("--text-muted").trim() || "#6b6a65",
+      up: css.getPropertyValue("--delta-up").trim() || "#006300",
+      down: css.getPropertyValue("--delta-down").trim() || "#c02f2f",
+    };
+  }
+  return up == null ? sparkInk.muted : up ? sparkInk.up : sparkInk.down;
+}
+function resetSparkInk() { sparkInk = null; }
+function watchSparkline(points, up) {
+  return sparkline((points || []).map((p) => p.c), up, 60);
+}
+/* Shared with the recent tables (`tables.js`), which pass the row's own
+   window closes. `up` null draws the line uncoloured. */
+function sparkline(values, up, SPARK_W) {
+  const closes = (values || []).filter(Number.isFinite);
+  if (closes.length < 2) return null;
+  let lo = closes[0], hi = closes[0];
+  for (let i = 1; i < closes.length; i++) {
+    const c = closes[i];
+    if (c < lo) lo = c;
+    if (c > hi) hi = c;
+  }
+  if (hi === lo) { lo -= 1; hi += 1; }      // a flat series draws mid-height
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const canvas = document.createElement("canvas");
+  canvas.className = "watch-spark " + (up == null ? "" : up ? "up" : "down");
+  canvas.width = Math.round(SPARK_W * dpr);
+  canvas.height = Math.round(SPARK_H * dpr);
+  canvas.style.width = SPARK_W + "px";
+  canvas.style.height = SPARK_H + "px";
+  canvas.setAttribute("aria-hidden", "true");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.scale(dpr, dpr);
+  const pad = 1.5, span = SPARK_H - pad * 2, step = SPARK_W / (closes.length - 1);
+  ctx.strokeStyle = sparkStroke(up);
+  ctx.lineWidth = 1.4;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  for (let i = 0; i < closes.length; i++) {
+    const x = i * step;
+    const y = pad + (hi - closes[i]) / (hi - lo) * span;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  return canvas;
+}
+
 function loadWatch() {
   try {
     const stored = localStorage.getItem(WATCH_KEY);
@@ -334,20 +426,41 @@ function removeFromWatch(symbol) {
   drawWatchList();
 }
 
+/* Many rows load at once; draw the list at most once per frame. */
+// Quotes land one by one; each used to rebuild the whole rail (rows,
+// sparklines, tiles, six-pack). Now quotes that land within 250 ms of each
+// other share one rebuild, and a steady stream still redraws once a second.
+let watchDrawTimer = 0, watchDrawFirst = 0;
+function queueWatchDraw() {
+  const now = Date.now();
+  if (!watchDrawTimer) watchDrawFirst = now;
+  clearTimeout(watchDrawTimer);
+  const wait = Math.max(0, Math.min(250, 1000 - (now - watchDrawFirst)));
+  watchDrawTimer = setTimeout(() => {
+    watchDrawTimer = 0;
+    requestAnimationFrame(drawWatchList);
+  }, wait);
+}
+
 /* Quote fetches are independent of the main chart request, so one bad symbol
    never blocks the list — each row resolves on its own. */
-async function fetchWatchQuote(symbol) {
+async function fetchWatchQuote(symbol, { fresh = false } = {}) {
   if (!isWatched(symbol)) return;
   // The saved entry, held across the await: `setWatchQuote` may rename it to the
   // server's spelling, and the live object answers the question below either way.
   const item = watchEntry(symbol);
   const readSeq = ++watchReadSeq;
-  setWatchQuote(symbol, { loading: true }, null, readSeq);
-  drawWatchList();
+  // A row that already shows a price keeps it until the new one lands, so a
+  // refresh costs one redraw, not two (and the row does not flash "loading").
+  const prev = state.watchQuotes[item.symbol];
+  if (!prev || prev.loading || prev.error) {
+    setWatchQuote(symbol, { loading: true }, null, readSeq);
+    queueWatchDraw();
+  }
   try {
-    const data = await requestJSON(
-      `/api/chart?symbol=${encodeURIComponent(symbol)}&range=${RANGE}&interval=${INTERVAL}`
-    );
+    // Prefer the short chart memo when warm (45 s): a row just charted should
+    // not start a second browser run. A reconnect pass passes `fresh: true`.
+    const data = await getChart(symbol, { fresh });
     if (!state.watch.includes(item)) return;      // removed while in flight
     setWatchQuote(item.symbol, quoteSummary(data), data, readSeq);
     if (typeof checkAlarms === "function") checkAlarms(data);
@@ -355,7 +468,7 @@ async function fetchWatchQuote(symbol) {
     if (!state.watch.includes(item)) return;
     setWatchQuote(item.symbol, { error: err.message }, null, readSeq);
   }
-  drawWatchList();
+  queueWatchDraw();
   // A row that has just gained its price line and its odds line is taller than
   // the row the chart revealed a second earlier, so the lit row can slide under
   // the rail's edge. Re-reveal for *that row only*: another row's quote landing
@@ -363,8 +476,8 @@ async function fetchWatchQuote(symbol) {
   if (item && isWatchActive(item)) scheduleReveal();
 }
 
-function refreshWatchQuotes() {
-  state.watch.forEach((it) => fetchWatchQuote(it.symbol));
+function refreshWatchQuotes({ fresh = false } = {}) {
+  state.watch.forEach((it) => fetchWatchQuote(it.symbol, { fresh }));
 }
 
 /* ---- staying current without being asked ----
@@ -386,23 +499,75 @@ const WATCH_TTL = 300 * 1000;   // rows re-sync on the leaderboards' cadence
 
 let healthEdges = null;   // last `reconnections` value seen; null until first poll
 
+/* Server-down banner (2026-11-24). A failed poll used to be silent, so a
+   stopped local server left the page showing old prices as if live. Two
+   unreachable polls in a row (about a minute) raise a banner; the first poll
+   that answers lowers it and re-reads the rows and the chart. Only a refused
+   connection counts: an HTTP error means the server is up. */
+const SERVER_DOWN_AFTER = 2;
+let healthMisses = 0;
+let serverDownSince = null;
+
+function serverBannerText(since) {
+  const at = since.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return `The local server stopped answering at ${at}. Prices on this page may be old. ` +
+    "Start it again with python3 server.py.";
+}
+
+function noteHealthResult(reachable, now = new Date()) {
+  const banner = document.getElementById("serverBanner");
+  if (!reachable) {
+    healthMisses += 1;
+    if (healthMisses === 1) serverDownSince = now;
+    if (healthMisses >= SERVER_DOWN_AFTER && banner) {
+      banner.textContent = serverBannerText(serverDownSince);
+      banner.hidden = false;
+    }
+    return false;
+  }
+  const wasDown = healthMisses >= SERVER_DOWN_AFTER;
+  healthMisses = 0;
+  serverDownSince = null;
+  if (banner) banner.hidden = true;
+  return wasDown;
+}
+
 async function pollHealth() {
   let payload;
   try {
     payload = await requestJSON("/api/health");
-  } catch { return; }              // server unreachable: nothing to learn
+  } catch (err) {
+    // `fetch` rejects with a TypeError when nothing answers; `requestJSON`
+    // throws a plain Error for an HTTP status, which means the server is up.
+    noteHealthResult(!(err instanceof TypeError));
+    return;
+  }
+  if (noteHealthResult(true)) {
+    // Back after an outage: whatever the counter says, the rows are old.
+    // File the counter as seen so the check below does not re-read them twice.
+    if (typeof payload.reconnections === "number") healthEdges = payload.reconnections;
+    declareWatch();
+    refreshWatchQuotes({ fresh: true });
+    if (state.chartSymbol) loadChart(state.chartSymbol, { quiet: true, pushHistory: false });
+    return;
+  }
   const edges = payload.reconnections;
   if (typeof edges !== "number") return;   // older server: no counter to watch
-  declareWatch();
   // First poll only files the baseline; the page has already fetched at load.
   // *Any* move refreshes: upward is a reconnect edge, to a smaller number is a
   // server restart, and both mean the copy behind each row just changed.
+  // Declaring the watchlist every 30 s was waste: saveWatch already posts it,
+  // and a reconnect (above) posts it once more.
   if (healthEdges === null) { healthEdges = edges; return; }
   if (edges === healthEdges) return;
   healthEdges = edges;
-  refreshWatchQuotes();
+  declareWatch();
+  refreshWatchQuotes({ fresh: true });
   // Re-read the chart on screen only if it is one of the rows just refreshed.
-  if (state.chartSymbol && activeWatchItem()) loadChart(state.chartSymbol);
+  if (state.chartSymbol && activeWatchItem()) {
+    // Quiet: never wipe what the reader is typing or flash "Loading…".
+    loadChart(state.chartSymbol, { quiet: true, pushHistory: false });
+  }
 }
 
 /* Kept current like the tables above: visible-only, so a background tab costs
@@ -638,6 +803,8 @@ function drawWatchList() {
   const keepTop = list.scrollTop;
   list.textContent = "";                    // untrusted labels -> no innerHTML
   el.watchCount.textContent = state.watch.length ? `${state.watch.length}` : "";
+  const rail = list.closest(".watch");
+  if (rail) rail.classList.toggle("is-filled", state.watch.length > 0);
 
   if (!state.watch.length) {
     const empty = document.createElement("li");
@@ -646,6 +813,8 @@ function drawWatchList() {
     list.append(empty);
     el.watchHint.textContent = "";
     syncWatchToggle();
+    if (typeof drawWatchHeat === "function") drawWatchHeat();
+    if (typeof syncTableStars === "function") syncTableStars();
     return;
   }
 
@@ -674,10 +843,11 @@ function drawWatchList() {
   ) + (activeWatchItem() ? " The highlighted row is the chart on screen." : "")
     + (anyVerdict ? " Each tag is that row's three-month verdict" +
         (anyLean ? ", and a lighter tag is a lean it has not confirmed — only a steady lean gets one." : ".") : "")
-    + (anyOdds ? " The odds figure is each chart's own three-month estimate." : "");
+    + (anyOdds ? " The chance figure is each chart's own three-month estimate." : "");
 
   state.watch.forEach((item) => {
     const quote = state.watchQuotes[item.symbol];
+    if (typeof watchItemVisible === "function" && !watchItemVisible(item, quote)) return;
     const active = isWatchActive(item);
 
     // The row's verdict. `quote.data` is the very payload the chart draws, so
@@ -731,6 +901,24 @@ function drawWatchList() {
     sym.className = "watch-sym";
     sym.textContent = item.symbol;
     id.append(sym);
+    if (typeof appendFlagDot === "function") appendFlagDot(id, item.symbol);
+    if (quote && quote.data && typeof appendFreshnessChip === "function") {
+      appendFreshnessChip(id, quote.data, item.symbol);
+    } else if (quote && quote.error && typeof appendFreshnessChip === "function") {
+      const chip = document.createElement("span");
+      chip.className = "fresh-chip kind-offline";
+      chip.textContent = "offline";
+      chip.title = quote.error;
+      id.append(chip);
+    }
+    const metaNote = typeof getWatchMeta === "function" ? getWatchMeta(item.symbol).note : "";
+    if (metaNote) {
+      const tip = document.createElement("span");
+      tip.className = "watch-note-mark";
+      tip.textContent = "✎";
+      tip.title = metaNote;
+      id.append(tip);
+    }
     const tagPhrase = watchTagPhrase(trend);
     if (tagPhrase && tagPhrase.kind === "lean") {
       // The lean replaces the plain Neutral tag rather than sitting beside it.
@@ -799,9 +987,102 @@ function drawWatchList() {
       chg.className = "watch-chg";
       chg.textContent = "";
     }
-    sub.append(name, chg);
+    const right = document.createElement("span");
+    right.className = "watch-right";
+    const spark = quote && quote.data ? watchSparkline(quote.data.points, quote.up) : null;
+    if (spark) right.append(spark);
+    right.append(chg);
+    // PSE liquidity: 5-day peso turnover from this chart's own bars.
+    if (quote && quote.data && typeof watchTurnover === "function") {
+      const turn = watchTurnover(quote.data, 5);
+      if (Number.isFinite(turn)) {
+        const liq = document.createElement("span");
+        liq.className = "watch-liq";
+        liq.textContent = typeof compact === "function" ? compact(turn, "PHP") : String(Math.round(turn));
+        liq.title = "Average close × volume over the last five bars with volume on this chart (pesos). Liquidity context only.";
+        const warn = typeof thinBookWarn === "function" ? thinBookWarn(turn) : null;
+        if (warn) {
+          liq.classList.add("thin-book-warn");
+          liq.textContent += " · thin";
+          liq.title = warn.title;
+        }
+        right.append(liq);
+      }
+    }
+    // Against-market chip when a benchmark reading is already memoised.
+    if (quote && quote.data && typeof againstMarketLine === "function"
+        && typeof benchmarkFor === "function") {
+      const pick = benchmarkFor(quote.data);
+      const memo = pick && typeof benchMemo !== "undefined" ? benchMemo.get(pick.symbol) : null;
+      if (pick && memo && memo.data) {
+        const line = againstMarketLine(quote.data, memo.data, pick);
+        if (line) {
+          const vs = document.createElement("span");
+          vs.className = "watch-vs-market " + (line.label || "");
+          vs.textContent = line.text;
+          vs.title = `Vs ${pick.name} over shared days — context only, not this row's label.`;
+          right.append(vs);
+        }
+      }
+    }
+    // UITF peer drift / ladder among watched funds in the same category.
+    if (quote && quote.data && typeof fundPeerDrift === "function") {
+      const drift = fundPeerDrift(item.symbol, state.watch, state.watchQuotes);
+      if (drift) {
+        const peer = document.createElement("span");
+        peer.className = "watch-peer " + drift.kind;
+        peer.textContent = drift.kind === "top" ? "↑ peers" : "↓ peers";
+        peer.title = `${drift.text} among ${drift.peers} watched funds in ${drift.category}. Rank of past 1M moves only.`;
+        id.append(peer);
+      }
+    }
+    if (quote && quote.data && typeof fundPeerLadder === "function") {
+      const ladder = fundPeerLadder(item.symbol, state.watch, state.watchQuotes);
+      if (ladder && ladder.rank > 0) {
+        const lad = document.createElement("span");
+        lad.className = "watch-peer-ladder";
+        lad.textContent = `#${ladder.rank}/${ladder.peers.length}`;
+        lad.title = ladder.peers.map((p, i) =>
+          `${i + 1}. ${p.symbol.split(":").pop()} ${p.pct >= 0 ? "+" : "−"}${Math.abs(p.pct).toFixed(1)}%`
+        ).join(" · ") + ` · ${ladder.category} (1M moves among watched peers)`;
+        id.append(lad);
+      }
+    }
+    sub.append(name, right);
 
     pick.append(top, sub);
+
+    // The week and the month inside the same window, one footnote line, each
+    // figure with its own sign so it never depends on colour alone. The
+    // distance from the window's high and low rides in the tooltip.
+    const periods = quote && quote.data ? periodChanges(quote.data.points) : null;
+    if (periods && periods.periods.some((p) => p.pct !== null)) {
+      const line = document.createElement("span");
+      line.className = "watch-periods";
+      for (const p of periods.periods) {
+        if (p.pct === null) continue;
+        const part = document.createElement("span");
+        const label = document.createElement("span");
+        label.textContent = p.name;
+        const val = document.createElement("span");
+        val.className = "watch-period-val " + (p.pct >= 0 ? "up" : "down");
+        val.textContent = signedPct(p.pct);
+        part.append(label, " ", val);
+        line.append(part);
+      }
+      const tips = ["Change from the last close at least 7 / 30 days before the newest"];
+      if (Number.isFinite(periods.fromHigh) && Number.isFinite(periods.fromLow)) {
+        tips.push(`${Math.abs(periods.fromHigh).toFixed(1)}% below the 3-month high, `
+          + `${periods.fromLow.toFixed(1)}% above the 3-month low`);
+        const off = document.createElement("span");
+        off.textContent = periods.fromHigh === 0 ? "at high"
+          : periods.fromLow === 0 ? "at low"
+          : `${Math.abs(periods.fromHigh).toFixed(1)}% off high`;
+        line.append(off);
+      }
+      line.title = tips.join(". ") + ".";
+      pick.append(line);
+    }
 
     // Below the name and the window's move, because it is a different kind of
     // claim: the move is what the last three months did, this is a model's odds
@@ -812,13 +1093,14 @@ function drawWatchList() {
       oddsLine.className = "watch-odds";
       oddsLine.title = profitOddsClaim(odds);
       const oddsLabel = document.createElement("span");
-      oddsLabel.textContent = "3-month odds";
+      oddsLabel.textContent = "3-mo chance";
       const oddsVal = document.createElement("span");
       oddsVal.className = "watch-odds-val " + (oddsP >= 0.5 ? "above" : "below");
       oddsVal.textContent = oddsP.toFixed(2);
       oddsLine.append(oddsLabel, oddsVal);
       pick.append(oddsLine);
     }
+    pick.dataset.chart = item.symbol;
     pick.addEventListener("click", () => loadChart(item.symbol));
 
     // The grip is the only draggable part, so the rest of the row keeps its
@@ -867,9 +1149,21 @@ function drawWatchList() {
     list.append(li);
   });
 
+  if (!list.children.length && state.watch.length) {
+    const empty = document.createElement("li");
+    empty.className = "watch-empty";
+    empty.textContent = watchInboxMode && watchInboxMode()
+      ? "No watched name has a pullback, volume spike, or window extreme right now."
+      : "No rows match this group filter.";
+    list.append(empty);
+  }
+
   syncWatchToggle();
   dragRepaint();   // a drag outlives the rows it started on
   list.scrollTop = keepTop;   // the rail keeps the place the reader left it in
+  if (typeof drawWatchHeat === "function") drawWatchHeat();
+  if (typeof syncTableStars === "function") syncTableStars();
+  if (typeof deskOnWatchDrawn === "function") deskOnWatchDrawn();
 }
 
 /* The charted asset is the only thing the toggle can add, so it mirrors

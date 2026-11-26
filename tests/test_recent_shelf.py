@@ -155,7 +155,8 @@ class PortfolioTests(unittest.TestCase):
             rows, stats = recent.ondo_portfolio_rows(
                 _shelf(portfolios=["MAG7X"]))
         self.assertEqual(rows, [])
-        self.assertEqual(stats, {"universe": 1, "missing": []})
+        self.assertEqual(stats, {"universe": 1, "missing": [],
+                                 "verdicts": {"bullish": 0, "bearish": 0, "neutral": 1}})
 
     def test_a_portfolio_row_opens_its_own_chart(self):
         with mock.patch.object(ondo, "bars_for", return_value=self._bars()):
@@ -272,7 +273,7 @@ class FloorTests(unittest.TestCase):
     def test_the_note_says_what_the_floor_hid(self):
         payload = self.scan([self.PAL])
         payload["note"] = recent.summarize(payload)
-        self.assertIn("· 1 below ₱1,000,000 volume hidden", payload["note"])
+        self.assertIn("· 1 below ₱1,000,000 5-day average volume hidden", payload["note"])
 
     def test_an_ondo_row_is_not_floored(self):
         # The shelf is the limit there; a swing of ₱311k does not apply.

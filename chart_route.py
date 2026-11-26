@@ -11,15 +11,18 @@ server's names as \`S.x\`, so \`server.chart_data\` and
 
 from __future__ import annotations
 
+import pse_edge
 import time
 import urllib.parse
 
 import coinsph
 import crypto
 import faults
+import nasdaq_bars
 import ondo
 import onset as onset_module
 import phfunds
+import preipo
 import probability
 import pse
 import rates
@@ -45,8 +48,8 @@ def chart_key(symbol: str, span: str, interval: str) -> str:
     """
     if tv.is_bond_symbol(symbol):
         return f"tv:{symbol.strip().upper()}:{span}:{interval}"
-    if pse.is_pse_symbol(symbol):
-        return f"pse:{symbol.upper()}:{span}:{interval}"
+    if pse.is_pse_symbol(symbol) or pse_edge.is_edge_symbol(symbol):
+        return f"pse:{symbol.strip().upper()}:{span}:{interval}"
     if phfunds.is_fund_symbol(symbol):
         # The fund's own synthetic key, for the same reason the bond's is: the
         # bars live under their own key (`phfunds.CACHE_PREFIX`) because they
@@ -148,7 +151,7 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
         # module does not know is about the symbol, not about the wire.
         raise LookupError("%r is not one of the Ondo tokens this page charts."
                           % symbol)
-    elif pse.is_pse_symbol(symbol):
+    elif pse.is_pse_symbol(symbol) or pse_edge.is_edge_symbol(symbol):
 
         def pse_produce():
             return pse.chart(symbol, span, interval)
@@ -170,8 +173,15 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
                 yahoo = S.yahoo_chart(fetch_url, symbol, span, interval)
             except LookupError as exc:
                 yahoo_error = exc          # Yahoo has no such instrument
-            # A transport failure is not a verdict about the symbol, so let it
-            # propagate rather than quietly substituting another source.
+            except S.UpstreamError:
+                # When Yahoo/Moli is down for a daily US equity/ETF, fall back
+                # to Nasdaq daily closes so clicking a Nasdaq-rescued row on
+                # the recent table opens the same series on a cold cache.
+                if interval == "1d" and nasdaq_bars.TICKER_RE.match(symbol.strip().upper()):
+                    nasdaq_payload = nasdaq_bars.chart(symbol, span, interval)
+                    if nasdaq_payload is not None:
+                        return nasdaq_payload
+                raise
 
             # Yahoo lists no `AEDPHP=X` or `SARPHP=X` at all (404), yet both
             # currencies have a dollar leg it charts (`AED=X`, `SAR=X`) and so
@@ -218,6 +228,16 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
             # for a live coin and a delisted one alike. A pair whose every
             # venue is silent answers None here and Yahoo stands: a missing
             # fetch is not a verdict about the coin.
+            # A listing whose exchange history is younger than the market's
+            # interest in it: ANT began Nasdaq trading on 2026-11-19, so its
+            # `3mo` chart is three bars. The stretch traded before the listing
+            # is put back in front, in the listing's own units (`preipo.py`).
+            # Done here, before the disagreement test and every return below,
+            # so the whole read sees one series; the cache holds the spliced
+            # payload, so a repeat read cannot splice it twice.
+            if yahoo is not None:
+                yahoo = preipo.extend(yahoo, symbol, interval)
+
             coin = None
             crypto_tried = False
             if yahoo is not None and yahoo.get("type") == "CRYPTOCURRENCY":
@@ -327,6 +347,18 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
     # Older offline chart copies contain the previous classifier's verdict.
     # Re-score the exact points drawn, so an outage cannot resurrect that call.
     points = out.get("points") or []
+    # Same idea for FX decimals: a disk copy may still carry Yahoo's flat
+    # priceHint of 4, which collapses a micro cross (VND/PHP ~0.0025) so every
+    # bar prints the same. Raise from the last close on every read.
+    if ((out.get("type") or "").upper() == "CURRENCY"
+            and points and isinstance(points[-1], dict)):
+        last_c = points[-1].get("c")
+        if isinstance(last_c, (int, float)) and last_c > 0:
+            try:
+                old = int(out.get("priceHint") or 0)
+            except (TypeError, ValueError):
+                old = 0
+            out["priceHint"] = max(old, crypto.price_hint(last_c))
     try:
         call = trend.classify([p["c"] for p in points])
     except (KeyError, TypeError, ValueError):
@@ -352,11 +384,25 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
             closes = [float(p["c"]) for p in full]
             volumes = [p.get("v") or 0.0 for p in full]
             yahoo_months = (S.SPAN_MONTHS.get(span)
-                            if out.get("source") == "Yahoo" else None)
+                            if out.get("source") in ("Yahoo", nasdaq_bars.SOURCE) else None)
+            span_days = pse.RANGE_DAYS.get(span, pse.RANGE_DAYS["3mo"])
             call = onset_module.decorate(
                 call, stamps, closes, volumes,
                 months=yahoo_months,
-                days=pse.RANGE_DAYS.get(span, pse.RANGE_DAYS["3mo"]))
+                days=span_days)
+            # Compute the onset bar for bullish/bearish labels so the chart can
+            # mark where the current run started (Invariant 2: same walk as the
+            # tables). Cross-check recent_state if the tail was short/censored.
+            if interval == "1d" and call.get("label") in ("bullish", "bearish"):
+                onset_res = onset_module.onset(
+                    stamps, closes, volumes,
+                    want=call["label"], months=yahoo_months, days=span_days)
+                if onset_res is not None:
+                    out["onset"] = {
+                        "since": onset_res["since"],
+                        "run": onset_res["run"],
+                        "censored": bool(onset_res["censored"]),
+                    }
     if out.get("yieldSeries"):
         # A bond yield's badge reads as a bond price, not as the yield's own
         # direction -- the same reversal the recent table's row makes, applied
@@ -366,25 +412,34 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
         # inference drawn from it.
         out["yieldTrend"] = call
         call = tv.bond_price_call(call)
-    # A daily series the source has stopped printing is not a price now, and
-    # nothing on this payload may say otherwise -- the same rule the table
-    # applies before it judges a shelf name (see `recent.STALE_GAP_DAYS`, and
-    # ATKR as the case that made it visible: three weeks of a frozen $94.96
-    # charted as a close with a "leaning bullish" badge on it). The line is
-    # still drawn -- it is the history that exists -- but the verdict and the
-    # profit odds are withheld, because both are claims about now.
-    #
-    # Yahoo only, and daily only. The trading days of the US market are what
-    # makes five days of silence meaningful; the PSE, the funds and the bonds
-    # close for long holidays (see the constant), and a weekly bar is stamped
-    # at the start of its week, so its age is not a session's.
-    if interval == "1d" and out.get("source") == "Yahoo":
+    # Cross-check swept 1-year onset when a cached 3-month chart lacked a long tail.
+    if (interval == "1d" and span == "3mo" and isinstance(call, dict)
+            and call.get("label") in ("bullish", "bearish")
+            and (not out.get("onset") or out["onset"].get("censored"))):
+        try:
+            rec = S.recent_state()
+            sym_up = str(out.get("symbol") or symbol).strip().upper()
+            bucket = "rows" if call["label"] == "bullish" else "bearish"
+            for row in rec.get(bucket) or []:
+                if (isinstance(row, dict)
+                        and str(row.get("chartSymbol") or row.get("symbol") or "").upper() == sym_up
+                        and row.get("since")):
+                    out["onset"] = {
+                        "since": int(row["since"]),
+                        "run": row.get("run"),
+                        "censored": bool(row.get("censored")),
+                    }
+                    break
+        except Exception as exc:
+            faults.note("chart_route.onset", exc)
+    if interval == "1d" and out.get("source") in ("Yahoo", nasdaq_bars.SOURCE):
         drawn_stamps = [p["t"] for p in points
                         if isinstance(p, dict) and p.get("t") is not None]
         gap = recent.stale_gap(drawn_stamps)
         if gap is not None:
             out["staleDays"] = int(round(gap))
             out["staleBar"] = recent.utc_day(max(drawn_stamps))
+            out.pop("onset", None)
             call = None
         elif "staleDays" in out:
             # A copy cannot keep a staleness claim it did not earn on this read
@@ -403,7 +458,7 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
     # a weekly bar's volume is a week's, so its product is not a trading day's
     # value. Every source but TradingView's PSE leg carries no `volumes`, and
     # `completed_trade` answers None for them, so the readout simply hides.
-    if interval == "1d" and pse.is_pse_symbol(symbol):
+    if interval == "1d" and (pse.is_pse_symbol(symbol) or pse_edge.is_edge_symbol(symbol)):
         traded_day, traded_shares, traded_value = pse.completed_trade(
             out.get("points") or [],
             out.get("volumes") or [],
@@ -411,6 +466,12 @@ def chart_data(symbol: str, span: str, interval: str) -> dict:
         out["tradedDay"] = traded_day
         out["tradedShares"] = traded_shares
         out["tradedTurnover"] = traded_value
+        try:
+            halt = pse_edge.halt_for(symbol)
+            if halt:
+                out["halt"] = halt
+        except Exception as exc:
+            faults.note("pse_edge.halt_for", exc)
     # Separate from the descriptive badge: project the drawn daily returns,
     # including mean-estimation uncertainty and assumed round-trip costs.
     # Withheld for a series that has stopped (`staleDays` above): an estimate

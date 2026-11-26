@@ -23,12 +23,18 @@ import time
 import urllib.parse
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import faults
+import sectors
 import live_quote
+import labelhistory
+import pse_dividends
+import phrates
+import pse_edge
 import bullish
 import crypto
 import cryptobull
 import diskcache
 import markets
+import notify
 import ondo
 import phfunds
 import pse
@@ -38,6 +44,7 @@ import research_judgment
 import sourcestats
 
 import server as S
+import deskpack
 import moli_client
 import netwatch
 
@@ -50,13 +57,43 @@ class Handler(SimpleHTTPRequestHandler):
 
     # -- helpers -----------------------------------------------------------
 
+    # -- compressed, revalidated answers ------------------------------------
+    #
+    # Compact JSON with an ETag, so a poll whose answer has not changed costs
+    # an empty 304. No gzip: the server answers 127.0.0.1 only, where
+    # compressing costs CPU and saves nothing. Nothing is memoised: a producer
+    # may update its dict in place, so the bytes are worked out per request.
+
+    @staticmethod
+    def _encode_json(payload: object) -> tuple:
+        """(body, etag) for one payload."""
+        body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+        return body, '"' + hashlib.blake2b(body, digest_size=12).hexdigest() + '"'
+
+    def _not_modified(self, etag: str) -> bool:
+        tags = self.headers.get("If-None-Match") or ""
+        return etag in [t.strip() for t in tags.split(",")]
+
     def send_json(self, status: int, payload: object) -> None:
-        body = json.dumps(payload).encode("utf-8")
+        body, etag = self._encode_json(payload)
+        # A GET that worked may be kept and re-asked with its ETag; an unchanged
+        # answer then costs an empty 304 instead of the whole table again.
+        cacheable = status == 200 and self.command == "GET"
         try:
+            if cacheable and self._not_modified(etag):
+                self.send_response(304)
+                self.send_header("ETag", etag)
+                self.send_header("Cache-Control", "no-cache")
+                self.end_headers()
+                return
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
-            self.send_header("Cache-Control", "no-store")
+            if cacheable:
+                self.send_header("ETag", etag)
+                self.send_header("Cache-Control", "no-cache")
+            else:
+                self.send_header("Cache-Control", "no-store")
             self.end_headers()
             self.wfile.write(body)
         except (BrokenPipeError, ConnectionResetError):
@@ -72,19 +109,54 @@ class Handler(SimpleHTTPRequestHandler):
 
     # The only files this server hands out. It used to serve the whole project
     # folder, source and cache included; the page needs just these.
-    PUBLIC_PAGES = ("/", "/index.html", "/jpy-php.html", "/status.html")
+    PUBLIC_PAGES = ("/", "/index.html", "/jpy-php.html", "/status.html",
+                    "/export/trend.js")
+    extensions_map = {
+        **SimpleHTTPRequestHandler.extensions_map,
+        ".webmanifest": "application/manifest+json",
+    }
 
     def app_page(self):
         # Multiple project copies can run at the same localhost address. Dates
         # alone cannot identify their scripts (a restored copy may be older).
         root = Path(self.directory)
+        # Rebuilt only when the page or one of its files changed on disk: a
+        # reload used to re-read and re-hash every script (~330 KB) each time.
+        stamp = self._page_stamp(root)
+        cached = Handler._page_cache
+        if cached and cached[0] == stamp:
+            return self._send_page(cached[1])
         def version(match):
             asset = match[2]
             digest = hashlib.sha256((root / asset).read_bytes()).hexdigest()[:16]
             return f'{match[1]}="{asset}?v={digest}"'
 
         html = (root / "index.html").read_text(encoding="utf-8")
-        body = re.sub(r'(src|href)="(static/[\w.-]+\.(?:js|css))"', version, html).encode()
+        body = re.sub(r'(src|href)="((?:static|export)/[\w.-]+\.(?:js|css|webmanifest|svg|png))"', version, html).encode()
+        Handler._page_cache = (stamp, body)
+        return self._send_page(body)
+
+    _page_cache: tuple | None = None
+
+    @staticmethod
+    def _page_stamp(root: Path) -> tuple:
+        """Modification times of index.html and every file it links."""
+        names = [root / "index.html"]
+        for folder in ("static", "export"):
+            try:
+                names += sorted((root / folder).iterdir())
+            except OSError:
+                pass
+        stamp = []
+        for path in names:
+            try:
+                st = path.stat()
+                stamp.append((path.name, st.st_mtime_ns, st.st_size))
+            except OSError:
+                stamp.append((path.name, None, None))
+        return tuple(stamp)
+
+    def _send_page(self, body: bytes):
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
@@ -97,15 +169,70 @@ class Handler(SimpleHTTPRequestHandler):
         if path in ("/", "/index.html"):
             return self.app_page()
         is_asset = path.startswith("/static/") and not path.endswith("/")
+        if is_asset:
+            # translate_path folds "..", so "/static/../server.py" passes the
+            # prefix test; check where the file really is.
+            static = os.path.realpath(os.path.join(self.directory, "static"))
+            real = os.path.realpath(self.translate_path(self.path))
+            is_asset = real.startswith(static + os.sep)
         if path not in self.PUBLIC_PAGES and not is_asset:
             self.send_error(404, "Not found")
             return None
+        # The page links every script and stylesheet as `?v=<content hash>`,
+        # so that exact URL can never change: let the browser keep it and
+        # skip even the "has it changed?" request on each reload.
+        query = urllib.parse.urlparse(self.path).query
+        self._immutable = is_asset and query.startswith("v=")
         return super().send_head()
+
+    # A dropped idle connection frees its thread (each connection has one).
+    timeout = 60
+
+    LOCAL_NAMES = ("127.0.0.1", "localhost", "[::1]", "::1")
+
+    @classmethod
+    def _local_host(cls, value: str) -> bool:
+        """True when a Host or Origin value names this machine."""
+        value = value.strip().lower()
+        if "://" in value:
+            value = value.split("://", 1)[1]
+        value = value.split("/", 1)[0]
+        if value.startswith("["):
+            name = value.split("]", 1)[0] + "]"
+        else:
+            name = value.rsplit(":", 1)[0] if value.count(":") == 1 else value
+        return name in cls.LOCAL_NAMES
+
+    def foreign(self) -> bool:
+        """True for a request a web page on another site could have sent.
+
+        A page on any website can make the reader's browser call
+        127.0.0.1 (a "DNS rebinding" request carries a foreign Host; a
+        cross-site POST carries a foreign Origin). The only real client is
+        this project's own page, so anything naming another host is refused."""
+        host = self.headers.get("Host")
+        if host is not None and not self._local_host(host):
+            return True
+        origin = self.headers.get("Origin")
+        if origin is None:
+            return False
+        return origin == "null" or not self._local_host(origin)
+
+    def end_headers(self) -> None:
+        # Stops a browser from re-guessing a file's type (a served .txt run as script).
+        bare, self._bare = getattr(self, "_bare", False), False  # per request, not per connection
+        immutable, self._immutable = getattr(self, "_immutable", False), False
+        if not bare:
+            self.send_header("X-Content-Type-Options", "nosniff")
+        if immutable:
+            self.send_header("Cache-Control", "public, max-age=31536000, immutable")
+        super().end_headers()
 
     def refuse(self) -> None:
         """Answer a probe path with a bare 404: the status line and nothing
         else. `send_response_only` adds no headers, so even the Server line
         that names Python is withheld."""
+        self._bare = True
         self.send_response_only(404)
         self.end_headers()
 
@@ -132,6 +259,8 @@ class Handler(SimpleHTTPRequestHandler):
     # -- routes ------------------------------------------------------------
 
     def do_GET(self):
+        if self.foreign():
+            return self.refuse()
         route = urllib.parse.urlparse(self.path)
         # Probes for services this is not (`/health`, `/v1/models` -- the
         # latter an LLM-server convention) get a bare refusal: a status line
@@ -145,6 +274,12 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.api_chart(route.query)
             if route.path == "/api/quote":
                 return self.api_quote(route.query)
+            if route.path == "/api/labelhistory":
+                return self.api_label_history(route.query)
+            if route.path == "/api/dividends":
+                return self.api_dividends(route.query)
+            if route.path == "/api/rates":
+                return self.api_rates()
             if route.path == "/api/research-judgment":
                 return self.api_research_judgment(route.query)
             if route.path == "/api/search":
@@ -157,8 +292,40 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.api_cryptobull()
             if route.path == "/api/recent":
                 return self.api_recent()
+            if route.path == "/api/sectors":
+                # The eight PSE indexes, built in the background (`sectors.py`).
+                return self.send_json(200, sectors.state(S.chart_data, epoch=S._refresh_epoch))
             if route.path == "/api/watch":
                 return self.send_json(200, {"ok": True, "watchlist": S.saved_watchlist()})
+            if route.path == "/api/alarms":
+                return self.send_json(200, {"ok": True, "alarms": notify.load_alarms()})
+            if route.path == "/api/digest":
+                digest = notify.build_digest(S, netwatch)
+                params = urllib.parse.parse_qs(route.query)
+                if (params.get("format") or [""])[0].lower() == "text":
+                    body = notify.digest_text(digest).encode("utf-8")
+                    try:
+                        self.send_response(200)
+                        self.send_header("Content-Type", "text/plain; charset=utf-8")
+                        self.send_header("Content-Length", str(len(body)))
+                        self.send_header("Cache-Control", "no-store")
+                        self.end_headers()
+                        self.wfile.write(body)
+                    except (BrokenPipeError, ConnectionResetError):
+                        self.close_connection = True
+                    return
+                return self.send_json(200, digest)
+            if route.path == "/api/packet":
+                # Offline morning bundle: last sweep + disk copies only.
+                return self.send_json(200, notify.build_packet(S, netwatch))
+            if route.path == "/api/filings":
+                return self.api_filings(route.query)
+            if route.path == "/api/deskpack":
+                try:
+                    return self.send_json(200, deskpack.deskpack_snapshot(S))
+                except Exception as exc:
+                    faults.note("GET /api/deskpack", exc)
+                    return self.send_json(200, {"ok": False, "error": str(exc)[:200]})
             if route.path == "/api/sources":
                 # Each outside source's last answer, failures and speed
                 # (`sourcestats`); `status.html` draws it.
@@ -184,10 +351,12 @@ class Handler(SimpleHTTPRequestHandler):
                     # declared union, so a reader can see whether the list the
                     # server holds is the list they are looking at.
                     "watchlist": S.union_watchlist(),
+                    "yahoo": moli_client.yahoo_cool_status(),
                 })
-        except (S.UpstreamError, pse.PseError) as exc:
-            return self.fail(502, str(exc))
         except Exception as exc:  # never let the page see a traceback
+            if S.is_transient(exc):
+                return self.fail(502, str(exc))
+            faults.note("GET " + urllib.parse.urlparse(self.path).path, exc)
             return self.fail(500, f"{type(exc).__name__}: {exc}")
         return super().do_GET()
 
@@ -205,28 +374,57 @@ class Handler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length") or 0)
         except ValueError:
             raise ValueError("bad Content-Length")
+        if length < 0:  # rfile.read(-1) would wait for a stream that never ends
+            raise ValueError("bad Content-Length")
         if length > 2 * 1024 * 1024:
             raise ValueError("body too large")
         return json.loads(self.rfile.read(length).decode("utf-8"))
 
+    def do_HEAD(self):
+        if self.foreign():
+            return self.refuse()
+        return super().do_HEAD()
+
     def do_POST(self):
+        if self.foreign():
+            return self.refuse()
         route = urllib.parse.urlparse(self.path)
-        if route.path != "/api/watch":
+        if route.path not in ("/api/watch", "/api/alarms"):
             return self.fail(404, "Unknown endpoint")
         try:
             body = self.read_json()
         except (ValueError, UnicodeDecodeError) as exc:
             return self.fail(400, f"Expected a JSON list: {exc}")
-        # Accept the page's own shape (an array of {symbol, name}) directly;
-        # wrapped is tolerated too, since `_clean_watch` reads either spelling.
-        symbols = body if isinstance(body, list) else body.get("symbols") \
-            if isinstance(body, dict) else None
-        if symbols is None:
-            return self.fail(400, "Expected a JSON array of {symbol, name}")
-        # A declared list may legitimately be empty -- the reader deleted every
-        # row -- and replaces the server's list so removed symbols stop warming.
-        S.record_watchlist(symbols)
-        return self.send_json(200, {"ok": True, "watchlist": S.union_watchlist()})
+        # Same guard as GET: a failure while saving answers 500, never a
+        # dropped connection.
+        try:
+            if route.path == "/api/alarms":
+                items = body if isinstance(body, list) else body.get("alarms") \
+                    if isinstance(body, dict) else None
+                if items is None:
+                    return self.fail(400, "Expected a JSON array of alarms")
+                saved = notify.save_alarms(items)
+                return self.send_json(200, {"ok": True, "alarms": saved})
+            # Accept the page's own shape (an array of {symbol, name}) directly;
+            # wrapped is tolerated too, since `_clean_watch` reads either spelling.
+            symbols = body if isinstance(body, list) else body.get("symbols") \
+                if isinstance(body, dict) else None
+            if symbols is None:
+                return self.fail(400, "Expected a JSON array of {symbol, name}")
+            # A declared list may legitimately be empty -- the reader deleted every
+            # row -- and replaces the server's list so removed symbols stop warming.
+            S.record_watchlist(symbols)
+            return self.send_json(200, {"ok": True, "watchlist": S.union_watchlist()})
+        except Exception as exc:
+            faults.note("POST " + route.path, exc)
+            return self.fail(500, f"{type(exc).__name__}: {exc}")
+
+    def api_filings(self, query: str) -> None:
+        symbol = (urllib.parse.parse_qs(query).get("symbol") or [""])[0].strip()
+        if not symbol or len(symbol) > 32:
+            return self.fail(400, "Missing or invalid ?symbol=")
+        rows = deskpack.filings_for(symbol)
+        return self.send_json(200, {"ok": True, "symbol": symbol, "rows": rows})
 
     def api_chart(self, query: str) -> None:
         params = urllib.parse.parse_qs(query)
@@ -261,6 +459,41 @@ class Handler(SimpleHTTPRequestHandler):
         except LookupError as exc:
             return self.fail(404, str(exc))
 
+    def api_label_history(self, query: str) -> None:
+        """The past year of labels for one symbol (`labelhistory.py`). A
+        separate request, so the chart never waits for it."""
+        params = urllib.parse.parse_qs(query)
+        symbol = (params.get("symbol") or [""])[0].strip()
+        if not symbol or len(symbol) > 32:
+            return self.fail(400, "Missing or invalid ?symbol=")
+        fresh = (params.get("fresh") or [""])[0] == "1"
+        try:
+            return self.send_json(200, labelhistory.history(symbol, fresh=fresh))
+        except (LookupError, pse.PseNotFound) as exc:
+            return self.fail(404, str(exc))
+
+    def api_dividends(self, query: str) -> None:
+        """Ex-dividend dates for one PSE name (`pse_dividends.py`), read after
+        the chart draws so the chart never waits. Markers only: no label."""
+        params = urllib.parse.parse_qs(query)
+        symbol = (params.get("symbol") or [""])[0].strip()
+        if not symbol or len(symbol) > 32:
+            return self.fail(400, "Missing or invalid ?symbol=")
+        try:
+            return self.send_json(200, pse_dividends.for_symbol(symbol))
+        except LookupError as exc:
+            return self.fail(404, str(exc))
+        except pse_edge.EdgeError as exc:
+            return self.fail(502, str(exc))
+
+    def api_rates(self) -> None:
+        """Peso cash rates for the desk strip (`phrates.py`): the BSP policy
+        rate and short government bill yields. Levels only, never a label."""
+        try:
+            return self.send_json(200, phrates.snapshot())
+        except pse.PseError as exc:
+            return self.fail(502, str(exc))
+
     def api_research_judgment(self, query: str) -> None:
         """Separate request: slow research inputs never hold up chart loading."""
         params = urllib.parse.parse_qs(query)
@@ -270,7 +503,9 @@ class Handler(SimpleHTTPRequestHandler):
         try:
             # A full year is needed to reconstruct the first monthly signal's
             # window even at month end. The chart route preserves actual source.
-            data = S.chart_data(symbol, "3mo" if pse.is_pse_symbol(symbol) else "1y", "1d")
+            data = S.chart_data(symbol, "3mo" if (pse.is_pse_symbol(symbol)
+                                                   or symbol.strip().upper().startswith("EDGE:"))
+                                       else "1y", "1d")
             def fetch_pse_snapshot(name):
                 def produce():
                     rows = pse.history_many([name], count=pse.MAX_BARS).get(name, [])
@@ -592,14 +827,16 @@ def kill_running_moli() -> None:
     """Terminate any Moli fetch still in flight (called at shutdown)."""
     with S._running_lock:
         procs = list(S._running)
+    # Each run is its own process group: signal the group, so the browser
+    # Moli started goes too.
     for proc in procs:
         if proc.poll() is None:
-            proc.terminate()
+            moli_client.kill_tree(proc, signal.SIGTERM)
     for proc in procs:
         try:
             proc.wait(timeout=2)
         except subprocess.TimeoutExpired:
-            proc.kill()
+            moli_client.kill_tree(proc, signal.SIGKILL)
 
 
 def port_owner(port: int) -> int | None:
@@ -622,6 +859,9 @@ def main() -> int:
         except ValueError:
             print(f"Not a port: {sys.argv[1]!r}", file=sys.stderr)
             return 2
+        if not 1 <= port <= 65535:
+            print(f"Not a port: {port} (use 1-65535)", file=sys.stderr)
+            return 2
 
     # Signals are delivered on the main thread, which is the one blocked in
     # serve_forever(), so raising there breaks out of the accept loop. (Calling
@@ -637,17 +877,32 @@ def main() -> int:
     except ValueError:  # no signal handling outside the main thread
         pass
 
-    try:
-        server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    except OSError as exc:
-        if exc.errno != errno.EADDRINUSE:
-            raise
-        owner = port_owner(port)
-        print(f"Port {port} is already in use.", file=sys.stderr)
-        if owner:
-            print(f"  Held by PID {owner} — stop it with:  kill {owner}", file=sys.stderr)
-        print(f"  Or run this server elsewhere:        python3 server.py {port + 1}",
-              file=sys.stderr)
+    # Prefer the requested port; if it is taken and the user did not pin one
+    # on the command line, try the next few free ports rather than dying.
+    # Never kill whatever holds 8000 — that may be the user's other copy.
+    pinned = len(sys.argv) > 1
+    server = None
+    for attempt in range(8 if not pinned else 1):
+        try_port = port + attempt
+        if try_port > 65535:
+            break
+        try:
+            server = ThreadingHTTPServer(("127.0.0.1", try_port), Handler)
+            port = try_port
+            break
+        except OSError as exc:
+            if exc.errno != errno.EADDRINUSE:
+                raise
+            if pinned or attempt == 7:
+                owner = port_owner(port)
+                print(f"Port {port} is already in use.", file=sys.stderr)
+                if owner:
+                    print(f"  Held by PID {owner} — stop it with:  kill {owner}",
+                          file=sys.stderr)
+                print(f"  Or run this server elsewhere:        python3 server.py {port + 1}",
+                      file=sys.stderr)
+                return 1
+    if server is None:
         return 1
     server.daemon_threads = True  # don't block shutdown on idle keep-alive threads
 
@@ -672,6 +927,7 @@ def main() -> int:
     # its first sweep is a browser sweep, so an offline start must not show an
     # empty table while a dated copy sits in `.cache/`.
     S.seed_recent()
+    sectors.seed()
     # Same reason for the watchlist, one degree quieter: the warmer starts on a
     # timer of its own and reads the declared union every pass, so a server
     # rebooted -- or one that simply has no browser open yet -- still knows

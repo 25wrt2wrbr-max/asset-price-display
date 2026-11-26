@@ -8,6 +8,7 @@ Split out of server.py; behaviour unchanged. Every name here is re-exported from
 from __future__ import annotations
 
 import coinsph
+import crypto
 import ecb
 import trend
 
@@ -61,15 +62,19 @@ def fx_cross_chart(symbol: str, span: str, interval: str,
         out["trend"] = trend.classify([p["c"] for p in points])
     except ValueError:
         out["trend"] = None
+    # Yahoo's FX priceHint is often a flat 4. That collapses a micro cross
+    # (VND/PHP ~0.0025) so every bar prints the same; take decimals from the
+    # rate's size, the same rule micro coins use.
+    last = points[-1]["c"]
     out.update({
         "symbol": out.get("symbol") or symbol,
         "name": out.get("name") or f"{base}/{quote}",
         "currency": out.get("currency") or quote,
         "exchange": out.get("exchange") or "CCY",
         "type": "CURRENCY",
-        "priceHint": out.get("priceHint") or 4,
+        "priceHint": crypto.price_hint(last),
         "previousClose": out.get("previousClose") or points[-2]["c"],
-        "marketPrice": out.get("marketPrice") or points[-1]["c"],
+        "marketPrice": out.get("marketPrice") or last,
         "points": points,
         "source": "Yahoo (USD legs)",
     })
@@ -114,9 +119,14 @@ def ecb_route(symbol: str, span: str, interval: str,
         # series that closed 70.475), and a headline change computed from it
         # would show the phantom dip the ECB bars exist to remove. The ECB
         # payload's own `previousClose` -- the second-to-last fix -- stands.
-        for field in ("name", "currency", "symbol", "priceHint"):
+        for field in ("name", "currency", "symbol"):
             if yahoo.get(field) is not None:
                 data[field] = yahoo[field]
+        # Yahoo's FX hint is often a flat 4; never let it wipe the
+        # magnitude-based decimals the ECB bars already chose.
+        pts = data.get("points") or []
+        if pts:
+            data["priceHint"] = crypto.price_hint(pts[-1]["c"])
     return data
 
 

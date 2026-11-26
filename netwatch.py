@@ -171,7 +171,10 @@ def net_watch_loop() -> None:
     online = S.net_ok()
     _watch_online = online
     while True:
-        time.sleep(S.NET_PROBE_INTERVAL)
+        # Online, a drop is only noticed; offline, the reconnect is what
+        # refills the caches, so that side keeps the quick pace.
+        time.sleep(S.NET_PROBE_INTERVAL if not online
+                   else getattr(S, "NET_PROBE_ONLINE_INTERVAL", S.NET_PROBE_INTERVAL))
         ok = S.net_ok()
         _watch_online = ok
         if ok and not online:

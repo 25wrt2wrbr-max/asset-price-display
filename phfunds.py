@@ -154,7 +154,7 @@ BPI_MODEL_URL = ("https://www.bpi.com.ph/content/bpi/ph/en/group/bpiwealth/"
                  "root/container/dynamicgraph_copy.model.json")
 
 TOAP_URL = ("https://www.uitf.com.ph/daily_navpu_details_json.php"
-            "?from=%s&to=%s&bank_id=3&fund_id=%s&verification_id=1&btn=Filter")
+            "?from=%s&to=%s&bank_id=%s&fund_id=%s&verification_id=1&btn=Filter")
 
 PIFA_URL = "https://pifa.com.ph/facts-figures/nav-history/?fund_id=%s"
 
@@ -162,6 +162,7 @@ PIFA_URL = "https://pifa.com.ph/facts-figures/nav-history/?fund_id=%s"
 # reading is not a run to date. The bullish table still lists them.
 ACCRUAL_FUNDS = frozenset({
     "BPI-PERA-MM", "ALFM-MM", "ALFM-MM-U", "BPI-ST", "BPI-MM", "BPI-USDST",
+    "BDO-MM", "BDO-ST", "METRO-MM", "SB-MM", "SB-USD-MM",
 })
 
 # `code, name, category, source, key, currency`.
@@ -218,6 +219,40 @@ FUNDS = (
     ("BPI-CONS", "BPI Philippine Consumer Equity Index Fund", "Equity", "uitf", "293", "PHP"),
     ("BPI-GEQ-P", "BPI Global Equity Fund-of-Funds (Class P)", "Equity", "uitf", "599", "PHP"),
     ("BPI-WTECH-P", "BPI World Technology Feeder Fund (Class P)", "Equity", "uitf", "600", "PHP"),
+    # BDO Unibank UITFs (TOAP bank_id=6)
+    ("BDO-EQIDX", "BDO Equity Index Fund", "Equity", "uitf", "6:258", "PHP"),
+    ("BDO-EQ", "BDO Equity Fund", "Equity", "uitf", "6:126", "PHP"),
+    ("BDO-DIV", "BDO Dividend Fund", "Equity", "uitf", "6:197", "PHP"),
+    ("BDO-MULTI", "BDO Peso Multi-Asset Fund", "Balanced", "uitf", "6:125", "PHP"),
+    ("BDO-BOND", "BDO Peso Bond Fund", "Bond", "uitf", "6:130", "PHP"),
+    ("BDO-ST", "BDO Short Term Fund", "Bond", "uitf", "6:305", "PHP"),
+    ("BDO-MM", "BDO Peso Money Market Fund", "Bond", "uitf", "6:128", "PHP"),
+    ("BDO-GEQ", "BDO Global Equity Index Feeder Fund", "Equity", "uitf", "6:326", "USD"),
+    ("BDO-CHINA", "BDO China Equity Feeder Fund", "Equity", "uitf", "6:261", "USD"),
+    ("BDO-EURO", "BDO Europe Equity Feeder Fund", "Equity", "uitf", "6:304", "USD"),
+    ("BDO-PERA-EQ", "BDO PERA Equity Index Fund", "PERA", "uitf", "6:291", "PHP"),
+    # Metrobank UITFs (TOAP bank_id=1)
+    ("METRO-EQIDX", "Metro Philippine Equity Index Tracker Fund", "Equity", "uitf", "1:247", "PHP"),
+    ("METRO-EQ", "Metro Equity Fund", "Equity", "uitf", "1:42", "PHP"),
+    ("METRO-HIDIV", "Metro High Dividend Yield Unit Paying Fund", "Equity", "uitf", "1:246", "PHP"),
+    ("METRO-BAL", "Metro Balanced Fund", "Balanced", "uitf", "1:41", "PHP"),
+    ("METRO-MAX3", "Metro Max-3 Bond Fund", "Bond", "uitf", "1:38", "PHP"),
+    ("METRO-MAX5", "Metro Max-5 Bond Fund", "Bond", "uitf", "1:40", "PHP"),
+    ("METRO-MM", "Metro Money Market Fund", "Bond", "uitf", "1:37", "PHP"),
+    ("METRO-USEQ", "Metro US Equity Feeder Fund", "Equity", "uitf", "1:635", "PHP"),
+    ("METRO-ASPIRE", "Metro Aspire Equity Feeder Fund", "Equity", "uitf", "1:269", "PHP"),
+    ("METRO-PERA-EQ", "Metrobank PERA Equity Fund", "PERA", "uitf", "1:397", "PHP"),
+    # Security Bank UITFs (TOAP bank_id=12)
+    ("SB-EQIDX", "SB Philippine Equity Index Fund", "Equity", "uitf", "12:263", "PHP"),
+    ("SB-EQ", "SB Peso Equity Fund", "Equity", "uitf", "12:86", "PHP"),
+    ("SB-HIDIV", "SB High Dividend Peso Equity Fund", "Equity", "uitf", "12:217", "PHP"),
+    ("SB-VAR", "SB Peso Asset Variety Fund", "Balanced", "uitf", "12:85", "PHP"),
+    ("SB-BOND", "SB Peso Bond Fund", "Bond", "uitf", "12:82", "PHP"),
+    ("SB-MM", "SB Peso Money Market Fund", "Bond", "uitf", "12:84", "PHP"),
+    ("SB-USEQ", "SB US Equity Index Feeder Fund (Class A)", "Equity", "uitf", "12:334", "USD"),
+    ("SB-GEQ", "SB Global Equity Index Feeder Fund (Class A)", "Equity", "uitf", "12:337", "USD"),
+    ("SB-USTECH", "SB US Technology Equity Index Feeder Fund", "Equity", "uitf", "12:454", "USD"),
+    ("SB-USD-MM", "SB Dollar Money Market Fund", "Bond", "uitf", "12:587", "USD"),
 )
 
 # The code -> record index, built once. Two funds sharing a code would make a
@@ -428,13 +463,19 @@ def _get_untimed(url: str) -> str:
         raise FundError("%s did not answer (%s)" % (url, exc))
 
 
+def toap_url(key: str, start: datetime.date, today: datetime.date) -> str:
+    """Build the TOAP JSON URL; unprefixed keys default to BPI (`bank_id=3`)."""
+    bank_id, fund_id = key.split(":", 1) if ":" in str(key) else ("3", str(key))
+    return TOAP_URL % (start.isoformat(), today.isoformat(), bank_id, fund_id)
+
+
 def _fetch(entry: dict) -> list[dict]:
     """Ask the fund's own publisher for its series, and normalise it."""
     source, key = entry["source"], entry["key"]
     if source == "uitf":
         today = datetime.date.today()
         start = today - datetime.timedelta(days=HISTORY_DAYS + 60)
-        body = _get(TOAP_URL % (start.isoformat(), today.isoformat(), key))
+        body = _get(toap_url(key, start, today))
         try:
             document = json.loads(body)
         except ValueError:
@@ -647,7 +688,7 @@ def _chart_payload(code: str, bars: list[dict], span: str, interval: str,
         # The bars before the window, for `onset.decorate`'s steadiness reading.
         # The series is `HISTORY_DAYS` long, so a 90-day chart has months behind
         # it; a fund publishes one value a business day, so it carries no volume.
-        tail = points[:keep[0]][-onset_module.LEAN_HOLD_BARS:]
+        tail = points[:keep[0]][-100:]
         points = [points[i] for i in keep]
     if not points:
         raise FundNotFound("No NAVPU data for %s in this window." % entry["name"])

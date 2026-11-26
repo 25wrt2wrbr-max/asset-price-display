@@ -26,6 +26,68 @@ function loadAlarms() {
 
 function saveAlarms() {
   try { localStorage.setItem(ALARM_KEY, JSON.stringify(alarms)); } catch {}
+  syncAlarmsToServer();
+}
+
+function syncAlarmBadge() {
+  const fired = alarms.filter((a) => a.fired).length;
+  try {
+    if (typeof navigator === "undefined") return;
+    if (fired > 0 && typeof navigator.setAppBadge === "function") {
+      Promise.resolve(navigator.setAppBadge(fired)).catch(() => {});
+    } else if (fired === 0 && typeof navigator.clearAppBadge === "function") {
+      Promise.resolve(navigator.clearAppBadge()).catch(() => {});
+    }
+  } catch {}
+}
+
+function syncAlarmsToServer() {
+  if (typeof postJSON !== "function") return;
+  postJSON("/api/alarms", alarms).catch(() => {});
+}
+
+async function restoreAlarmsFromServer() {
+  if (typeof requestJSON !== "function") return;
+  try {
+    const res = await requestJSON("/api/alarms");
+    const remote = Array.isArray(res && res.alarms) ? res.alarms : [];
+    if (!remote.length) {
+      if (alarms.length) syncAlarmsToServer();
+      return;
+    }
+    if (!alarms.length) {
+      alarms = remote;
+      try { localStorage.setItem(ALARM_KEY, JSON.stringify(alarms)); } catch {}
+      drawAlarms();
+      redrawChartForAlarm();
+      return;
+    }
+    // Merge any alarm fired on the server while Safari was closed.
+    const byId = new Map(remote.map((a) => [a.id, a]));
+    let changed = false;
+    for (const local of alarms) {
+      const srv = byId.get(local.id);
+      if (srv && srv.fired && !local.fired) {
+        local.fired = srv.fired;
+        local.last = srv.last;
+        changed = true;
+        ringAlarm(local);
+      }
+    }
+    if (changed) {
+      try { localStorage.setItem(ALARM_KEY, JSON.stringify(alarms)); } catch {}
+      drawAlarms();
+    } else {
+      syncAlarmsToServer();
+    }
+  } catch {}
+}
+
+function redrawChartForAlarm(symbol) {
+  if (typeof state === "undefined" || !state.data || typeof drawChart !== "function") return;
+  if (!symbol || alarmSym(state.data.symbol) === alarmSym(symbol)) {
+    drawChart({ keep: true });
+  }
 }
 
 const alarmSym = (s) => String(s || "").trim().toUpperCase();
@@ -49,29 +111,53 @@ function alarmCrossed(prev, now, target) {
   return null;
 }
 
-function addAlarm(data, target) {
+function snapAlarmTarget(data, target) {
+  let t = Number(target);
+  if (!Number.isFinite(t)) return null;
+  // PSE names: snap to a valid tick so the alert matches what can be traded.
+  const sym = String(data && data.symbol || "").toUpperCase();
+  const pse = data && data.currency === "PHP"
+    && (sym.startsWith("PSE:") || sym.startsWith("EDGE:") || sym.endsWith(".PS")
+      || Number.isFinite(data.boardLot));
+  if (pse && typeof pseRoundToTick === "function") {
+    const snapped = pseRoundToTick(t, "nearest");
+    if (Number.isFinite(snapped)) t = snapped;
+  }
+  return t;
+}
+
+function addAlarm(data, target, needLabel) {
   const price = alarmPrice(data);
+  const want = needLabel === "bullish" || needLabel === "bearish" ? needLabel : null;
+  const snapped = snapAlarmTarget(data, target);
+  if (!Number.isFinite(snapped)) return null;
   const a = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     symbol: data.symbol,
     name: data.name || data.symbol,
-    target,
+    target: snapped,
     last: price,                 // the reading the next one is compared with
     unit: data.unit || null,
     currency: data.currency || null,
     priceHint: Number.isFinite(Number(data.priceHint)) ? Number(data.priceHint) : null,
+    // Optional filter: fire only while the chart's current label matches.
+    // Descriptive gate on today's badge — not a forecast that it will stay.
+    needLabel: want,
     created: Date.now(),
     fired: null,                 // {at, price, dir} once it has gone off
   };
   alarms.push(a);
   saveAlarms();
+  redrawChartForAlarm(a.symbol);
   return a;
 }
 
 function removeAlarm(id) {
+  const gone = alarms.find((a) => a.id === id);
   alarms = alarms.filter((a) => a.id !== id);
   saveAlarms();
   drawAlarms();
+  redrawChartForAlarm(gone && gone.symbol);
 }
 
 /* Every fresh payload for a symbol goes through here: the chart's own loads,
@@ -80,16 +166,25 @@ function checkAlarms(data) {
   const price = alarmPrice(data);
   if (price === null) return;
   const key = alarmSym(data.symbol);
+  const labelNow = data.trend && data.trend.label;
   let changed = false;
   for (const a of alarms) {
     if (a.fired || alarmSym(a.symbol) !== key) continue;
     const dir = alarmCrossed(a.last, price, a.target);
-    a.last = price;
-    changed = true;
     if (dir) {
+      // Label gate: a filter on the chart's current label, not a forecast.
+      // When the label does not match, leave `last` alone so a later reading
+      // with the right label can still count as a cross.
+      if (a.needLabel && labelNow !== a.needLabel) continue;
+      changed = true;
+      a.last = price;
       a.fired = { at: Date.now(), price, dir };
       ringAlarm(a);
+      continue;
     }
+    // Stored and redrawn only when the price moved: the minute poll runs in
+    // hidden tabs too, and most minutes nothing moves.
+    if (a.last !== price) { a.last = price; changed = true; }
   }
   if (changed) { saveAlarms(); drawAlarms(); }
 }
@@ -142,8 +237,9 @@ function ringAlarm(a) {
       }
     }
   } catch {}
-  // 4. the tab title, for a tab the reader is not looking at
+  // 4. the tab title & Safari Dock badge, for a tab the reader is not looking at
   if (!document.title.startsWith("🔔")) document.title = "🔔 " + document.title;
+  syncAlarmBadge();
 }
 
 /* ---- the form under the chart and the list in the rail ---- */
@@ -184,8 +280,10 @@ function drawAlarms() {
       what.textContent = `went off ${a.fired.dir === "up" ? "▲" : "▼"} at ${alarmFmt(a.fired.price, a)} (level ${alarmFmt(a.target, a)})`;
     } else {
       const side = Number.isFinite(a.last) ? (a.target >= a.last ? "▲ " : "▼ ") : "";
+      const gate = a.needLabel ? ` · only while ${a.needLabel}` : "";
       what.textContent = `${side}${alarmFmt(a.target, a)}` +
-        (Number.isFinite(a.last) ? ` · now ${alarmFmt(a.last, a)}` : " · waiting for a live price");
+        (Number.isFinite(a.last) ? ` · now ${alarmFmt(a.last, a)}` : " · waiting for a live price") +
+        gate;
     }
     const del = document.createElement("button");
     del.type = "button"; del.className = "watch-io-btn";
@@ -196,6 +294,7 @@ function drawAlarms() {
     list.append(li);
   }
   drawAlarmForm();
+  syncAlarmBadge();
 }
 
 function bindAlarmForm() {
@@ -221,10 +320,18 @@ function bindAlarmForm() {
       if (typeof Notification !== "undefined" && Notification.permission === "default") Notification.requestPermission();
     } catch {}
     try { if (!alarmAudio) alarmAudio = new (window.AudioContext || window.webkitAudioContext)(); } catch {}
-    addAlarm(d, target);
+    const needSel = document.getElementById("alarmNeedLabel");
+    const needLabel = needSel ? needSel.value : "";
+    const a = addAlarm(d, target, needLabel);
     drawAlarms();
     const denied = typeof Notification === "undefined" || Notification.permission === "denied";
-    note.textContent = `Alarm set at ${formatPrice(target, d)}.` +
+    const shown = a ? a.target : target;
+    if (a && a.target !== target && typeof pseRoundToTick === "function") {
+      input.value = String(a.target);
+    }
+    note.textContent = `Alarm set at ${formatPrice(shown, d)}` +
+      (a && a.target !== target ? " (snapped to a valid PSE tick)" : "") +
+      (needLabel ? ` (only while currently labelled ${needLabel})` : "") + "." +
       (denied ? " Browser notifications are off, so it will show on this page and beep." : "");
   });
   document.addEventListener("visibilitychange", () => {

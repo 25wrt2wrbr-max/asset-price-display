@@ -8,13 +8,14 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import signal
 import socket
 import subprocess
 import threading
 import time
-import time
 import urllib.parse
 import crypto
+import faults
 import pse
 import sourcestats
 
@@ -84,9 +85,32 @@ BATCH_EVAL_SCRIPT = """(async () => {
 _running: set[subprocess.Popen] = set()
 _running_lock = threading.Lock()
 
+# At most this many browsers at once (2026-11-24). Row hover prefetch, chart
+# misses, compare lines, the warmer and the sweeps each start their own run,
+# and nothing else bounded them: a burst could open a dozen Chromes and draw
+# Yahoo's 429. Six leaves room for the PSE sweep's four socket workers
+# (`pse.BATCH_WORKERS`) plus a chart click. A run waits for a slot up to its
+# own wall budget, then fails as an outage like any other browser failure.
+# `APD_MOLI_MAX` overrides.
+MAX_BROWSERS = max(1, int(os.environ.get("APD_MOLI_MAX") or 6))
+_browser_slots = threading.BoundedSemaphore(MAX_BROWSERS)
+
+YAHOO_429_TRIP = 3
+YAHOO_COOL_SEC = 90
+_yahoo_cool_until = 0.0
+_yahoo_429_streak = 0
+_yahoo_cb_lock = threading.Lock()
+_slot_wait_ms_total = 0.0
+_slot_wait_ms_last = 0.0
+_browsers_recycled = 0
+
 
 class UpstreamError(RuntimeError):
     """Moli could not be run, or returned something unusable."""
+
+
+class MoliBusy(UpstreamError):
+    """Every browser slot stayed taken: a queue, not a broken browser."""
 
 
 # What the last browser run did, kept in place (never rebound) so every module
@@ -102,6 +126,10 @@ def moli_run(page: str, script: str,
     start = time.monotonic()
     try:
         text = _moli_run(page, script, timeout_ms, wall_timeout)
+    except MoliBusy:
+        # A full queue says nothing about whether the browser works, so it
+        # neither marks the browser broken nor counts as its failure.
+        raise
     except UpstreamError as exc:
         health.update(ok=False, error=str(exc)[:200], at=time.time())
         sourcestats.record("Moli browser", failed=1,
@@ -118,14 +146,69 @@ def moli_run(page: str, script: str,
 YAHOO_ANSWERS = (200, 404)
 
 
+def _yahoo_url(url: str) -> bool:
+    return sourcestats.name_for(url) == "Yahoo Finance"
+
+
+def _note_yahoo_status(status: int) -> None:
+    global _yahoo_429_streak, _yahoo_cool_until
+    with _yahoo_cb_lock:
+        if status in YAHOO_ANSWERS:
+            _yahoo_429_streak = 0
+            return
+        if status == 429:
+            _yahoo_429_streak += 1
+            if _yahoo_429_streak >= YAHOO_429_TRIP:
+                _yahoo_cool_until = time.time() + YAHOO_COOL_SEC
+                sourcestats.record(
+                    "Yahoo Finance", failed=1, error="429 circuit open %ss" % YAHOO_COOL_SEC)
+        else:
+            _yahoo_429_streak = 0
+
+
+def _yahoo_cooling() -> bool:
+    return time.time() < _yahoo_cool_until
+
+
+def reset_yahoo_circuit() -> None:
+    """Reset 429 circuit state (tests)."""
+    global _yahoo_429_streak, _yahoo_cool_until, _slot_wait_ms_total, _slot_wait_ms_last
+    global _browsers_recycled
+    with _yahoo_cb_lock:
+        _yahoo_429_streak = 0
+        _yahoo_cool_until = 0.0
+    _slot_wait_ms_total = 0.0
+    _slot_wait_ms_last = 0.0
+    _browsers_recycled = 0
+
+
+def yahoo_cool_status() -> dict:
+    """Circuit breaker and browser-slot wait stats for `/api/health`."""
+    with _yahoo_cb_lock:
+        cool_until = _yahoo_cool_until
+        streak = _yahoo_429_streak
+    return {
+        "cooling": _yahoo_cooling(),
+        "coolUntil": int(cool_until) if cool_until else None,
+        "streak429": streak,
+        "tripAfter": YAHOO_429_TRIP,
+        "coolSeconds": YAHOO_COOL_SEC,
+        "slotWaitMsTotal": round(_slot_wait_ms_total, 1),
+        "slotWaitMsLast": round(_slot_wait_ms_last, 1),
+        "browsersRecycled": _browsers_recycled,
+        "maxBrowsers": MAX_BROWSERS,
+    }
+
+
 def _tally_yahoo(results: dict, seconds: float) -> None:
     """Count one Moli run's Yahoo URLs in `sourcestats` (other hosts are
     counted by the module that asked, so they are skipped here)."""
     ok = failed = 0
     error = None
     for url, (status, _body) in results.items():
-        if sourcestats.name_for(url) != "Yahoo Finance":
+        if not _yahoo_url(url):
             continue
+        _note_yahoo_status(status)
         if status in YAHOO_ANSWERS:
             ok += 1
         else:
@@ -135,6 +218,20 @@ def _tally_yahoo(results: dict, seconds: float) -> None:
         sourcestats.record("Yahoo Finance", ok=ok, failed=failed,
                            seconds=seconds, error=error)
 
+
+
+def kill_tree(popen: subprocess.Popen, sig: int = signal.SIGTERM) -> None:
+    """Signal Moli and every process it started (one process group)."""
+    try:
+        os.killpg(popen.pid, sig)
+    except (ProcessLookupError, PermissionError):
+        pass
+    except OSError as exc:
+        faults.note("moli kill_tree", exc)
+        try:
+            popen.send_signal(sig)
+        except OSError:
+            pass
 
 
 def _moli_run(page: str, script: str,
@@ -157,12 +254,32 @@ def _moli_run(page: str, script: str,
             f"moli not found at {MOLI!r}. Install it from the latest release "
             "(see ~/.claude/skills/moli-webfetch/SKILL.md), or set MOLI_BIN."
         )
+    global _slot_wait_ms_total, _slot_wait_ms_last
+    slot_wait_start = time.monotonic()
+    if not _browser_slots.acquire(timeout=wall_timeout):
+        raise MoliBusy(
+            f"moli busy: {MAX_BROWSERS} browser runs in flight for {wall_timeout}s")
+    waited = (time.monotonic() - slot_wait_start) * 1000.0
+    _slot_wait_ms_last = waited
+    _slot_wait_ms_total += waited
+    try:
+        return _moli_run_slot(page, script, timeout_ms, wall_timeout)
+    finally:
+        _browser_slots.release()
+
+
+def _moli_run_slot(page: str, script: str,
+                   timeout_ms: int, wall_timeout: float) -> str:
+    """`_moli_run`'s body, run while holding one of `MAX_BROWSERS` slots."""
     popen = subprocess.Popen(
         [MOLI, "fetch", "--eval", script,
          "--wait-until", "domcontentloaded",
          "--timeout", str(timeout_ms), page],
         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
         text=True, cwd=HERE,
+        # Its own process group, so a timeout or shutdown can stop the browser
+        # Moli started too, not only Moli (see `kill_tree`).
+        start_new_session=True,
     )
     with _running_lock:
         _running.add(popen)
@@ -170,8 +287,15 @@ def _moli_run(page: str, script: str,
         stdout, stderr = popen.communicate(timeout=wall_timeout)
         returncode = popen.returncode
     except subprocess.TimeoutExpired:
-        popen.kill()
-        popen.communicate()
+        global _browsers_recycled
+        _browsers_recycled += 1
+        kill_tree(popen, signal.SIGKILL)
+        try:
+            popen.communicate(timeout=5)
+        except subprocess.TimeoutExpired as exc:
+            # A child still holds the pipe; give up on its output rather than
+            # leave this thread waiting on it for ever.
+            faults.note("moli timeout reap", exc)
         raise UpstreamError(f"moli timed out after {wall_timeout}s")
     finally:
         with _running_lock:
@@ -187,8 +311,17 @@ def _moli_run(page: str, script: str,
     return text
 
 
+def _check_yahoo_cool(urls: list[str]) -> None:
+    if not any(_yahoo_url(u) for u in urls):
+        return
+    if _yahoo_cooling():
+        raise UpstreamError(
+            "Yahoo cooling after 429s (%ss); try disk or wait" % YAHOO_COOL_SEC)
+
+
 def moli_get(url: str, page: str = ORIGIN_PAGE) -> tuple[int, str]:
     """Fetch `url` through Moli. Returns (http_status, response_body)."""
+    _check_yahoo_cool([url])
     # A run that fails outright is the browser's failure, tallied as
     # "Moli browser" in `moli_run`: Yahoo was never asked, so it is not
     # blamed. Only the statuses Yahoo itself sent are counted for it.
@@ -228,6 +361,7 @@ def moli_batch_get(urls: list[str],
     """
     if not urls:
         return {}
+    _check_yahoo_cool(urls)
     timeout_ms = max(WARM_BATCH_TIMEOUT_MS, 25_000 + len(urls) * 500)
     wall_timeout = max(WARM_BATCH_SUBPROCESS_TIMEOUT, timeout_ms / 1000.0 + 30.0)
     start = time.monotonic()

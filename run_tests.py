@@ -18,11 +18,24 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parent
 os.chdir(ROOT)  # several tests read files by relative path
-# The tests must never read or write the real cache folder.
+# The tests must never read or write the real cache folder or fire OS banners.
 os.environ["APD_CACHE_DIR"] = tempfile.mkdtemp(prefix="apd-test-cache-")
+os.environ.setdefault("APD_NOTIFY", "0")
 atexit.register(shutil.rmtree, os.environ["APD_CACHE_DIR"], ignore_errors=True)
 for p in (ROOT / "lab", ROOT):
     sys.path.insert(0, str(p))
+
+
+# Node tests the full run also executes, in this order.
+JS_TESTS = (
+    "test_verdict_words.js", "test_watch_changes.js", "test_alarms.js",
+    "test_desk.js", "test_spark_canvas.js", "test_etag_memo.js",
+    "test_chart_quiet_sig.js",
+    "test_psefees.js", "test_labelstrip.js", "test_peso.js", "test_benchmark.js",
+    "test_comparison.js", "test_heatmap.js", "test_server_banner.js", "test_rates.js", "test_dividends.js",
+    "test_deskextras.js", "test_desksuggest.js", "test_deskpack.js",
+    "test_friendly_ux.js", "test_glance.js",
+)
 
 
 def main() -> int:
@@ -33,10 +46,9 @@ def main() -> int:
     ok = result.wasSuccessful()
     if len(sys.argv) == 1:  # the parity check belongs to the full run only
         parity = subprocess.run([sys.executable, str(ROOT / "export" / "verify_parity.py")])
-        phrases = subprocess.run(["node", str(ROOT / "tests" / "test_verdict_words.js")])
-        visits = subprocess.run(["node", str(ROOT / "tests" / "test_watch_changes.js")])
-        alarms = subprocess.run(["node", str(ROOT / "tests" / "test_alarms.js")])
-        ok = ok and parity.returncode == 0 and phrases.returncode == 0 and visits.returncode == 0 and alarms.returncode == 0
+        ok = ok and parity.returncode == 0
+        for name in JS_TESTS:
+            ok = subprocess.run(["node", str(ROOT / "tests" / name)]).returncode == 0 and ok
     return 0 if ok else 1
 
 

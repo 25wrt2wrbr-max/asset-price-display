@@ -205,6 +205,7 @@ WARM_SPAN, WARM_INTERVAL = "3mo", "1d"
 # `diskcache.MAX_AGE` is the outer bound -- past it the copy reads as absent
 # offline anyway.
 ROW_STALE_AFTER = 900  # seconds
+ROW_CLOSED_STALE_AFTER = 3600  # while the row's market is shut (warm.row_stale_after)
 
 # Pause after a chart batch fails to reach the network at all. One row's
 # outage usually means the whole machine cannot, and the batches behind it
@@ -395,7 +396,8 @@ from memo import (  # noqa: E402,F401  (split out 2026-11-20)
 # the edge arrives late, when the host answers again.
 NET_PROBE = ("data-api.binance.vision", 443)
 NET_PROBE_TIMEOUT = 2.0   # seconds the connect may take before it counts as a no
-NET_PROBE_INTERVAL = 5.0  # seconds between questions while nothing has changed
+NET_PROBE_INTERVAL = 5.0  # seconds between questions while offline
+NET_PROBE_ONLINE_INTERVAL = 15.0  # and while online (was 5 s: ~17,000 probes a day)
 
 # The reconnect counter, and the lock the background sleepers wait on. A lock
 # of its own on purpose: `_cache_lock` guards the memos and this guards the

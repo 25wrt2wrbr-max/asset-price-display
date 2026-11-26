@@ -1,3 +1,53 @@
+
+## Added 2026-11-25 (deskpack — full suggestion pack)
+
+Implemented the brainstorm pack end-to-end: `deskpack.py` +
+`static/deskpack.js` + `pseBoardLot`/`pseCashPlan`; cash planner, T+2, morning
+pulse, overnight gap, commodities, holdings, named watchlists, scan/focus,
+print brief, chart-in-words, filings, BSP/BTr chips, ASEAN presets, keyboard
+bar walk, mobile sheet; `/api/filings` + `/api/deskpack`; Yahoo 429 circuit;
+memo SWR; next free port; `.command` launcher. Chaos tests assert missing ≠
+bearish. Not `trend.classify`.
+
+## Added 2026-11-25 (desk suggestion pack — full build)
+
+Moved from AGENTS.md for size. Implemented: COL sell-net + board-lot on hero;
+PSE tick snap alarms; thin-book; PSE Edge link; chance yardstick; digest under
+badge; PSE session countdown; packet day-diff; digest text link; print CSS;
+against-market on watch rows; watch label counts; layouts + column presets;
+turnover heat tiles; chart range chips; UITF peer ladder; fund→PSEi strip;
+PH–UST chip; local reminders; watch CSV with fees. `static/desksuggest.js`.
+Not `trend.classify`.
+
+## Friendlier + lighter III (2026-11-25)
+
+Research: progressive disclosure (UXPin / LogRocket), web.dev
+`content-visibility` / IntersectionObserver for off-screen work. Three
+brainstorms (UX, perf, visual) then one pack — no `trend.classify`.
+
+**Visual:** softer page wash; quiet scrolling section nav; neutral
+plain-reading; plot without box border; watch hairlines; fold-out dividers;
+calmer example chips.
+
+**Friendly:** short meta + “About this price”; Turn began / Days in trend /
+3-mo change; Today’s overview; dismissible welcome tip; skip-to-search;
+footer keyboard help (`?` opens it); friendlier 404; plain alarm gate words;
+profit-odds aside; mobile List options; clamp triage note.
+
+**Lighter:** live `renderAll` skips meta/badge/stats (fees still track live);
+morning desk refresh only while in view (and while still hidden pre-draw);
+reuse `loadSectors.last` for the desk ribbon; label history deferred when
+the plot is off-screen; hover prefetch gated by viewport (optimistic until
+IO answers). Tests: `test_friendly_ux.js`.
+
+## Friendlier + lighter II (2026-11-25)
+
+Chart under the price; More numbers / Why this label / compare / sources as
+fold-outs; empty watch rail no longer forced tall; CSS contain on watch/plot.
+Quiet chart refresh uses chartQuietSig; recent/sectors skip without stringifying
+spark arrays; desk extras skip when watch quotes unchanged. Plainer leaning
+headers and chance wording. See CLAUDE.md. Not trend.classify.
+
 # asset-price-display — older agent notes
 
 Kept for history. The current working notes are `CLAUDE.md` (also reachable as
@@ -2094,3 +2144,202 @@ for code, *_ in phfunds.FUNDS:
 EOF
 # expect no output
 ```
+
+## Fast price clock (2026-11-21)
+
+`live_quote.py` + `/api/quote?symbol=`: newest Yahoo 1m print, 1 s memo. While a
+Yahoo chart's `lastBarBasis` is live/pre/after, `main.js` polls it every 2 s and
+patches only the newest point's close (hero, alarms). The badge is not re-scored
+until the next full chart re-read (60 s), which replaces the patched point.
+
+
+## Moved from CLAUDE.md on 2026-11-23
+
+### The bond socket: browser, not a raw websocket
+
+The TradingView chart protocol *can* be driven by a plain TLS socket — that was
+tried first and the code was correct (handshake, session, symbol resolution,
+series request, `timescale_update` all arrived). The protocol **drops most of the
+sessions it accepts**: a session is told `series_loading` and the series never
+comes, a coin flip per attempt, worse for `TVC:PH05Y`, and bursty. Retrying hard
+enough to win took ~40 s for three symbols with one often missing.
+
+Driving the same protocol from the browser (`pse.history_many`) is reliable:
+all three tenors in ~1.1 s. `tv.py` is thin: it owns the bond symbols and
+borrows `pse.py`'s socket.
+
+
+### The PSEi, and the scan's makeup in both notes (2026-11-09)
+
+- **The PSEi is scanned with the stocks.** `bullish._universe` no longer drops
+  `kind == "INDEX"`; the index goes through the same `onset` walk, so it appears
+  on the recent table or the leaning one whenever its own chart says so. Its
+  rows carry **no board lot, no minimum investment, no turnover** (an index is
+  not bought and trades no shares); `pse.chart` withholds the "Min. investment"
+  readout for `type == "index"` in both chart builders. `PSE:PSEI` opens the
+  page's own chart.
+- **Both notes print what was scanned.** `bullish.scan` ships
+  `payload["kinds"]` (`{EQUITY, PREFERRED, ETF, CLOSEDEND, INDEX}` counts over
+  its universe); `server.recent_loop` passes the sweep's `universe`/`kinds` into
+  `recent.scan(ph_sweep_stats=...)`; `recent.kinds_line` writes
+  "249 common shares, 11 preferred shares, 1 ETF, 1 closed-end fund, 1 index".
+  `recent.summarize` puts it in the recent note, and the identical sentence
+  ships as `payload["phScan"]` for the leaning note (`drawLeaningNote`). One
+  string, so the two notes cannot disagree. An older disk copy has no `kinds`;
+  the note then drops the makeup rather than guessing it.
+- Counts drift with listings: 262 scanner securities on 2026-11-09, plus the
+  index added by hand = 263 scanned.
+
+
+## Chart memory and prefetch (2026-11-23)
+
+`getChart` in `static/core.js` keeps chart payloads 45 s (40 max) and shares
+in-flight requests. Any element with `data-chart` prefetches on hover (70 ms
+rest), focus and pointerdown; clicks draw from memory, background refreshes
+(`quiet`) and watchlist quotes always re-ask. Cold click ~1.3 s → ~20 ms.
+Measured: server 60–110 MB RAM, ~0% CPU idle; page ~2 MB JS heap.
+
+
+### Bond cache, and the two ages
+
+`diskcache` under `tv:bond:<symbol>`:
+- `BOND_CACHE_TTL = 6h` — fresh enough to **skip the fetch** (a yield is a daily
+  close, so a copy a few hours old has missed at most one bar).
+- `BOND_CACHE_KEEP = 7d` — still worth **showing** when the fetch failed; the row
+  then carries `stale` (seconds) and says how old the reading is.
+
+
+
+## Moved from CLAUDE.md 2026-11-24
+
+### Time zones
+
+Bond bars are stamped at Manila 05:00 (= 21:00 UTC of the prior day), so bond rows
+carry `"tz": "Asia/Manila"` and the front end reads their dates in that zone via
+`rowDate()`. Every other row stays UTC. Do not "fix" this by shifting timestamps in
+the data — the timezone belongs on the row.
+
+### The PSEi and the scan's makeup (2026-11-09)
+
+The PSEi is scanned with the stocks (no lot, minimum or turnover on its rows);
+both notes print the same `kinds` sentence. Details in `docs/agent-notes-history.md`.
+
+### US Treasury futures (2026-10-31)
+
+The rate market, added because it was **missing** rather than new: `ZB=F` was
+always chartable, but the US leg is a turnover ranking (`common`/`etf` typespecs)
+that cannot name a futures contract, and search could not answer "30-year
+treasury bond" or "long bond" (Korean ETFs and KB funds came back instead).
+
+- `rates.CONTRACTS` is the curve as a **fixed list**: ZT, Z3N, ZF, ZN, TN, ZB, UB.
+- **A future is a price** — nothing is inverted (unlike the bond yields). Only a
+  bullish contract is a row.
+- `recent.rate_rows(fetch_us_bars)` judges them on Yahoo's daily bars with
+  `months=` (Yahoo's 3mo window, like the US leg), a second call for 7 symbols.
+  `turnover: None` (a contract's volume is a count, not money) and
+  `rates.price_hint` for the 32nds.
+- Search: `rates.search_contracts` adds Yahoo-shaped rows; `named_contracts`
+  leads with the contract a query *names* (ticker, tenor, "long bond"), and the
+  bare word "treasury" only fills in the curve behind Yahoo's answer.
+- `rates.chart_alias` makes a bare `ZB` chart `ZB=F` — retried **only after**
+  Yahoo refuses the bare spelling (`UB` is a real ETF and keeps its chart).
+
+## Moved from CLAUDE.md 2026-11-24
+
+### Philippine funds (2026-10-31)
+
+A fund has no ticker, no exchange and no volume; it publishes one **NAVPU** a
+business day, which is a daily close, so the classifier reads it like any price.
+The row and the chart are one series: both go through `phfunds.series(code)`.
+
+- The raw series is **calendar-padded** (weekends repeat Friday, BPI's model
+  repeats stamps and stamps a day or two ahead). `phfunds.clean` keeps business
+  days only — never read raw points.
+- A **money market fund is always bullish** (its NAVPU only accrues). Six of the
+  47 are money-market/short-term funds; that is not a classifier bug.
+- Cold pass ~35 s (PIFA dominates; it refuses parallel reads), warm pass <5 s.
+  Six-hour cache, one-week fallback, `stale` seconds on the row.
+- `FUND:<CODE>` symbols route in `server.chart_data` before Yahoo; the warmer has
+  its own leg (`_warm_batch_funds`). Fund turnover is `null` (exempt from the
+  peso-volume floor).
+
+## Added 2026-11-23 (moved from AGENTS.md)
+
+- **Health bar**: legs ship `stats["verdicts"]` (judged series; bonds as
+  bond price; PH only with its bearish list) → `recent.market_health`.
+- **High/low tag**: `windowExtreme` (`static/verdict.js`), newest close ≥/≤
+  every earlier one, 20+ bars; rows read `spark`, chart its drawn closes.
+- **Watchlist 1W/1M**: `periodChanges` (`static/watchlist.js`), last close
+  ≥ 7 / 30 calendar days back, else null; % off the window's high/low.
+- **Plain words**: `plainReading`, path steady ≥ 0.25 / uneven ≥ 0.10 by
+  |efficiency| (measured on market-history), drift words at t 1.96 / 1.0.
+- **Volume tag**: `volumeSpike`, newest bar ≥ 2× the window's median (6.8%
+  of days). Rows read `sparkVol` (from `onset`); charts `volumes` or Yahoo's
+  `barVolumes` (not `volumes`: `fill_missing_days` keys on it), only if
+  aligned. Crypto rows carry none: Binance volume ≠ the Yahoo chart's.
+- **Luck check**: `recent.luck_check`, Benjamini-Yekutieli 10% on rows'
+  `significance` vs all judged names → `payload["luck"]`; never a filter.
+- **5-day volume** (user rule): the peso floor and the volume column read
+  `turnover.average` — mean close×volume over the last 5 *finished*
+  sessions (PSE before 15:15, crypto's UTC day, NY until 16:15 left out).
+- **PSE Edge backup** (`pse_edge.py`): socket gaps (or all of it) and a
+  cold scanner failure fall back to edge.pse.com.ph; rows get `source` and
+  open `EDGE:XXX` (same bars). No preferreds/PSEi, ~1 day behind,
+  unadjusted (one-day fall ≥ 30% → not judged). 241 names: 1 label differs.
+- **Sector table** (`sectors.py`): PSEI ALL FIN IND HDG PRO SVC M_O, each
+  row the `chart_data` payload its click opens; rebuilt every 15 min.
+- **Compare**: ≤ 6 lines, legend click = baseline (÷ it); `--series-2..6`.
+- **Tiles** (`static/heatmap.js`): watchlist heatmap from `state.watchQuotes`.
+- None touches `trend.classify`.
+
+## Added 2026-11-24 (speed and polish)
+
+- Page skips redraws that change nothing: a quiet chart re-read whose JSON
+  equals `state.data`; star changes redraw only "Watched only" tables
+  (`tableViews`); alarms save only on a price move; a hidden data table is
+  built when opened; a watch row keeps its price while it re-reads.
+- Tab return re-reads the chart only after `CHART_LIVE_TTL`.
+- Moli runs in its own process group; timeout and shutdown `killpg` it
+  (`moli_client.kill_tree`), so no browser is left behind.
+- `diskcache.count` memo by folder mtime; the index page's `?v=` rewrite is
+  cached by file mtimes (`Handler._page_cache`).
+- CSS polish block at the end of `app.css` (theme tokens `--warn-*`,
+  `--star`; right-aligned figures; pinned table header ≥ 1100px).
+- Browser cap: `moli_client.MAX_BROWSERS` = 6 Moli runs at once
+  (`APD_MOLI_MAX`); a run waits up to its wall budget for a slot, then
+  fails as an outage. Server-down banner: two refused `/api/health` polls
+  (`noteHealthResult`, `static/watchlist.js`) raise `#serverBanner`; the
+  next answer lowers it and re-reads rows and chart.
+
+## Added 2026-11-24 (second pass: lighter and friendlier)
+
+- `send_json`: compact JSON + ETag; a GET 200 answers `If-None-Match` with
+  304 (`Cache-Control: no-cache`). Bytes are made per request, never memoised
+  (a producer may change its dict in place). No gzip: 127.0.0.1 only.
+- `memo.cached` sweeps entries older than 3600 s once `_cache` passes 256.
+- Live quote: page polls every 30 s, `QUOTE_TTL` 25 s (was 10 / 8). A move
+  that prints the same skips the redraw but still checks alarms.
+- Net probe: 15 s while online, 5 s while offline.
+- Row warmer: plain US share tickers and `PSE:` rows whose copy was saved
+  after their market's close settled are re-read hourly while it stays shut
+  (`warm.row_stale_after`, `ROW_CLOSED_STALE_AFTER`); all else every 15 min.
+- Page: theme set in `<head>` before paint; `#plainNote` shows
+  `plainReading` under the price; section links; example buttons in the
+  empty chart; long scan notes clamp to two lines ("Show details");
+  `.leaders.recent` uses `content-visibility: auto`; friendly request errors
+  (`friendlyError`, raw text in `err.detail` and the console).
+
+## Added 2026-11-25 (deskpack)
+
+`deskpack.py` adds morning-desk server data: six commodity futures, ASEAN
+index/peer symbols (with Yahoo lag notes), PSE Edge `filings_for` via
+`announcements/search.ax`, BSP keystat and treasury.gov.ph BTr listings
+(best-effort HTML, disk TTL, empty on outage). `overnight_moves` reads the
+last two closes from disk charts for the watchlist plus commodities;
+`enrich_digest` attaches moves, macro rows, and `pulseHints` to
+`/api/digest`. Routes `/api/filings?symbol=` and `/api/deskpack`. Yahoo's
+429 circuit (`YAHOO_429_TRIP` / `YAHOO_COOL_SEC`, `yahoo_cool_status` on
+`/api/health`) and browser slot wait ms. `memo.cached` stale-while-revalidate
+serves stamped disk with `cacheError: revalidating` while a daemon thread
+refreshes. `compare.js` gains `^STI` and `^JKSE` presets. Tests
+`tests/test_deskpack.py`.

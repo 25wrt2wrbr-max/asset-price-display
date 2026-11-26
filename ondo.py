@@ -415,7 +415,7 @@ def _chart_payload(token: dict, bars: list[dict], span: str, interval: str,
         # The points before the window, for `onset.decorate`'s steadiness
         # reading. `bars_for` asks for a few days more than the chart draws so
         # there is something to look back over.
-        tail = points[:keep[0]][-onset_module.LEAN_HOLD_BARS:]
+        tail = points[:keep[0]][-100:]
         points = [points[i] for i in keep]
     if not points:
         raise OndoNotFound("No price data for %s in this window." % token["name"])

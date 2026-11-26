@@ -81,4 +81,10 @@ async function refresh() {
 
 refresh();
 setInterval(() => { if (!document.hidden) refresh(); }, STATUS_POLL_MS);
-document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });
+let statusShownAt = 0;
+document.addEventListener("visibilitychange", () => {
+  // Quick tab switching re-reads at most once every ten seconds.
+  if (document.hidden || Date.now() - statusShownAt < 10000) return;
+  statusShownAt = Date.now();
+  refresh();
+});

@@ -101,12 +101,29 @@ def count() -> int:
     """Stored entries now on disk (for `/api/health`); 0 if the directory does
     not exist yet. Declared records (`store_plain`) are excluded -- a list the
     client told us is not an upstream copy we are holding for a rainy day."""
+    # The health poll asks every 30 s; listing ~1,000 files each time is
+    # waste when nothing was added or removed, which the folder's own
+    # modification time says.
     try:
-        return sum(1 for name in os.listdir(dir())
-                   if name.endswith(".json") and not name.endswith(PLAIN_SUFFIX)
-                   and not _STRAY.match(name))
+        folder = dir()
+        stamp = (folder, os.stat(folder).st_mtime_ns)
+        if _count_memo[0] == stamp:
+            return _count_memo[1]
+        n = sum(1 for name in os.listdir(folder)
+                if name.endswith(".json") and not name.endswith(PLAIN_SUFFIX)
+                and not _STRAY.match(name))
+        _count_memo[:] = [stamp, n]
+        return n
     except OSError:
         return 0
+
+
+_count_memo: list = [None, 0]
+
+
+# Temp files left behind by a killed process are reaped once older than this;
+# younger ones may belong to another thread writing right now.
+TMP_MAX_AGE = 300
 
 
 def store(key: str, value: object) -> None:
@@ -125,7 +142,7 @@ def store(key: str, value: object) -> None:
     """
     global _writes
     path = _path(key)
-    tmp = f"{path}.{os.getpid()}.tmp"
+    tmp = f"{path}.{os.getpid()}.{threading.get_ident()}.tmp"
     try:
         os.makedirs(dir(), exist_ok=True)
         with open(tmp, "w", encoding="utf-8") as fh:
@@ -173,10 +190,11 @@ def prune() -> None:
         except OSError:
             continue  # raced with its own deletion
         if name.endswith(".tmp"):
-            try:
-                os.unlink(path)
-            except OSError:
-                pass
+            if now - mtime > TMP_MAX_AGE:
+                try:
+                    os.unlink(path)
+                except OSError:
+                    pass
             continue
         if _STRAY.match(name):
             # "<hash> 2.json": a copy the Finder or a sync made of a cache
@@ -239,7 +257,7 @@ def store_plain(key: str, value: object) -> None:
     """
     global _writes
     path = _path(key, plain=True)
-    tmp = f"{path}.{os.getpid()}.tmp"
+    tmp = f"{path}.{os.getpid()}.{threading.get_ident()}.tmp"
     try:
         os.makedirs(dir(), exist_ok=True)
         with open(tmp, "w", encoding="utf-8") as fh:

@@ -5,7 +5,13 @@ minute (`CACHE_TTL`), and the page re-reads it once a minute, so the hero
 price could trail the market by up to two minutes. This asks Yahoo for today's
 one-minute bars (extended hours included) and returns only the newest print,
 kept for `QUOTE_TTL` seconds so several tabs share one browser run. It never
-touches the chart cache, the classifier or the disk cache.
+writes the chart cache, the classifier or the disk cache.
+
+Fast path (2026-11-25): when the same symbol's default chart (`CHART_SPAN` /
+`CHART_INTERVAL`, the page's `RANGE` / `INTERVAL`) sits in the memory memo,
+is younger than `QUOTE_TTL`, and its newest bar is a live / pre / after print,
+the quote is read from that bar and no browser is launched. It only reads the
+memo; the label still comes from the chart route alone.
 """
 
 from __future__ import annotations
@@ -15,6 +21,7 @@ import threading
 import time
 import urllib.parse
 
+import faults
 import ondo
 import phfunds
 import pse
@@ -22,7 +29,11 @@ import tv
 
 import server as S
 
-QUOTE_TTL = 1.0  # seconds; one Moli run is ~1 s
+QUOTE_TTL = 25.0  # seconds; just under the page's 30 s poll, so tabs share a run
+MEMO_MAX = 256  # symbols kept before stale ones are dropped
+CHART_SPAN = "3mo"     # the page's default chart (static/core.js RANGE)
+CHART_INTERVAL = "1d"  # ... and INTERVAL
+LIVE_BASES = ("live", "pre", "after")
 
 _lock = threading.Lock()
 _memo: dict[str, tuple[float, dict]] = {}
@@ -32,6 +43,7 @@ _flight: dict[str, threading.Event] = {}
 def is_yahoo_symbol(symbol: str) -> bool:
     s = symbol.strip().upper()
     return bool(s) and not (tv.is_bond_symbol(s) or pse.is_pse_symbol(s)
+                            or s.startswith("EDGE:")
                             or phfunds.is_fund_symbol(s) or ondo.is_ondo_symbol(s)
                             or s.startswith(phfunds.PREFIX) or s.startswith(ondo.PREFIX))
 
@@ -83,6 +95,47 @@ def _fetch(symbol: str) -> dict:
     return got
 
 
+def from_chart(symbol: str) -> dict | None:
+    """The quote read off the memoised default chart, or None.
+
+    Only a fresh memory entry (younger than `QUOTE_TTL`, never a disk
+    fallback) whose newest bar is a live / pre / after print answers; the
+    basis is decided now, from the same functions the chart route uses
+    (`live_point`, then `last_bar_basis`), so it matches the badge's wording.
+    """
+    raw = symbol.strip()
+    for sym in dict.fromkeys((raw, raw.upper())):
+        key = S.chart_key(sym, CHART_SPAN, CHART_INTERVAL)
+        with S._cache_lock:
+            hit = S._cache.get(key)
+        if not hit:
+            continue
+        stored, data = hit
+        if time.time() - stored >= QUOTE_TTL:
+            return None
+        if not isinstance(data, dict) or data.get("cached"):
+            return None
+        try:
+            card = S.live_point(dict(data))
+            basis = S.last_bar_basis(card)
+            if basis not in LIVE_BASES:
+                return None
+            price = card["points"][-1]["c"]
+        except (KeyError, IndexError, TypeError) as exc:
+            faults.note("live_quote.from_chart", exc)
+            return None
+        if (not isinstance(price, (int, float)) or isinstance(price, bool)
+                or price <= 0):
+            return None
+        # A live bar's print time is the session's last trade; an extended
+        # print has no stamp of its own here, so it is dated to the read.
+        printed = (card.get("session") or {}).get("lastPrint")
+        stamp = printed if basis == "live" and isinstance(printed, int) else int(stored)
+        return {"price": round(float(price), 6), "t": int(stamp),
+                "symbol": data.get("symbol") or sym}
+    return None
+
+
 def quote(symbol: str) -> dict:
     """The newest print for `symbol`, at most `QUOTE_TTL` seconds old."""
     key = symbol.strip().upper()
@@ -97,9 +150,13 @@ def quote(symbol: str) -> dict:
                 break
         wait.wait(15)
     try:
-        got = _fetch(symbol.strip())
+        got = from_chart(symbol) or _fetch(symbol.strip())
         with _lock:
-            _memo[key] = (time.monotonic(), got)
+            now = time.monotonic()
+            if len(_memo) >= MEMO_MAX:  # every entry past QUOTE_TTL is dead weight
+                for k in [k for k, (t, _) in _memo.items() if now - t > QUOTE_TTL]:
+                    del _memo[k]
+            _memo[key] = (now, got)
         return dict(got)
     finally:
         with _lock:

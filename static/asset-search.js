@@ -34,6 +34,7 @@ function bindAssetSearch(input, list, form, select) {
         const span = document.createElement('span');
         span.className = `sug-${css}`; span.textContent = row[key] || ''; option.append(span);
       }
+      option.setAttribute('data-chart', row.symbol);   // prefetched on hover (core.js)
       option.addEventListener('pointerdown', ev => ev.preventDefault());
       option.addEventListener('click', () => choose(row.symbol));
       list.append(option);

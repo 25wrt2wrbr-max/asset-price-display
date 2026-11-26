@@ -52,6 +52,8 @@ def market_status(stats: dict, errors: dict, rows: list[dict]) -> list[dict]:
         entry = {"market": name, "state": state, "scanned": universe,
                  "missing": missing, "fallback": fallback,
                  "asOf": newest.get(name)}
+        if fallback and detail.get("fallbackSource"):
+            entry["via"] = detail["fallbackSource"]
         if name in errors:
             entry["detail"] = str(errors[name])
         out.append(entry)
@@ -104,6 +106,23 @@ def summarize(payload: dict) -> str:
     # printed once this scan actually looked.
     if "bearish" in payload:
         parts.append(f"{len(payload.get('bearish') or [])} bearish")
+    # The luck check (`recent.luck_check`): with this many names tested at
+    # once, how many labels would still stand out. Absent on an older copy.
+    luck = payload.get("luck")
+    if isinstance(luck, dict) and luck.get("labelled"):
+        parts.append(
+            f"luck check: with {luck['tests']} names tested at once, at least "
+            f"{luck['pass']} of {luck['labelled']} labels still stand out "
+            f"(at most {round(luck['q'] * 100)}% of those could be chance)")
+    # The chance yardstick (`recent.chance_check`): pure-noise series would
+    # still get some labels. Absent on an older copy.
+    chance = payload.get("chance")
+    if isinstance(chance, dict) and chance.get("judged"):
+        parts.append(
+            f"by chance alone about {chance['expected']} of {chance['judged']} "
+            f"names judged would read bullish and about {chance['expected']} "
+            f"bearish; this scan found {chance['bullish']} bullish and "
+            f"{chance['bearish']} bearish")
     if payload.get("leaning") is not None:
         parts.append(f"{len(payload['leaning'])} leaning bullish")
         # The leaning list is filtered onto app.ondo.finance (see
@@ -150,7 +169,7 @@ def summarize(payload: dict) -> str:
             # across both tables, since it applies to a market and not to
             # one of them. A name that is bullish on its own chart and
             # absent from the table has to be explained on the page.
-            parts.append(f"{hidden} below ₱{R.MIN_TURNOVER_PHP:,} volume hidden")
+            parts.append(f"{hidden} below ₱{R.MIN_TURNOVER_PHP:,} 5-day average volume hidden")
         if stale:
             # A series whose source stopped printing is not judged, so the note
             # names it and dates its last bar: the alternative is a name that

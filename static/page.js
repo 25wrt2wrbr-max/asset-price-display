@@ -19,18 +19,30 @@ function setBusy(busy) {
   el.go.textContent = busy ? "Loading…" : "Show chart";
 }
 
-function renderAll() {
-  const d = state.data;
-  if (!d) return;
-  closeSuggestions();
-
+// `live`: a price tick on the chart already open. It must not close the
+// search list the reader is typing in, drop the hovered bar, or rebuild a
+// bar table nobody is looking at.
+function fillAssetMeta(d) {
   el.assetName.textContent = d.name;
-  const bits = [d.symbol, d.exchange, d.type ? d.type.toLowerCase() : ""].filter(Boolean);
+  // Short line under the title; longer source notes sit in "About this price".
+  const shortBits = [d.symbol, d.exchange, d.type ? d.type.toLowerCase() : ""].filter(Boolean);
+  if (Number.isFinite(d.coinRank)) shortBits.splice(2, 0, `rank ${d.coinRank}`);
+  el.assetMeta.textContent = shortBits.join(" · ") || "—";
+
+  const more = [];
   // Crypto rows carry the coin's market-cap rank, which is what tells the coin
   // you meant from a same-ticker collision, and always name the source, so a
   // symbol rerouted away from Yahoo is never mistaken for Yahoo's answer.
-  if (Number.isFinite(d.coinRank)) bits.splice(2, 0, `rank ${d.coinRank}`);
-  if (d.source) bits.push(`via ${d.source}`);
+  if (d.source) more.push(`via ${d.source}`);
+  // The bars before the listing are not the exchange's: they come from a
+  // pre-IPO market, rescaled by the server so the last one closes at the IPO
+  // price. Named here, so the earlier stretch is never read as Nasdaq history
+  // and the level looked up as if it were.
+  if (d.preipo && d.preipo.bars) {
+    const price = Number(d.preipo.ipoPrice);
+    more.push(`bars before ${d.preipo.anchor} via ${d.preipo.venue},`
+      + (Number.isFinite(price) ? ` scaled to the $${price.toFixed(2)} IPO price` : " rescaled"));
+  }
   // The newest bar is not always a closing price: it can be the price trading
   // now or the last extended-hours print. Name which, so the hero figure is
   // never read as a settled close it is not. A payload from before this field
@@ -43,14 +55,14 @@ function renderAll() {
     after: "last bar is the after-hours price",
     weekend: "last bar is Coins.ph's USDC/PHP weekend price",
   }[d.lastBarBasis];
-  if (basisNote) bits.push(basisNote);
-  else if (!d.lastBarBasis && d.extendedLastBar) bits.push("last bar includes after-hours");
+  if (basisNote) more.push(basisNote);
+  else if (!d.lastBarBasis && d.extendedLastBar) more.push("last bar includes after-hours");
   // A series the source has stopped printing: the hero figure above is that old
   // bar's close, not a price now, and the line has to say so before the reader
   // reads it as today's. The server decides it (`staleDays`), by the same rule
   // the recent table uses to leave such a name off the table.
   if (Number.isFinite(d.staleDays)) {
-    bits.push(`newest bar is ${d.staleDays === 1 ? "1 day" : d.staleDays + " days"} old`
+    more.push(`newest bar is ${d.staleDays === 1 ? "1 day" : d.staleDays + " days"} old`
       + (d.staleBar ? ` (${d.staleBar})` : ""));
   }
   // The peso pair's Saturdays and Sundays come from Coins.ph's USDC/PHP book,
@@ -59,16 +71,43 @@ function renderAll() {
   // chart is still the stablecoin's price.
   if (d.weekendProxy) {
     const n = (d.weekendProxy.stamps || []).length;
-    bits.push(n === 1
+    more.push(n === 1
       ? "1 weekend bar is Coins.ph USDC/PHP"
       : `${n} weekend bars are Coins.ph USDC/PHP`);
   }
   // A disk fallback is the same shape as a live answer with a date attached:
   // the chart draws, and the meta line says when the bars were really fetched.
-  if (d.cached && d.fetchedAt) bits.push("last retrieved " + retrievedAt(d.fetchedAt));
-  el.assetMeta.textContent = bits.join(" · ");
+  if (d.cached && d.fetchedAt) more.push("last retrieved " + retrievedAt(d.fetchedAt));
+  const pesoWords = typeof pesoNote === "function" ? pesoNote() : "";
+  if (pesoWords) more.push(pesoWords);
+  if (d.halt && d.halt.action) {
+    more.push(d.halt.active ? `PSE ${d.halt.action.toLowerCase()} active` : `PSE ${d.halt.action.toLowerCase()} today`);
+  }
+  if (el.assetAbout && el.assetAboutBody) {
+    if (more.length) {
+      el.assetAboutBody.textContent = more.join(" · ");
+      el.assetAbout.hidden = false;
+    } else {
+      el.assetAboutBody.textContent = "";
+      el.assetAbout.hidden = true;
+    }
+  }
+}
 
-  const pts = d.points;
+function renderAll(opts = {}) {
+  const d = state.data;
+  if (!d) return;
+  const live = Boolean(opts.live);
+  if (!live) closeSuggestions();
+
+  // A live quote tick only moves the newest close: skip meta, badge, fees and
+  // fold-outs so the 30 s clock does not rebuild work that cannot change.
+  if (!live) fillAssetMeta(d);
+
+  // What is drawn: the payload, or its peso copy (static/peso.js). The meta
+  // line above and everything after the chart keep the payload itself.
+  const v = typeof shownData === "function" ? shownData() : d;
+  const pts = v.points;
   const last = pts[pts.length - 1];
   // The first bar the plot draws: the other end of the window the badge and
   // every table row are judged on.
@@ -76,7 +115,7 @@ function renderAll() {
 
   // hero figure — proportional figures, never tabular-nums at display size
   el.hero.hidden = false;
-  el.hero.textContent = formatPrice(last.c, d);
+  el.hero.textContent = formatPrice(last.c, v);
 
   // The delta is the *window's* move -- the first drawn close to the latest --
   // not the last session's. It is the same pair the watchlist row and the
@@ -108,7 +147,7 @@ function renderAll() {
     val.className = "delta-val " + (up ? "up" : "down");
     const amount = isYield
       ? `${up ? "+" : "−"}${nf(digitsFor(d)).format(Math.abs(diff))} pt`
-      : formatDelta(diff, d);
+      : formatDelta(diff, v);
     val.textContent = `${amount} (${up ? "+" : "−"}${Math.abs(pct).toFixed(2)}%)`;
 
     const label = document.createElement("span");
@@ -121,14 +160,141 @@ function renderAll() {
     el.heroDelta.hidden = true;
   }
 
-  drawProfitOdds();
-  drawMinInvest();
-  drawLastVolume();
-  drawTrend();
-  drawQuality();
-  drawChart();
-  drawTable();
-  comparisonPrimaryChanged(d);
+  if (!live) {
+    if (typeof drawPesoToggle === "function") drawPesoToggle();
+    drawQuickStats();
+    drawProfitOdds();
+    drawMinInvest();
+    drawLastVolume();
+    drawTrend();
+    drawHalt();
+    drawQuality();
+  }
+  // Fee / break-even lines follow the newest close on live ticks too.
+  drawPseFees();
+  // Sell-net / board-lot hero lines track the live price.
+  if (typeof desksuggestOnChart === "function") desksuggestOnChart(d);
+  drawChart({ keep: live });
+  if (!live && typeof loadLabelStrip === "function") loadLabelStrip(d.symbol);
+  if (!live && typeof loadDividends === "function") loadDividends(d.symbol);
+  if (!live && typeof loadBenchmarkLine === "function") loadBenchmarkLine(d);
+  if (!live && typeof loadBeatCash === "function") loadBeatCash(d);
+  if (!live || !el.tableWrap.hidden) drawTable();
+  if (!live) comparisonPrimaryChanged(d);
+  const journal = document.getElementById("journalBtn");
+  const pin = document.getElementById("sixPackPin");
+  if (journal) journal.hidden = !d;
+  if (pin) pin.hidden = !d;
+  if (typeof deskOnChartDrawn === "function") deskOnChartDrawn(live);
+}
+
+/* Compact pure-price strip right under the 3M delta: 1D / 1W / 1M moves,
+   max 3-month drawdown, distance off the 3M high, typical daily swing, and
+   when the current trend run started. Omitted for yield % series except onset. */
+function drawQuickStats() {
+  const box = el.quickStats;
+  if (!box) return;
+  const d = state.data;
+  const pts = (d && d.points) || [];
+  if (pts.length < 2) {
+    box.hidden = true;
+    box.textContent = "";
+    return;
+  }
+  const isYield = Boolean(d.yieldSeries || d.unit === "%");
+  const chips = [];
+  if (!isYield) {
+    const last = pts[pts.length - 1], prev = pts[pts.length - 2];
+    if (prev && prev.c > 0 && Number.isFinite(last.c)) {
+      const d1 = (last.c / prev.c - 1) * 100;
+      chips.push({ label: "1D", text: signedPct(d1), cls: d1 >= 0 ? "up" : "down" });
+    }
+    if (typeof periodChanges === "function") {
+      const pc = periodChanges(pts);
+      if (pc && pc.periods) {
+        for (const p of pc.periods) {
+          if (Number.isFinite(p.pct)) {
+            chips.push({ label: p.name, text: signedPct(p.pct), cls: p.pct >= 0 ? "up" : "down" });
+          }
+        }
+      }
+    }
+    const dd = typeof windowDrawdown === "function" ? windowDrawdown(pts.map((p) => p.c)) : null;
+    if (dd) {
+      chips.push({
+        label: "Max drawdown",
+        text: dd.maxDrawdown < -0.05 ? `−${Math.abs(dd.maxDrawdown).toFixed(1)}%` : "0.0%",
+        cls: dd.maxDrawdown <= -10 ? "down" : "",
+        title: "Largest peak-to-trough drop inside the drawn 3-month window.",
+      });
+      if (Number.isFinite(dd.fromHigh)) {
+        chips.push({
+          label: "Off 3M high",
+          text: dd.fromHigh < -0.05 ? `−${Math.abs(dd.fromHigh).toFixed(1)}%` : "at high",
+          cls: "",
+        });
+      }
+      if (Number.isFinite(dd.dailyVol)) {
+        chips.push({
+          label: "Daily swing",
+          text: `±${dd.dailyVol.toFixed(1)}%`,
+          cls: "",
+          title: "Standard deviation of daily log returns over the drawn window.",
+        });
+      }
+    }
+  }
+  if (d.onset && Number.isFinite(d.onset.since)) {
+    const when = dayFmt.format(toDate(d.onset.since));
+    const run = Number.isFinite(d.onset.run) ? ` (${d.onset.run} bars)` : "";
+    chips.push({
+      label: d.onset.censored ? "Trend since at least" : "Trend started",
+      text: when + run,
+      cls: "",
+      title: d.onset.censored
+        ? "This run began before the oldest bar fetched."
+        : "The bar where the current trend label started (hollow ring on the chart).",
+    });
+  }
+  box.textContent = "";
+  if (!chips.length) {
+    box.hidden = true;
+    return;
+  }
+  chips.forEach((c, idx) => {
+    if (idx > 0) {
+      const sep = document.createElement("span");
+      sep.className = "qs-sep";
+      sep.setAttribute("aria-hidden", "true");
+      sep.textContent = "·";
+      box.append(sep);
+    }
+    const item = document.createElement("span");
+    item.className = "qs-item";
+    if (c.title) item.title = c.title;
+    const lbl = document.createElement("span");
+    lbl.className = "qs-lbl";
+    lbl.textContent = c.label + " ";
+    const val = document.createElement("span");
+    val.className = "qs-val" + (c.cls ? " " + c.cls : "");
+    val.textContent = c.text;
+    item.append(lbl, val);
+    box.append(item);
+  });
+  box.hidden = false;
+}
+
+function drawHalt() {
+  const box = el.haltNote;
+  if (!box) return;
+  const h = state.data && state.data.halt;
+  if (!h || !h.action) {
+    box.hidden = true;
+    box.textContent = "";
+    return;
+  }
+  box.hidden = false;
+  box.textContent = (h.active ? "⛔ " : "⚠ ") + haltPhrase(h) + " (via PSE Edge).";
 }
 
 /* ---- three-month profit odds ----
@@ -161,9 +327,11 @@ function drawProfitOdds() {
   const d = state.data;
   const r = d && d.profitProbability;
   const p = r && r.probability;
+  const aside = document.getElementById("profitOddsAside");
   if (!Number.isFinite(p)) {
     el.profitOdds.hidden = true;
     el.profitOdds.removeAttribute("title");
+    if (aside) aside.hidden = true;
     // Cleared, not just hidden: a yield chart sitting on top of the previous
     // asset's odds would leave "0.45 PSE stock base rate" in the DOM, one
     // inspector away from being read as a claim about a bond.
@@ -174,10 +342,11 @@ function drawProfitOdds() {
   }
   const cost = (r.cost * 100).toFixed(2);
   el.profitOdds.hidden = false;
+  if (aside) aside.hidden = false;
   el.profitOddsValue.textContent = p.toFixed(2);
   el.profitOddsValue.className = "stat-value " + (p >= 0.5 ? "above" : "below");
   el.profitOddsNote.textContent =
-    `chart-based estimate, net of ${cost}% costs`;
+    `based on similar past charts, after about ${cost}% in costs`;
 
   // The tooltip carries the whole claim, because the figure alone would read as
   // a forecast for *this* asset: the population, how it was measured, what the
@@ -205,6 +374,53 @@ function drawMinInvest() {
   el.minInvestValue.textContent = leaderMoney(d.minInvestment, d.currency);
   el.minInvestNote.textContent =
     `${nf(0).format(d.boardLot)}-share board lot at ${formatPrice(d.marketPrice, d)}`;
+}
+
+/* ---- fees on one board lot ----
+   Buy and sell costs for the same lot the minimum-investment line names, at
+   today's price, and the lowest valid price that recovers the purchase with
+   both sides' fees. A cost readout, not a target: it says nothing about where
+   the price will go. Rates and their source are in static/psefees.js. */
+function drawPseFees() {
+  const d = state.data;
+  const lot = d && d.boardLot;
+  const price = d && d.marketPrice;
+  const usable = typeof pseTradeFees === "function" && d && d.currency === "PHP"
+    && Number.isFinite(lot) && lot > 0 && Number.isFinite(price) && price > 0;
+  el.pseFees.hidden = !usable;
+  if (el.heroFees) el.heroFees.hidden = !usable;
+  if (!usable) {
+    if (el.heroFees) el.heroFees.textContent = "";
+    return;
+  }
+  const value = lot * price;
+  const buy = pseTradeFees(value, "buy");
+  const sell = pseTradeFees(value, "sell");
+  const be = pseBreakEven(price, lot);
+  const pct = (buy.total + sell.total) / value * 100;
+  const net = typeof pseSellNet === "function" ? pseSellNet(price, lot) : null;
+  el.pseFeesValue.textContent = `${leaderMoney(buy.total + sell.total, "PHP")} round trip`;
+  el.pseFeesNote.textContent =
+    `${leaderMoney(buy.total, "PHP")} to buy, ${leaderMoney(sell.total, "PHP")} to sell (${pct.toFixed(2)}%)` +
+    (be ? ` · gets the money back at ${formatPrice(be, d)} or higher` : "") +
+    (net != null ? ` · sell clears ${leaderMoney(net, "PHP")}` : "");
+  el.pseFees.title =
+    `${PSE_FEES.source}: commission 0.25% (at least ₱20) plus 12% VAT, PSE fee 0.005%, ` +
+    `clearing fee 0.01%, and 0.1% sales tax when selling. Your broker's fees may differ slightly. ` +
+    `The break-even price is the lowest valid PSE price at which selling this lot returns ` +
+    `what buying it cost, after both sides' fees. Sell clears = gross proceeds minus sell-side fees.`;
+  // Hero: board lot, round trip, break-even, and sell net — same arithmetic as above.
+  if (el.heroFees) {
+    el.heroFees.hidden = false;
+    const lotBit = Number.isFinite(d.boardLot)
+      ? `${nf(0).format(d.boardLot)}-share lot · min ${leaderMoney(d.minInvestment, "PHP")}`
+      : "One lot";
+    el.heroFees.textContent = lotBit
+      + ` · ${leaderMoney(buy.total + sell.total, "PHP")} round trip`
+      + (be ? ` · break-even ${formatPrice(be, d)}` : "")
+      + (net != null ? ` · sell clears ${leaderMoney(net, "PHP")}` : "");
+    el.heroFees.title = el.pseFees.title;
+  }
 }
 
 /* ---- traded value on the last trading day ----

@@ -16,10 +16,12 @@ successful reading in this browser. The first visit sets the baseline. A failed
 request or an offline copy never counts as a change. Neutral charts explain
 why the readings did not confirm a trend.
 
-To **compare two assets**, open the first chart and enter the second symbol in
-the comparison form below it. Both lines start at 100 on their first shared
-trading date. A value of 105 means that series rose 5% from its own starting
-value. Only dates present in both series appear; the table lists each pair.
+To **compare up to six assets**, open the first chart and add up to five more
+symbols in the comparison form below it. Every line starts at 100 on the first
+trading date all of them share; a value of 105 means that series rose 5% from its
+own starting value. Click an asset in the legend to make it the baseline: each
+line is then divided by it, so 100 means level with the baseline. Only dates
+present in every series appear; the table lists each one.
 
 Three things Yahoo cannot serve at all are charted from elsewhere: coins Yahoo
 gets *wrong* (the ticker collision under
@@ -175,4 +177,5 @@ The full reference is in `docs/`, one page per topic:
 - [The most-traded tables](docs/most-traded.md) — the US and Philippine turnover tables and the 24-hour crypto table
 - [Recently bullish assets](docs/recently-bullish.md) — the one table across every market, and each market's rules
 - [How the trend call works](docs/trend-call.md) — how a chart is labelled bullish, bearish or neutral
+- [Classifier variants tried](docs/variants-tried.md) — every version and threshold tried, plus the across-eras check
 - [Notes](docs/notes.md) — everything else

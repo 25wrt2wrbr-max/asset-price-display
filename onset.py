@@ -333,6 +333,8 @@ def leaning(stamps: list[int], closes: list[float], volumes: list,
         "price": closes[n - 1],
         "turnover": closes[n - 1] * volume if volume else None,
         "window": len(used),
+        # The window's closes for the leaning table's sparkline, as `onset`.
+        "spark": [float(f"{closes[i]:.6g}") for i in used],
     }
 
 
@@ -485,6 +487,16 @@ def decorate(call: dict | None, stamps: list[int], closes: list[float],
     return out
 
 
+def spark_volumes(volumes, used) -> list[float] | None:
+    """The window's volumes at four significant digits, or None when the
+    series carries none (a fund, a yield, an index)."""
+    vols = [float(volumes[i] or 0.0) if volumes and i < len(volumes) else 0.0
+            for i in used]
+    if not any(v > 0 for v in vols):
+        return None
+    return [float(f"{v:.4g}") for v in vols]
+
+
 def onset(stamps: list[int], closes: list[float], volumes: list,
           want: str = "bullish", days: int = WINDOW_DAYS,
           months: int | None = None) -> dict | None:
@@ -565,9 +577,11 @@ def onset(stamps: list[int], closes: list[float], volumes: list,
         # The badge's own tag for a label whose last two weeks ran against it
         # (`trend.pullback`), so a row and its chart say it together.
         pulling = now_call["pullback"]
+        drift_t = now_call.get("significance")
     except (ValueError, IndexError):
         score = None
         pulling = None
+        drift_t = None
 
     # The window's first bar's close, shipped as a raw price rather than as a
     # move: a price's move is a percentage and a yield's is a number of
@@ -609,4 +623,60 @@ def onset(stamps: list[int], closes: list[float], volumes: list,
         # The window's first drawn close -- see `first` above. The pair
         # (`windowFirst`, `price`) is what a caller's move is computed from.
         "windowFirst": first,
+        # The window's closes, oldest first, for the table rows' sparkline:
+        # the same bars the label was read from, at six significant digits.
+        "spark": [float(f"{closes[i]:.6g}") for i in used],
+        # The same bars' volumes, for the page's volume tag (`volumeSpike`
+        # in static/verdict.js). None for a series with no volume.
+        "sparkVol": spark_volumes(volumes, used),
+        # The newest window's drift t, for the table's luck check.
+        "significance": drift_t,
     }
+
+
+def history(stamps: list[int], closes: list[float], volumes: list,
+            first: int = 0, days: int = WINDOW_DAYS,
+            months: int | None = None) -> list[str | None]:
+    """The label each bar from `first` to the newest carried, read the way
+    `onset` reads them: every earlier bar through the window the chart would
+    have drawn on its own day (`window_at`), the newest bar through the badge's
+    window (`window_now`). So the newest run in this list starts on the bar
+    `onset` dates it to (invariant 2), and its last entry is the badge.
+
+    A bar whose window would reach past the oldest bar fetched is None: its
+    label would be read off a short window, which is a fact about how much
+    data came back, not about the asset (invariant 4).
+    """
+    n = len(closes)
+    if n < 3 or len(stamps) != n:
+        return []
+    last = n - 1
+    out: list[str | None] = []
+    for end in range(max(0, first), n):
+        cutoff = (months_back(stamps[end], months) if months
+                  else stamps[end] - days * DAY)
+        if stamps[0] > cutoff:
+            out.append(None)
+            continue
+        idx = (window_now(stamps, end, days=days, months=months) if end == last
+               else window_at(stamps, end, days=days, months=months))
+        out.append(label(closes, volumes, idx))
+    return out
+
+
+def history_summary(labels: list[str | None]) -> dict:
+    """Bar counts per label, the number of label changes, and every run
+    (label, length in bars), over the bars that have a label."""
+    known = [x for x in labels if x]
+    counts = {k: sum(1 for x in known if x == k)
+              for k in ("bullish", "neutral", "bearish")}
+    runs: list[list] = []
+    for x in known:
+        if runs and runs[-1][0] == x:
+            runs[-1][1] += 1
+        else:
+            runs.append([x, 1])
+    longest = {k: max((r[1] for r in runs if r[0] == k), default=0)
+               for k in ("bullish", "bearish")}
+    return {"bars": len(known), "counts": counts,
+            "changes": max(0, len(runs) - 1), "longest": longest}

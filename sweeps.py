@@ -562,6 +562,7 @@ def seed_recent() -> None:
                 "cached": bool(shelf.get("cached")),
             }
         seeded["note"] = recent.summarize(seeded)
+        seeded["healthHistory"] = recent.load_health_history()
         seeded["cached"] = True
         seeded["fetchedAt"] = int(fetched_at)
         S._recent_state["payload"] = seeded
@@ -638,7 +639,9 @@ def recent_loop() -> None:
             ph_unlanded = bool(
                 ph_state.get("pending")
                 and not (ph_state.get("rows") or ph_state.get("leaning")))
-            payload = recent.scan(
+            # Built under its own name and published only once every step
+            # below succeeded, so a failure never ships a half-built table.
+            built = recent.scan(
                 ph_sweep_rows=ph_state.get("rows") or [],
                 fetch_us_bars=S.fetch_us_bars,
                 ph_sweep_leaning=ph_state.get("leaning") or [],
@@ -653,17 +656,26 @@ def recent_loop() -> None:
                 # instead of only counting the rows that turned bullish.
                 ph_sweep_stats={"universe": ph_state.get("universe"),
                                 "kinds": ph_state.get("kinds") or {},
-                                "missing": ph_state.get("missing") or []})
-            payload["checkedAt"] = int(time.time())
+                                "missing": ph_state.get("missing") or [],
+                                "edge": ph_state.get("edge") or []})
+            built["checkedAt"] = int(time.time())
             # The one-line summary of the sweep, drawn by the same module that
             # knows what was judged -- so the note and the rows cannot disagree
             # about what was scanned.
-            payload["note"] = recent.summarize(payload)
+            built["note"] = recent.summarize(built)
+            built["healthHistory"] = recent.record_health_history(
+                built.get("health") or [])
+            payload = built
         except Exception as exc:  # a sweep may fail in many ways; none are fatal
             faults.note("recent sweep", exc)
             error = str(exc) or type(exc).__name__
         if payload is not None:
             diskcache.store(S.RECENT_KEY, payload)
+            try:
+                import notify
+                notify.observe_recent(payload, S.union_watchlist())
+            except Exception as exc:
+                faults.note("notify.observe_recent", exc)
         with S._recent_lock:
             S._recent_state["running"] = False
             S._recent_state["error"] = error

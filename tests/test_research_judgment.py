@@ -203,8 +203,10 @@ class ResearchJudgmentTests(unittest.TestCase):
         # an in-sample baseline for every asset outside the studied universe, so
         # the chart no longer carries it. The endpoint still answers for anybody
         # asking directly; the page must not ask.
+        text_exts = {".html", ".js", ".css", ".svg", ".webmanifest"}
         html = "\n".join(p.read_text(encoding="utf-8") for p in
-                         [Path("index.html"), *sorted(Path("static").glob("*"))])
+                         [Path("index.html"), *(p for p in sorted(Path("static").glob("*"))
+                                                if p.is_file() and p.suffix in text_exts)])
         for needle in ("researchJudgment", "research-judgment", "/api/research-judgment"):
             self.assertNotIn(needle, html)
 

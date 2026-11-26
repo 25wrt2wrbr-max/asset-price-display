@@ -65,6 +65,13 @@ FX_SEARCH_EXTRA: dict[str, tuple[str, ...]] = {
     "php": ("JPYPHP=X", "KRWPHP=X"),
     "peso": ("JPYPHP=X", "KRWPHP=X"),
     "philippine peso": ("JPYPHP=X", "KRWPHP=X"),
+    # Indian rupee over Vietnamese dong. Yahoo's search returns nothing for
+    # "inrvnd" (measured 2026-11-25), but the chart works: it is divided out
+    # of the dollar legs `INR=X` and `VND=X` (`fx_cross_chart`).
+    "inrvnd": ("INRVND=X",),
+    "inrvnd=x": ("INRVND=X",),
+    "inr/vnd": ("INRVND=X",),
+    "inr vnd": ("INRVND=X",),
 }
 
 

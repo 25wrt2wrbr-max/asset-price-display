@@ -245,7 +245,7 @@ def _chart_payload(symbol: str, bars: list[dict], span: str,
                                        len(points) - 1,
                                        days=pse.RANGE_DAYS.get(
                                            span, pse.RANGE_DAYS["3mo"]))
-        tail = points[:keep[0]][-onset_module.LEAN_HOLD_BARS:]
+        tail = points[:keep[0]][-100:]
         points = [points[i] for i in keep]
     if not points:
         raise TvNotFound("No yield data for %s in this window." % symbol)

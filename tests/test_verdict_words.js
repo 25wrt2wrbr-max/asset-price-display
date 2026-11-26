@@ -91,6 +91,61 @@ eq("watch bearish tag",
   "Bearish");
 eq("no tag without a label", context.watchTagPhrase(null), null);
 
+// The score's parts in plain words.
+eq("plain steady",
+  context.plainReading({ components: { efficiency: -0.33 }, significance: -1.98, agreement: "4/4" }),
+  "In plain words: a steady path (about 33% of all the daily ups and downs added up to the net move); "
+  + "the move stands out clearly from the usual daily swings; 4 of 4 signals point the same way.");
+eq("plain choppy",
+  context.plainReading({ components: { efficiency: 0.04 }, significance: 0.5, agreement: null }),
+  "In plain words: a choppy path (about 4% of all the daily ups and downs added up to the net move); "
+  + "the move does not stand out from the usual daily swings.");
+eq("plain uneven, partly",
+  context.plainReading({ components: { efficiency: 0.1 }, significance: 1.2 }).slice(0, 27),
+  "In plain words: an uneven p");
+eq("plain one-way", context.plainReading({ components: {}, significance: 99 }),
+  "In plain words: every bar moved the same way.");
+eq("plain nothing", context.plainReading({}), "");
+
+// Volume tag: newest bar against the median earlier bar, 2x or more.
+const flatVol = Array(30).fill(100);
+eq("spike", context.volumeSpike(flatVol.concat([250])), 2.5);
+eq("no spike", context.volumeSpike(flatVol.concat([150])), null);
+eq("zero history", context.volumeSpike(Array(30).fill(0).concat([5])), null);
+eq("too short", context.volumeSpike(Array(10).fill(100).concat([500])), null);
+eq("no volume", context.volumeSpike(undefined), null);
+eq("missing points", context.volumeSpike(Array(30).fill(undefined)), null);
+eq("volume words", context.volumePhrase(2.46), "volume 2.5× usual");
+const pts3 = [{t: 1, c: 1}, {t: 2, c: 2}, {t: 3, c: 3}];
+eq("yahoo volumes", context.chartVolumes({points: pts3, barVolumes: [1, 2, 3]}).length, 3);
+eq("venue volumes win", context.chartVolumes({points: pts3, volumes: [4, 5, 6], barVolumes: [1, 2, 3]})[0], 4);
+eq("misaligned", context.chartVolumes({points: pts3.concat([{t: 4, c: 4}]), barVolumes: [1, 2, 3]}), null);
+eq("none", context.chartVolumes({points: pts3}), null);
+
+// New 3-month high or low: the newest close against every earlier one.
+const ramp = Array.from({ length: 30 }, (_, i) => 100 + i);
+eq("newest is the high", context.windowExtreme(ramp), "high");
+eq("newest is the low", context.windowExtreme(ramp.slice().reverse()), "low");
+eq("equal to the old high counts", context.windowExtreme(ramp.concat([129])), "high");
+eq("inside the range", context.windowExtreme(ramp.concat([110])), null);
+eq("too short", context.windowExtreme(ramp.slice(0, 19)), null);
+eq("flat series", context.windowExtreme(Array(30).fill(5)), null);
+eq("missing series", context.windowExtreme(undefined), null);
+eq("price words", context.extremePhrase("high", false), "at 3-month high");
+eq("yield words", context.extremePhrase("low", true), "yield at 3-month low");
+eq("no words", context.extremePhrase(null, false), "");
+
+// Volume median, window drawdown & PSE halt phrase.
+eq("volume median odd", context.volumeMedian([10, 50, 20]), 20);
+eq("volume median even", context.volumeMedian([10, 50, 20, 40]), 30);
+const dd = context.windowDrawdown([100, 120, 90, 108]);
+eq("max drawdown", Math.round(dd.maxDrawdown * 10) / 10, -25);
+eq("off 3m high", Math.round(dd.fromHigh * 10) / 10, -10);
+eq("daily vol positive", dd.dailyVol > 0, true);
+eq("halt active phrase",
+  context.haltPhrase({ action: "Suspension", date: "Nov 4, 2026", time: "9:00 AM", active: true, circular: "C07712-2026" }),
+  "PSE Trading suspended (Nov 4, 2026 9:00 AM) — lifting TBA · C07712-2026");
+
 if (failed) {
   console.error(failed + " verdict phrase check(s) failed");
   process.exit(1);

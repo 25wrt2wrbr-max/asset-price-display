@@ -11,6 +11,7 @@ from __future__ import annotations
 import threading
 import time
 
+import faults
 import server as S
 
 
@@ -36,7 +37,7 @@ class _Flight:
 # that is the verdict kind.
 TRANSIENT_ERRORS = (
     S.UpstreamError, S.pse.PseError, S.markets.MarketError, S.crypto.CryptoError,
-    S.ecb.EcbError, S.tv.TvError, S.ondo.OndoError,
+    S.ecb.EcbError, S.tv.TvError, S.ondo.OndoError, S.phfunds.FundError,
 )
 
 
@@ -66,6 +67,43 @@ def tables_usable(payload) -> bool:
         (not card.get("error")) and card.get("rows")
         for card in (payload.get("markets") or [])
     )
+
+
+MEMO_PRUNE_AT = 256      # entries before expired ones are swept out
+MEMO_MAX_AGE = 3600      # seconds: the longest ttl any caller passes
+
+
+def _revalidate_worker(key: str, produce, ttl: float, usable, flight: _Flight) -> None:
+    """Background refresh after stale-while-revalidate.
+
+    A transport failure leaves the stamped disk copy already served to the
+    page; the flight closes without an error so waiters without a disk copy
+    retry on their next call rather than inheriting a stuck failure.
+    """
+    try:
+        try:
+            value = produce()
+        except Exception as exc:
+            # Keep last-good memo if present; never promote a transient outage
+            # into "not bullish" for table consumers.
+            if not S.is_transient(exc):
+                flight.error = exc
+            return
+        if usable is not None and not usable(value):
+            return
+        S.diskcache.store(key, value)
+        with S._cache_lock:
+            now = time.time()
+            if len(S._cache) > MEMO_PRUNE_AT:
+                for old in [k for k, v in S._cache.items() if now - v[0] > MEMO_MAX_AGE]:
+                    del S._cache[old]
+            S._cache[key] = (now, value)
+        flight.value = value
+    finally:
+        with S._cache_lock:
+            if S._flights.get(key) is flight:
+                S._flights.pop(key, None)
+        flight.done.set()
 
 
 def cached(key: str, produce, ttl: float = S.CACHE_TTL, usable=None):
@@ -111,7 +149,31 @@ def cached(key: str, produce, ttl: float = S.CACHE_TTL, usable=None):
         if leader:
             flight = S._flights[key] = _Flight()
 
+    expired = not (hit and now - hit[0] < ttl)
+    stale = None
+    if expired:
+        # A disk copy that cannot be read must not escape here: the flight is
+        # already claimed, and leaving it open would hang every later caller
+        # for this key. With no stale copy the key is simply produced afresh.
+        try:
+            stale = S._stamp_copy(key, "revalidating", usable)
+        except Exception as exc:  # noqa: BLE001 - disk or usable check, any kind
+            faults.note("memo stale copy", exc)
+            stale = None
+        if stale is not None:
+            stale["revalidate"] = True
+
+    if leader and stale is not None:
+        threading.Thread(
+            target=_revalidate_worker,
+            args=(key, produce, ttl, usable, flight),
+            daemon=True,
+        ).start()
+        return stale
+
     if not leader:
+        if stale is not None:
+            return stale
         # Another thread is already producing this key: wait for its answer
         # instead of starting a duplicate fetch.
         flight.done.wait()
@@ -120,51 +182,70 @@ def cached(key: str, produce, ttl: float = S.CACHE_TTL, usable=None):
         return flight.value
 
     try:
-        value = produce()
-    except Exception as exc:
-        fallback = (S._stamp_copy(key, str(exc) or type(exc).__name__, usable)
-                    if S.is_transient(exc) else None)
-        if fallback is None:
-            flight.error = exc
-            with S._cache_lock:
-                S._flights.pop(key, None)
-            flight.done.set()
-            raise
-        # The outage is nobody's fault twice over: this request gets the last
-        # good copy, and the next caller within the TTL gets it from memory
-        # without touching disk or the network again.
-        value = fallback
-    else:
-        if usable is not None and not usable(value):
-            # The producer answered without raising, but the answer carries
-            # only failures (see the docstring). It is a fallback situation
-            # reached by a different road: serve the last good copy stamped as
-            # such, or -- if there is none -- the failing payload itself.
-            # Either way it is never stored over the last good copy, and the
-            # unstorable failing payload is not memoized either, so the next
-            # caller tries the network again instead of inheriting a stuck
-            # outage -- the same promise the raising path makes.
-            fallback = S._stamp_copy(
-                key, "sources unreachable (all sections failed)", usable)
+        try:
+            value = produce()
+        except Exception as exc:
+            fallback = (S._stamp_copy(key, str(exc) or type(exc).__name__, usable)
+                        if S.is_transient(exc) else None)
             if fallback is None:
-                # Nothing to rescue: serve the failing payload as-is, but
-                # un-memoized and with the flight closed, so the next caller
-                # tries the network again rather than inheriting this outage.
+                flight.error = exc
                 with S._cache_lock:
                     S._flights.pop(key, None)
-                flight.value = value
                 flight.done.set()
-                return value
+                raise
+            # The outage is nobody's fault twice over: this request gets the last
+            # good copy, and the next caller within the TTL gets it from memory
+            # without touching disk or the network again.
             value = fallback
         else:
-            S.diskcache.store(key, value)
+            if usable is not None and not usable(value):
+                # The producer answered without raising, but the answer carries
+                # only failures (see the docstring). It is a fallback situation
+                # reached by a different road: serve the last good copy stamped as
+                # such, or -- if there is none -- the failing payload itself.
+                # Either way it is never stored over the last good copy, and the
+                # unstorable failing payload is not memoized either, so the next
+                # caller tries the network again instead of inheriting a stuck
+                # outage -- the same promise the raising path makes.
+                fallback = S._stamp_copy(
+                    key, "sources unreachable (all sections failed)", usable)
+                if fallback is None:
+                    # Nothing to rescue: serve the failing payload as-is, but
+                    # un-memoized and with the flight closed, so the next caller
+                    # tries the network again rather than inheriting this outage.
+                    with S._cache_lock:
+                        S._flights.pop(key, None)
+                    flight.value = value
+                    flight.done.set()
+                    return value
+                value = fallback
+            else:
+                S.diskcache.store(key, value)
 
-    with S._cache_lock:
-        S._cache[key] = (time.time(), value)
-        S._flights.pop(key, None)
-    flight.value = value
-    flight.done.set()
-    return value
+        with S._cache_lock:
+            now = time.time()
+            # Expired entries used to stay for the life of the process (charts are
+            # 30-60 KB each). An hour is the longest lifetime any caller asks for,
+            # so an entry older than that can never be served as a hit again.
+            if len(S._cache) > MEMO_PRUNE_AT:
+                for old in [k for k, v in S._cache.items() if now - v[0] > MEMO_MAX_AGE]:
+                    del S._cache[old]
+            S._cache[key] = (now, value)
+            S._flights.pop(key, None)
+        flight.value = value
+        flight.done.set()
+        return value
+    except BaseException as exc:
+        # Whatever went wrong past the producer (a disk copy that cannot be
+        # read, a `usable` check that raises), the flight must close: a flight
+        # left open would hang every later caller for this key.
+        if not flight.done.is_set():
+            flight.error = exc
+            with S._cache_lock:
+                if S._flights.get(key) is flight:
+                    S._flights.pop(key, None)
+            flight.done.set()
+        raise
 
 
 def _stamp_copy(key: str, reason: str, usable=None):

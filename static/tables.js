@@ -115,6 +115,63 @@ function recentPrice(value, currency, hint) {
   catch { return nf(digits).format(value); }
 }
 
+const tableRenderers = {};
+// Each table's filter state, so a star change redraws only a table that
+// filters on the watchlist; the others just repaint their star buttons.
+const tableViews = {};
+
+function makeRowStar(row) {
+  const sym = row.chartSymbol || row.symbol;
+  if (!sym || typeof isWatched !== "function") return null;
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "row-star";
+  btn.dataset.watchStar = sym;
+  btn.dataset.watchLabel = row.ticker || sym;
+  if (row.symbol && row.symbol !== sym) btn.dataset.watchAlt = row.symbol;
+  const paint = () => {
+    const on = isWatched(sym) || (row.symbol && isWatched(row.symbol));
+    btn.textContent = on ? "★" : "☆";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.setAttribute("aria-label", `${on ? "Remove" : "Add"} ${row.ticker || sym} ${on ? "from" : "to"} watchlist`);
+    btn.title = on ? "On watchlist — click to remove" : "Add to watchlist";
+  };
+  paint();
+  btn.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    const on = isWatched(sym) || (row.symbol && isWatched(row.symbol));
+    if (on) {
+      removeFromWatch(isWatched(sym) ? sym : row.symbol);
+      if (typeof setStatus === "function") setStatus(`Removed ${row.ticker || sym} from the watchlist.`);
+    } else {
+      addToWatch(sym, row.name || row.ticker || sym);
+    }
+  });
+  return btn;
+}
+
+function syncTableStars() {
+  // Called on every rail redraw (each quote that lands). Stars and the
+  // watched-only tables only change when the watched set does.
+  const sig = (state.watch || []).map((w) => (w && w.symbol) || w).join("|");
+  if (sig === syncTableStars.sig) return;
+  syncTableStars.sig = sig;
+  for (const btn of document.querySelectorAll("button[data-watch-star]")) {
+    const sym = btn.dataset.watchStar;
+    const label = btn.dataset.watchLabel || sym;
+    const alt = btn.dataset.watchAlt;
+    const on = typeof isWatched === "function" && (isWatched(sym) || Boolean(alt && isWatched(alt)));
+    btn.textContent = on ? "★" : "☆";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.setAttribute("aria-label", `${on ? "Remove" : "Add"} ${label} ${on ? "from" : "to"} watchlist`);
+    btn.title = on ? "On watchlist — click to remove" : "Add to watchlist";
+  }
+  for (const [key, fn] of Object.entries(tableRenderers)) {
+    const view = tableViews[key];
+    if (typeof fn === "function" && (!view || view.watchedOnly)) fn();
+  }
+}
+
 function drawRecent(payload, listKey, view) {
   const card = document.createElement("div");
   card.className = "card";
@@ -134,11 +191,19 @@ function drawRecent(payload, listKey, view) {
   const thead = document.createElement("thead");
   const hrow = document.createElement("tr");
   for (const heading of
-       ["Market", "Asset", "Direction", "Since", "Run", "Price", "3-month",
-        "Trading volume (in PHP)"]) {
+       ["Market", "Asset", "Direction", "Turn began", "Days in trend", "Price", "3-mo change",
+        "Volume (5-day avg., ₱)"]) {
     const th = document.createElement("th");
     th.scope = "col";
     th.textContent = heading;
+    if (heading === "Turn began") th.title = "The day the current trend run began";
+    if (heading === "Days in trend") th.title = "How many trading days the current trend has lasted";
+    if (heading === "3-mo change") {
+      th.title = "Move from the window's first close to its newest close — the same bars the badge was scored on";
+    }
+    if (heading === "Volume (5-day avg., ₱)") {
+      th.title = "Average trading volume over the last five finished sessions, in Philippine pesos";
+    }
     hrow.append(th);
   }
   thead.append(hrow);
@@ -171,6 +236,7 @@ function drawRecent(payload, listKey, view) {
     // allowed to wrap -- a long instrument name held on one line would need a
     // column wider than the five others leave over.
     const label = document.createElement("td");
+    const starBtn = makeRowStar(row);
     const button = document.createElement("button");
     button.type = "button";
     button.className = "tick-btn";
@@ -181,7 +247,15 @@ function drawRecent(payload, listKey, view) {
     const name = document.createElement("span");
     name.className = "tick-sub";
     name.textContent = row.name || "";
+    if (starBtn) label.append(starBtn);
     label.append(button, name);
+    if (row.halt && row.halt.action) {
+      const h = document.createElement("span");
+      h.className = "halt-tag";
+      h.textContent = row.halt.action === "Suspension" ? "Suspended" : "Halted";
+      h.title = (typeof haltPhrase === "function" ? haltPhrase(row.halt) : row.halt.action) + " (via PSE Edge).";
+      label.append(h);
+    }
     // Two honest marks beside the name: where the bars came from when it was
     // not the primary source, and any defect found in them. Both describe the
     // data; neither changes the verdict in the next column.
@@ -189,8 +263,12 @@ function drawRecent(payload, listKey, view) {
       const via = document.createElement("span");
       via.className = "src-tag";
       via.textContent = "via " + row.source;
-      via.title = "Yahoo did not answer, so this row was read from " + row.source +
-                  " daily closes. They can differ slightly from the chart's series.";
+      via.title = row.source === "PSE Edge"
+        ? "TradingView did not answer, so this row was read from PSE Edge, the " +
+          "exchange's own site. Its bars can run a day behind and are not adjusted " +
+          "for splits. The chart this row opens draws these same bars."
+        : "Yahoo did not answer, so this row was read from " + row.source +
+          " daily closes. They can differ slightly from the chart's series.";
       label.append(via);
     }
     if (row.quality && row.quality.length) {
@@ -228,6 +306,25 @@ function drawRecent(payload, listKey, view) {
                  + "wrong side of its 20-bar average. The label is unchanged.";
       dir.append(pull);
     }
+    // Newest close at the window's high or low, read off the same closes the
+    // row's chart draws. A tag beside the label, like the one above.
+    const extreme = windowExtreme(row.spark);
+    if (extreme) {
+      const tag = document.createElement("span");
+      tag.className = "pull extreme";
+      tag.textContent = extremePhrase(extreme, phrase.yield);
+      tag.title = extremeSentence(extreme, phrase.yield, Array.isArray(row.spark) ? row.spark.length : undefined);
+      dir.append(tag);
+    }
+    // Newest bar's volume against the window's median bar (`sparkVol`).
+    const spike = volumeSpike(row.sparkVol);
+    if (spike) {
+      const tag = document.createElement("span");
+      tag.className = "pull volume";
+      tag.textContent = volumePhrase(spike);
+      tag.title = volumeSentence(spike);
+      dir.append(tag);
+    }
     tr.append(dir);
 
     // The date the current run started. A run that began on the latest bar is
@@ -259,6 +356,11 @@ function drawRecent(payload, listKey, view) {
     // change between them would be a figure about a figure.
     const moveCell = document.createElement("td");
     moveCell.className = "move";
+    // The shape of the same window, drawn beside its move. A yield's line is
+    // left uncoloured, for the reason its move is left out below.
+    const spark = sparkline(row.spark, row.currency === "%" ? null
+      : Number.isFinite(row.windowMove) ? row.windowMove >= 0 : null, 44);
+    if (spark) spark.classList.add("recent-spark");
     if (row.currency === "%") {
       moveCell.textContent = "—";
       moveCell.title = "A yield's level is the figure — it is in the price column — "
@@ -274,6 +376,7 @@ function drawRecent(payload, listKey, view) {
       moveCell.textContent = "—";
       moveCell.title = "This series has no window to measure a move over.";
     }
+    if (spark) moveCell.prepend(spark);
     tr.append(moveCell);
 
     // The latest bar's value traded, in pesos, whatever the row's own
@@ -288,9 +391,12 @@ function drawRecent(payload, listKey, view) {
     if (Number.isFinite(row.turnoverPhp)) {
       vol.textContent = compact(row.turnoverPhp, "PHP");
       const native = recentPrice(row.turnover, row.currency, row.priceHint);
-      vol.title = (row.currency || "").toUpperCase() === "PHP"
-        ? leaderMoney(row.turnoverPhp, "PHP")
-        : `${native} at USDPHP ${rate ? rate : "—"}`;
+      // Average daily value traded over the last five finished sessions
+      // (`turnover.py`): today's session still trading is left out.
+      vol.title = "Average per day over the last 5 finished sessions: " +
+        ((row.currency || "").toUpperCase() === "PHP"
+          ? leaderMoney(row.turnoverPhp, "PHP")
+          : `${native} at USDPHP ${rate ? rate : "—"}`);
     } else if (row.kind === "INDEX") {
       // The PSEi is scanned with the stocks so its own chart can put it on
       // either table; an index is a reading of its members, not a security,
@@ -327,12 +433,13 @@ function drawRecent(payload, listKey, view) {
     // was judged on. The fallback stays for a row that genuinely has no chart
     // (a payload with no `chartSymbol`), and says so rather than pretending.
     if (row.chartable && row.chartSymbol) {
+      tr.dataset.chart = row.chartSymbol;
       tr.addEventListener("click", () => loadChart(row.chartSymbol));
     } else {
       tr.classList.add("no-chart");
       tr.title = "No chart for this row.";
     }
-    return { row, tr, index };
+    return { row, tr, index, extreme, spike };
   });
   table.append(tbody);
 
@@ -378,6 +485,27 @@ function drawRecent(payload, listKey, view) {
   freshCheck.checked = Boolean(view.freshOnly);
   freshLabel.append(freshCheck, "Fresh turns only");
 
+  const watchedLabel = document.createElement("label");
+  watchedLabel.className = "check-filter";
+  const watchedCheck = document.createElement("input");
+  watchedCheck.type = "checkbox";
+  watchedCheck.checked = Boolean(view.watchedOnly);
+  watchedLabel.append(watchedCheck, "Watched only");
+
+  const volLabel = document.createElement("label");
+  volLabel.className = "check-filter";
+  const volCheck = document.createElement("input");
+  volCheck.type = "checkbox";
+  volCheck.checked = Boolean(view.volSpikeOnly);
+  volLabel.append(volCheck, "Volume 2×+");
+
+  const extremeLabel = document.createElement("label");
+  extremeLabel.className = "check-filter";
+  const extremeCheck = document.createElement("input");
+  extremeCheck.type = "checkbox";
+  extremeCheck.checked = Boolean(view.extremeOnly);
+  extremeLabel.append(extremeCheck, "At 3M high/low");
+
   const reset = document.createElement("button");
   reset.type = "button";
   reset.className = "ghost";
@@ -389,14 +517,16 @@ function drawRecent(payload, listKey, view) {
   const count = document.createElement("span");
   count.className = "view-count";
   count.setAttribute("role", "status");
-  controls.append(marketLabel, searchLabel, hidePullLabel, freshLabel, reset, csvBtn, count);
+  controls.append(marketLabel, searchLabel, hidePullLabel, freshLabel,
+                  watchedLabel, volLabel, extremeLabel, reset, csvBtn, count);
 
   const SORTS = {
     Market: ["market", 1, (r) => r.market || ""],
     Asset: ["asset", 1, (r) => (r.ticker || r.symbol || "").toUpperCase()],
-    Since: ["since", -1, (r) => r.since],
-    Run: ["run", -1, (r) => r.run],
-    "3-month": ["move", -1, (r) => r.windowMove],
+    "Turn began": ["since", -1, (r) => r.since],
+    "Days in trend": ["run", -1, (r) => r.run],
+    "3-mo change": ["move", -1, (r) => r.windowMove],
+    "Volume (5-day avg., ₱)": ["volume", -1, (r) => r.turnoverPhp],
   };
   const heads = [...hrow.children];
   heads.forEach((th) => {
@@ -419,10 +549,14 @@ function drawRecent(payload, listKey, view) {
   let lastShown = [];
   function render() {
     const text = view.text.trim().toLowerCase();
-    let shown = built.filter(({ row }) =>
+    let shown = built.filter(({ row, extreme, spike }) =>
       (!view.market || (row.market || "") === view.market) &&
       (!view.hidePullback || !row.pullback) &&
       (!view.freshOnly || Boolean(row.since && row.since === latest[row.market || ""])) &&
+      (!view.watchedOnly || (typeof isWatched === "function" &&
+        (isWatched(row.chartSymbol) || isWatched(row.symbol)))) &&
+      (!view.volSpikeOnly || Boolean(spike)) &&
+      (!view.extremeOnly || Boolean(extreme)) &&
       (!text || [row.ticker, row.symbol, row.name].some(
         (v) => String(v || "").toLowerCase().includes(text))));
     const spec = Object.values(SORTS).find((s) => s[0] === view.key);
@@ -451,22 +585,38 @@ function drawRecent(payload, listKey, view) {
     });
     count.textContent = shown.length === built.length
       ? `${built.length} rows` : `Showing ${shown.length} of ${built.length} rows`;
-    reset.hidden = !(view.key || view.market || view.text || view.hidePullback || view.freshOnly);
+    reset.hidden = !(view.key || view.market || view.text || view.hidePullback
+      || view.freshOnly || view.watchedOnly || view.volSpikeOnly || view.extremeOnly);
     csvBtn.disabled = !shown.length;
   }
   select.addEventListener("change", () => { view.market = select.value; render(); });
-  search.addEventListener("input", () => { view.text = search.value; render(); });
+  let typing = 0;  // wait for a pause in typing: each render re-sorts every row
+  search.addEventListener("input", () => {
+    clearTimeout(typing);
+    typing = setTimeout(() => { view.text = search.value; render(); }, 150);
+  });
   hidePullCheck.addEventListener("change", () => { view.hidePullback = hidePullCheck.checked; render(); });
   freshCheck.addEventListener("change", () => { view.freshOnly = freshCheck.checked; render(); });
+  watchedCheck.addEventListener("change", () => { view.watchedOnly = watchedCheck.checked; render(); });
+  volCheck.addEventListener("change", () => { view.volSpikeOnly = volCheck.checked; render(); });
+  extremeCheck.addEventListener("change", () => { view.extremeOnly = extremeCheck.checked; render(); });
   reset.addEventListener("click", () => {
-    view.market = ""; view.text = ""; view.hidePullback = false; view.freshOnly = false; view.key = null; view.dir = 1;
+    view.market = ""; view.text = ""; view.hidePullback = false; view.freshOnly = false;
+    view.watchedOnly = false; view.volSpikeOnly = false; view.extremeOnly = false;
+    view.key = null; view.dir = 1;
     select.value = ""; search.value = ""; hidePullCheck.checked = false; freshCheck.checked = false;
+    watchedCheck.checked = false; volCheck.checked = false; extremeCheck.checked = false;
     render();
   });
+  tableViews[listKey] = view;
+  tableRenderers[listKey] = () => {
+    if (select.value !== view.market) select.value = view.market;
+    render();
+  };
   csvBtn.addEventListener("click", () => {
     const headers = [
       "Market", "Ticker", "Symbol", "Name", "Direction", "Pullback",
-      "Since", "Run (bars)", "Price", "Currency", "3-month (%)", "Trading volume (PHP)",
+      "Turn began", "Days in trend", "Price", "Currency", "3-mo change (%)", "5-day avg. trading volume (PHP)",
     ];
     const dataRows = lastShown.map(({ row }) => {
       const phrase = rowDirectionPhrase(row);
@@ -500,9 +650,15 @@ function drawRecent(payload, listKey, view) {
 }
 
 // The reader's sort and filter on the tables.
-const recentView = { market: "", text: "", hidePullback: false, freshOnly: false, key: null, dir: 1 };
-const bearishView = { market: "", text: "", hidePullback: false, freshOnly: false, key: null, dir: 1 };
-const leaningView = { market: "", text: "", key: null, dir: 1 };
+const recentView = {
+  market: "", text: "", hidePullback: false, freshOnly: false,
+  watchedOnly: false, volSpikeOnly: false, extremeOnly: false, key: null, dir: 1,
+};
+const bearishView = {
+  market: "", text: "", hidePullback: false, freshOnly: false,
+  watchedOnly: false, volSpikeOnly: false, extremeOnly: false, key: null, dir: 1,
+};
+const leaningView = { market: "", text: "", watchedOnly: false, key: null, dir: 1 };
 
 /* One chip per market: did it answer, and how fresh are its bars? An outage
  * has to read as an outage, not as a market with nothing bullish in it. */
@@ -521,7 +677,8 @@ function drawMarketStatus(payload) {
     chip.className = "mkt-chip state-" + m.state;
     const bits = [m.market, word];
     if (m.state === "partial" && m.missing) bits[1] = `partial, ${m.missing} did not answer`;
-    if (m.state === "fallback" && m.fallback) bits[1] = `Nasdaq closes for ${m.fallback}`;
+    if (m.state === "fallback" && m.fallback) bits[1] = `${m.via || "Nasdaq closes"} for ${m.fallback}`;
+    else if (m.state === "fallback" && m.via) bits[1] = m.via;
     if (m.asOf && m.state !== "offline") {
       bits.push("bars to " + rowDate(m.asOf, m.market === "Philippine bond" ? "Asia/Manila" : undefined));
     }
@@ -532,6 +689,80 @@ function drawMarketStatus(payload) {
   box.hidden = !box.children.length;
 }
 
+
+/* Market health: one line per market, the share of every name it judged that
+ * reads bullish, bearish or neutral on its own chart right now. It counts the
+ * sweep's verdicts, so it describes today's charts and predicts nothing. A
+ * market with no count (failed, or an older copy) is left off, never drawn
+ * as zero. */
+const HEALTH_PARTS = [["bullish", "bullish"], ["bearish", "bearish"], ["neutral", "neutral"]];
+function healthText(m) {
+  return HEALTH_PARTS.map(([key, word]) => `${m[key]} ${word}`).join(" · ")
+    + ` of ${m.judged}`;
+}
+function drawHealth(payload) {
+  const box = el.recentHealth;
+  box.textContent = "";
+  const list = payload.health || [];
+  const historyMap = (payload && payload.healthHistory) || {};
+  if (list.length) {
+    const title = document.createElement("h3");
+    title.className = "health-title";
+    title.textContent = "Market health — every name each market judged";
+    box.append(title);
+  }
+  const jumpToMarket = (market, listKey) => {
+    const view = listKey === "bearish" ? bearishView : recentView;
+    const grid = listKey === "bearish" ? el.bearishGrid : el.recentGrid;
+    view.market = view.market === market ? "" : market;
+    if (tableRenderers[listKey]) tableRenderers[listKey]();
+    if (grid && grid.scrollIntoView) grid.scrollIntoView({ behavior: scrollBehavior(), block: "nearest" });
+  };
+  for (const m of list) {
+    const row = document.createElement("div");
+    row.className = "health-row";
+    const name = document.createElement("span");
+    name.className = "health-market";
+    name.textContent = m.market;
+    const bar = document.createElement("span");
+    bar.className = "health-bar";
+    bar.setAttribute("role", "img");
+    bar.setAttribute("aria-label", `${m.market}: ${healthText(m)}`);
+    for (const [key] of HEALTH_PARTS) {
+      if (!m[key]) continue;
+      const seg = document.createElement("span");
+      seg.className = "health-seg seg-" + key;
+      seg.style.flexGrow = String(m[key]);
+      seg.title = `${m[key]} ${key} (${Math.round(100 * m[key] / m.judged)}%)` +
+        (key === "bullish" || key === "bearish" ? " — click to filter" : "");
+      if (key === "bullish" || key === "bearish") {
+        seg.classList.add("is-clickable");
+        seg.addEventListener("click", () => jumpToMarket(m.market, key === "bearish" ? "bearish" : "rows"));
+      }
+      bar.append(seg);
+    }
+    const hist = Array.isArray(historyMap[m.market]) ? historyMap[m.market] : [];
+    const sparkWrap = document.createElement("span");
+    sparkWrap.className = "health-spark";
+    if (hist.length >= 2 && typeof sparkline === "function") {
+      const vals = hist.map((e) => Number(e.bullPct));
+      const up = vals[vals.length - 1] >= vals[0];
+      const svg = sparkline(vals, up, 48);
+      if (svg) {
+        sparkWrap.append(svg);
+        sparkWrap.title = `${m.market} bullish share: ${vals[0].toFixed(1)}% (${hist[0].day}) → ` +
+          `${vals[vals.length - 1].toFixed(1)}% (${hist[hist.length - 1].day}), ${hist.length} days tracked`;
+      }
+    }
+    const text = document.createElement("span");
+    text.className = "health-text";
+    text.textContent = healthText(m);
+    text.setAttribute("aria-hidden", "true");
+    row.append(name, bar, sparkWrap, text);
+    box.append(row);
+  }
+  box.hidden = !list.length;
+}
 
 function drawRecentNote(payload) {
   const parts = [];
@@ -586,11 +817,15 @@ function drawLeaning(payload) {
   const table = document.createElement("table");
   const thead = document.createElement("thead");
   const hrow = document.createElement("tr");
-  for (const heading of ["Market", "Asset", "Toward bullish", "Score", "Drift t",
-                         "Price", "Trading volume (in PHP)"]) {
+  for (const heading of ["Market", "Asset", "% toward bullish", "Signal strength", "How clear the move is",
+                         "Price", "Volume (5-day avg., ₱)"]) {
     const th = document.createElement("th");
     th.scope = "col";
     th.textContent = heading;
+    if (heading === "Run") th.title = "How many trading days the current trend has lasted";
+    if (heading === "Volume (5-day avg., ₱)") {
+      th.title = "Average trading volume over the last five finished sessions, in Philippine pesos";
+    }
     hrow.append(th);
   }
   thead.append(hrow);
@@ -602,6 +837,7 @@ function drawLeaning(payload) {
     tr.append(cell(row.market || "—", "market"));
 
     const label = document.createElement("td");
+    const starBtn = makeRowStar(row);
     const button = document.createElement("button");
     button.type = "button";
     button.className = "tick-btn";
@@ -609,7 +845,15 @@ function drawLeaning(payload) {
     const name = document.createElement("span");
     name.className = "tick-sub";
     name.textContent = row.note ? `${row.name || ""} (${row.note})` : (row.name || "");
+    if (starBtn) label.append(starBtn);
     label.append(button, name);
+    if (row.halt && row.halt.action) {
+      const h = document.createElement("span");
+      h.className = "halt-tag";
+      h.textContent = row.halt.action === "Suspension" ? "Suspended" : "Halted";
+      h.title = (typeof haltPhrase === "function" ? haltPhrase(row.halt) : row.halt.action) + " (via PSE Edge).";
+      label.append(h);
+    }
     tr.append(label);
 
     const pct = Number.isFinite(row.progress) ? Math.round(row.progress * 100) : null;
@@ -641,14 +885,29 @@ function drawLeaning(payload) {
     const t = Number.isFinite(row.significance)
       ? (row.significance >= 0 ? "+" : "−") + Math.abs(row.significance).toFixed(2) : "—";
     tr.append(cell(t, "num"));
-    tr.append(cell(recentPrice(row.price, row.currency, row.priceHint)));
+    // The window's shape beside its price. A leaning row has no move column,
+    // so the line is coloured by its own first and last close; a yield's is
+    // left uncoloured, as on the other tables.
+    const priceCell = cell(recentPrice(row.price, row.currency, row.priceHint));
+    const closes = Array.isArray(row.spark) ? row.spark : [];
+    const spark = sparkline(closes, row.currency === "%" || closes.length < 2 ? null
+      : closes[closes.length - 1] >= closes[0], 44);
+    if (spark) {
+      spark.classList.add("recent-spark");
+      priceCell.prepend(spark);
+    }
+    tr.append(priceCell);
 
     const vol = document.createElement("td");
     vol.className = "vol";
     vol.textContent = Number.isFinite(row.turnoverPhp) ? compact(row.turnoverPhp, "PHP") : "—";
+    if (Number.isFinite(row.turnoverPhp)) {
+      vol.title = "Average per day over the last 5 finished sessions";
+    }
     tr.append(vol);
 
     if (row.chartable && row.chartSymbol) {
+      tr.dataset.chart = row.chartSymbol;
       tr.addEventListener("click", () => loadChart(row.chartSymbol));
     } else {
       tr.classList.add("no-chart");
@@ -681,6 +940,12 @@ function drawLeaning(payload) {
   search.value = view.text;
   search.setAttribute("autocomplete", "off");
   searchLabel.append(search);
+  const watchedLabel = document.createElement("label");
+  watchedLabel.className = "check-filter";
+  const watchedCheck = document.createElement("input");
+  watchedCheck.type = "checkbox";
+  watchedCheck.checked = Boolean(view.watchedOnly);
+  watchedLabel.append(watchedCheck, "Watched only");
   const reset = document.createElement("button");
   reset.type = "button";
   reset.className = "ghost";
@@ -692,14 +957,15 @@ function drawLeaning(payload) {
   const count = document.createElement("span");
   count.className = "view-count";
   count.setAttribute("role", "status");
-  controls.append(marketLabel, searchLabel, reset, csvBtn, count);
+  controls.append(marketLabel, searchLabel, watchedLabel, reset, csvBtn, count);
 
   const SORTS = {
     Market: ["market", 1, (r) => r.market || ""],
     Asset: ["asset", 1, (r) => (r.ticker || r.symbol || "").toUpperCase()],
-    "Toward bullish": ["progress", -1, (r) => r.progress],
-    Score: ["score", -1, (r) => r.score],
-    "Drift t": ["significance", -1, (r) => r.significance],
+    "% toward bullish": ["progress", -1, (r) => r.progress],
+    "Signal strength": ["score", -1, (r) => r.score],
+    "How clear the move is": ["significance", -1, (r) => r.significance],
+    "Volume (5-day avg., ₱)": ["volume", -1, (r) => r.turnoverPhp],
   };
   const heads = [...hrow.children];
   heads.forEach((th) => {
@@ -724,6 +990,8 @@ function drawLeaning(payload) {
     const text = view.text.trim().toLowerCase();
     let shown = built.filter(({ row }) =>
       (!view.market || (row.market || "") === view.market) &&
+      (!view.watchedOnly || (typeof isWatched === "function" &&
+        (isWatched(row.chartSymbol) || isWatched(row.symbol)))) &&
       (!text || [row.ticker, row.symbol, row.name].some(
         (v) => String(v || "").toLowerCase().includes(text))));
     const spec = Object.values(SORTS).find((s) => s[0] === view.key);
@@ -752,20 +1020,27 @@ function drawLeaning(payload) {
     });
     count.textContent = shown.length === built.length
       ? `${built.length} rows` : `Showing ${shown.length} of ${built.length} rows`;
-    reset.hidden = !(view.key || view.market || view.text);
+    reset.hidden = !(view.key || view.market || view.text || view.watchedOnly);
     csvBtn.disabled = !shown.length;
   }
   select.addEventListener("change", () => { view.market = select.value; render(); });
-  search.addEventListener("input", () => { view.text = search.value; render(); });
+  let typing = 0;  // wait for a pause in typing: each render re-sorts every row
+  search.addEventListener("input", () => {
+    clearTimeout(typing);
+    typing = setTimeout(() => { view.text = search.value; render(); }, 150);
+  });
+  watchedCheck.addEventListener("change", () => { view.watchedOnly = watchedCheck.checked; render(); });
   reset.addEventListener("click", () => {
-    view.market = ""; view.text = ""; view.key = null; view.dir = 1;
-    select.value = ""; search.value = "";
+    view.market = ""; view.text = ""; view.watchedOnly = false; view.key = null; view.dir = 1;
+    select.value = ""; search.value = ""; watchedCheck.checked = false;
     render();
   });
+  tableViews.leaning = view;
+  tableRenderers.leaning = render;
   csvBtn.addEventListener("click", () => {
     const headers = [
       "Market", "Ticker", "Symbol", "Name", "Toward bullish (%)",
-      "Score", "Drift t", "Price", "Currency", "Trading volume (PHP)",
+      "Signal strength", "How clear the move is", "Price", "Currency", "5-day avg. trading volume (PHP)",
     ];
     const dataRows = lastShown.map(({ row }) => [
       row.market || "",
@@ -850,30 +1125,256 @@ function drawBearishNote(payload) {
     ph;
 }
 
+/* ------------------------------------------------------------------ *
+ * Philippine market by sector
+ *
+ * Eight fixed rows: the PSEi, All Shares and the six sector indexes. Each row
+ * carries its chart's own points and trend (`sectors.py`), so the label, the
+ * moves and the high/low tag are read with the chart's own functions and a
+ * click opens the same series.
+ * ------------------------------------------------------------------ */
+function sectorMove(from, to) {
+  return from && from.c > 0 && to ? (to.c / from.c - 1) * 100 : null;
+}
+
+function sectorMoveCell(pct, title) {
+  const td = document.createElement("td");
+  td.className = "move" + (pct === null ? "" : pct >= 0 ? " up" : " down");
+  td.textContent = pct === null ? "—" : `${pct >= 0 ? "+" : "−"}${Math.abs(pct).toFixed(2)}%`;
+  if (title) td.title = title;
+  return td;
+}
+
+function drawSectors(payload) {
+  const rows = payload.rows || [];
+  const card = document.createElement("div");
+  card.className = "card";
+  const wrap = document.createElement("div");
+  wrap.className = "table-wrap";
+  const table = document.createElement("table");
+  const thead = document.createElement("thead");
+  const hrow = document.createElement("tr");
+  for (const heading of ["Index", "Trend (3 months)", "Level", "1 day", "1 week",
+                         "1 month", "3 months"]) {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.textContent = heading;
+    if (heading === "Run") th.title = "How many trading days the current trend has lasted";
+    if (heading === "Volume (5-day avg., ₱)") {
+      th.title = "Average trading volume over the last five finished sessions, in Philippine pesos";
+    }
+    hrow.append(th);
+  }
+  thead.append(hrow);
+  const tbody = document.createElement("tbody");
+  for (const row of rows) {
+    const pts = row.points || [];
+    const last = pts[pts.length - 1];
+    const tr = document.createElement("tr");
+
+    const label = document.createElement("td");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "tick-btn";
+    button.textContent = row.name;
+    const sub = document.createElement("span");
+    sub.className = "tick-sub";
+    sub.textContent = row.symbol;
+    label.append(button, sub);
+    tr.append(label);
+
+    const dir = document.createElement("td");
+    const t = row.trend;
+    dir.className = "dir " + ((t && t.label) || "neutral");
+    dir.textContent = t ? `${TREND_GLYPH[t.label] || ""} ${badgePhrase(t)}`.trim() : "—";
+    const extreme = windowExtreme(pts.map((p) => p.c));
+    if (extreme) {
+      const tag = document.createElement("span");
+      tag.className = "pull";
+      tag.textContent = extremePhrase(extreme, false);
+      tag.title = extremeSentence(extreme, false, pts.length);
+      dir.append(tag);
+    }
+    tr.append(dir);
+
+    const level = document.createElement("td");
+    level.textContent = last ? last.c.toLocaleString(undefined,
+      { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—";
+    tr.append(level);
+
+    const periods = periodChanges(pts);
+    const week = periods && periods.periods.find((p) => p.name === "1W");
+    const month = periods && periods.periods.find((p) => p.name === "1M");
+    tr.append(
+      sectorMoveCell(pts.length > 1 ? sectorMove(pts[pts.length - 2], last) : null,
+        "Newest close against the one before"),
+      sectorMoveCell(week ? week.pct : null, "Against the last close at least 7 days earlier"),
+      sectorMoveCell(month ? month.pct : null, "Against the last close at least 30 days earlier"),
+      sectorMoveCell(pts.length > 1 ? sectorMove(pts[0], last) : null,
+        "The chart's first close to its newest"));
+
+    tr.dataset.chart = row.symbol;
+    tr.addEventListener("click", () => loadChart(row.symbol));
+    tbody.append(tr);
+  }
+  table.append(thead, tbody);
+  wrap.append(table);
+  card.append(wrap);
+  return card;
+}
+
+const SECTOR_NAMES = { "PSE:PSEI": "PSEi", "PSE:ALL": "All Shares", "PSE:FIN": "Financials",
+  "PSE:IND": "Industrial", "PSE:HDG": "Holding Firms", "PSE:PRO": "Property",
+  "PSE:SVC": "Services", "PSE:M_O": "Mining & Oil" };
+
+/* Draw-facing fields only — skips spark/points arrays that inflate stringify. */
+function recentRowsSig(rows) {
+  if (!rows || !rows.length) return "0";
+  return rows.length + "#" + rows.map((r) => [
+    r.symbol || r.ticker || "",
+    r.direction || "",
+    r.since || "",
+    r.price,
+    r.score,
+    r.pullback ? 1 : 0,
+    r.progress,
+    r.significance,
+  ].join(",")).join(";");
+}
+
+function recentPayloadSig(payload) {
+  if (!payload) return "";
+  return [
+    recentRowsSig(payload.rows),
+    recentRowsSig(payload.bearish),
+    recentRowsSig(payload.leaning),
+    payload.luck && payload.luck.note,
+    payload.note,
+  ].join("|");
+}
+
+function sectorsRowsSig(rows) {
+  if (!rows || !rows.length) return "0";
+  return rows.length + "#" + rows.map((r) => [
+    r.symbol || "",
+    r.move,
+    r.trend && r.trend.label,
+    r.trend && r.trend.score,
+    (r.points && r.points.length) || 0,
+    r.points && r.points.length && r.points[r.points.length - 1].c,
+  ].join(",")).join(";");
+}
+
+async function loadSectors() {
+  try {
+    const payload = await requestJSON("/api/sectors");
+    const parts = [];
+    // An unchanged answer keeps the table on screen as it is: no rebuild,
+    // no lost scroll or focus.
+    // A 304 hands back the very object kept last time: no need to stringify.
+    const same = payload === loadSectors.last;
+    loadSectors.last = payload;
+    const sig = same ? loadSectors.sig : sectorsRowsSig(payload.rows);
+    if (sig !== loadSectors.sig) {
+      loadSectors.sig = sig;
+      el.sectorGrid.textContent = "";
+      if (payload.rows && payload.rows.length) el.sectorGrid.append(drawSectors(payload));
+    }
+    if (payload.pending) {
+      parts.push("Loading the eight indexes — this fills in shortly");
+      // The first build runs in the background; ask again soon.
+      clearTimeout(loadSectors.retry);
+      const retry = () => {
+        // A hidden tab stops asking and reads once when it comes back.
+        if (document.hidden) {
+          document.addEventListener("visibilitychange", loadSectors, { once: true });
+          return;
+        }
+        loadSectors();
+      };
+      loadSectors.retry = setTimeout(retry, 8000);
+    } else if (payload.checkedAt) {
+      parts.push("Read " + new Date(payload.checkedAt * 1000).toLocaleTimeString());
+    }
+    if (payload.rows && payload.rows.length) {
+      parts.push("Past price trend only — not a forecast");
+    }
+    const failed = Object.keys(payload.errors || {}).map((s) => SECTOR_NAMES[s] || s);
+    if (failed.length) parts.push(`${failed.join(", ")} did not answer`);
+    if (payload.staleError) parts.push("last refresh failed — " + payload.staleError);
+    el.sectorNote.textContent = parts.join(" · ");
+    // Morning ribbon shares this payload; redraw when sectors moved.
+    if (typeof deskSectors !== "undefined") {
+      deskSectors = payload;
+      if (typeof drawMorningRibbon === "function" && typeof deskPacket !== "undefined") {
+        drawMorningRibbon(deskSectors, { rows: (deskPacket && deskPacket.recentSample) || [] });
+      }
+    }
+  } catch (err) {
+    el.sectorNote.textContent = "Sector table unavailable — " + err.message;
+  }
+}
+
 async function loadRecent() {
   try {
     const payload = await requestJSON("/api/recent");
-    el.recentGrid.textContent = "";
-    // Nothing to draw before the first sweep lands; the note carries it.
-    if (payload.rows && payload.rows.length) {
-      el.recentGrid.append(drawRecent(payload, "rows", recentView));
+    // The sweep runs every fifteen minutes; a poll that brings the same rows
+    // back leaves the three tables (and any filter being typed) alone. The
+    // notes still redraw, since they carry the read time.
+    const same = payload === loadRecent.last;
+    loadRecent.last = payload;
+    const sig = same ? loadRecent.sig
+      : recentPayloadSig(payload);
+    const changed = sig !== loadRecent.sig;
+    loadRecent.sig = sig;
+    if (changed) {
+      el.recentGrid.textContent = "";
+      delete tableRenderers.rows;
+      // Nothing to draw before the first sweep lands; the note carries it.
+      if (payload.rows && payload.rows.length) {
+        el.recentGrid.append(drawRecent(payload, "rows", recentView));
+      }
     }
     drawRecentNote(payload);
     drawMarketStatus(payload);
-    el.bearishGrid.textContent = "";
-    if (payload.bearish && payload.bearish.length) {
-      el.bearishGrid.append(drawRecent(payload, "bearish", bearishView));
+    drawHealth(payload);
+    if (typeof deskOnRecent === "function") deskOnRecent(payload);
+    // Bearish and leaning sit below the fold: build them when the browser is
+    // idle so the bullish table paints first. Notes still update at once.
+    // Cancel any earlier idle build; a generation stamp drops a stale one too.
+    // Only a changed answer cancels: an unchanged one landing within the
+    // idle wait used to cancel the pending build and leave both tables empty.
+    if (changed && loadRecent.idle != null && typeof cancelIdleCallback === "function") {
+      cancelIdleCallback(loadRecent.idle);
+      loadRecent.idle = null;
+    }
+    const gen = changed ? (loadRecent.gen = (loadRecent.gen || 0) + 1) : loadRecent.gen;
+    const finishLower = () => {
+      loadRecent.idle = null;
+      if (!changed || gen !== loadRecent.gen) return;
+      el.bearishGrid.textContent = "";
+      delete tableRenderers.bearish;
+      if (payload.bearish && payload.bearish.length) {
+        el.bearishGrid.append(drawRecent(payload, "bearish", bearishView));
+      }
+      el.leaningGrid.textContent = "";
+      delete tableRenderers.leaning;
+      if (payload.leaning && payload.leaning.length) {
+        el.leaningGrid.append(drawLeaning(payload));
+      }
+    };
+    if (changed && typeof requestIdleCallback === "function") {
+      loadRecent.idle = requestIdleCallback(finishLower, { timeout: 400 });
+    } else {
+      finishLower();
     }
     drawBearishNote(payload);
-    el.leaningGrid.textContent = "";
-    if (payload.leaning && payload.leaning.length) {
-      el.leaningGrid.append(drawLeaning(payload));
-    }
     drawLeaningNote(payload);
   } catch (err) {
     // Same rule as the leaderboards: a failed refresh must not clear a table
     // already on screen.
     el.recentNote.textContent = "Recently bullish table unavailable — " + err.message;
     el.bearishNote.textContent = "Recently bearish table unavailable — " + err.message;
+    el.leaningNote.textContent = "Leaning table unavailable — " + err.message;
   }
 }

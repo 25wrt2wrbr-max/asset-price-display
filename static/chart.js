@@ -10,6 +10,14 @@ const TREND_PARTS = [
   ["range", "range"],
 ];
 
+/* The one-sentence plain reading, shown under the price (empty hides it). */
+function showPlainNote(text) {
+  const p = document.getElementById("plainNote");
+  if (!p) return;
+  p.textContent = text;
+  p.hidden = !text;
+}
+
 function drawTrend() {
   const t = state.data && state.data.trend;
   const badge = el.trendBadge;
@@ -37,6 +45,7 @@ function drawTrend() {
     el.trendScore.textContent = "";
     el.trendNote.textContent = stopped;
     el.trendNote.hidden = !stopped;
+    showPlainNote("");
     document.getElementById("outlookNote").hidden = true;
     return;
   }
@@ -47,55 +56,71 @@ function drawTrend() {
   // label itself stays Neutral (trend.py's `lean`, never a second verdict).
   // A label whose last two weeks ran against it says so (trend.py's
   // `pullback`). The label is unchanged; the tag only names the newest bars.
-  el.trendLabel.textContent = badgePhrase(t);
+  const extreme = windowExtreme((state.data.points || []).map((p) => p.c));
+  const extremeWords = extremePhrase(extreme, Boolean(state.data.yieldSeries));
+  const spike = volumeSpike(chartVolumes(state.data));
+  el.trendLabel.textContent = badgePhrase(t) + (extremeWords ? " · " + extremeWords : "")
+    + (spike ? " · " + volumePhrase(spike) : "");
   const pullWord = t.pullback && t.label !== "neutral";
-  el.trendScore.textContent = (t.score >= 0 ? "+" : "−") + Math.abs(t.score).toFixed(3);
+  // The raw score means little to a newcomer: say it in a word, keep the
+  // number on hover. (Labels need 0.25; past 0.4 is a clear-cut run.)
+  const scoreText = (t.score >= 0 ? "+" : "−") + Math.abs(t.score).toFixed(3);
+  const mag = Math.abs(t.score);
+  // The word follows the label, never contradicts it: a neutral badge with a
+  // big score failed the evidence check, and a held label is in its hold band.
+  el.trendScore.textContent = t.label === "neutral" ? "no clear trend"
+    : t.held ? "strength: holding"
+    : "strength: " + (mag >= 0.4 ? "strong" : "medium");
+  el.trendScore.title = "Signal number " + scoreText + " (a clear label needs about ±0.25)";
   badge.hidden = false;
 
-  // Name the horizon and the inputs, so the verdict is auditable rather than
-  // a number the reader has to trust.
+  // Technical signal breakdown stays on the note's title attribute; the
+  // visible text stays in plain words (the open "Why this label" fold-out).
   const parts = TREND_PARTS
     .filter(([key]) => t.components && Number.isFinite(t.components[key]))
     .map(([key, name]) => `${name} ${t.components[key] >= 0 ? "+" : "−"}${Math.abs(t.components[key]).toFixed(2)}`);
   const fit = t.components && Number.isFinite(t.components.r2)
     ? ` · fit R² ${t.components.r2.toFixed(2)}` : "";
-  // The evidence behind the call, in words: a label needs the drift to clear
-  // t 1.96 and holds while it stays above t 1.0 (see trend.py).
   const sig = Number.isFinite(t.significance)
     ? (Math.abs(t.significance) >= 99 ? "every bar moved the same way"
        : `drift t ${t.significance >= 0 ? "+" : "−"}${Math.abs(t.significance).toFixed(2)}`)
     : "";
+  const techDetail = parts.length
+    ? `Signals: ${parts.join(", ")}${fit}${sig ? " · " + sig : ""}. Score strength is not a probability.`
+    : "";
   const evidence = t.label === "neutral"
     ? neutralExplanation(t) + " "
     : t.held
-      ? `This ${TREND_WORD[t.label].toLowerCase()} trend has weakened but is holding: it stays until the drift falls below the hold band. `
+      ? `This ${TREND_WORD[t.label].toLowerCase()} trend has weakened but is holding: it stays until the move softens further. `
       : "";
   const pullNote = pullWord ? pullNoteSentence(t.label) + " " : "";
   const liveNote = state.data.lastBarBasis && state.data.lastBarBasis !== "close"
     ? "The verdict includes the newest price and updates as it moves. " : "";
-  // A bond chart needs one extra sentence, or the plot contradicts the badge
-  // at a glance: the line is the yield, and the label is its bond-price
-  // reading. The classifier's own call rides along as `yieldTrend`, so the
-  // reader can see which of the two they are looking at.
   const raw = state.data.yieldTrend;
   const yieldNote = state.data.yieldSeries
     ? "This line plots the yield in percent" +
       (raw && TREND_WORD[raw.label]
-        ? `; the classifier reads the yield itself as ${TREND_WORD[raw.label].toLowerCase()}` : "") +
+        ? `; the yield itself reads as ${TREND_WORD[raw.label].toLowerCase()}` : "") +
       ". " + bondBadgeClause() + " "
     : "";
-  // A fund's line is a net asset value, struck once a business day by its
-  // manager -- not a traded price. Saying so keeps the hero figure and the
-  // window's move from reading as an exchange quote.
   const fundNote = state.data.fundSeries
-    ? "This line plots the fund's net asset value per unit (NAVPU), set once a business day; "
-      + "there is no volume and no intraday price. "
+    ? "This line plots the fund's daily unit value, set once a business day; "
+      + "there is no volume and no price during the day. "
     : "";
+  const plain = plainReading(t) || "";
   el.trendNote.textContent = yieldNote + fundNote +
-    `Past-${state.data.yieldSeries ? "yield" : "price"} trend over all ${t.bars} bars drawn; not a prediction or guarantee for the next three months. ` +
-    evidence + pullNote + liveNote +
-    (parts.length ? `Signals: ${parts.join(", ")}${fit}${sig ? " · " + sig : ""}. Score strength is not a probability.` : "");
+    `Past-${state.data.yieldSeries ? "yield" : "price"} trend over all ${t.bars} trading days drawn; not a prediction or guarantee for the next three months. ` +
+    evidence + pullNote +
+    (extreme ? extremeSentence(extreme, Boolean(state.data.yieldSeries), t.bars) + " " : "") +
+    (spike ? volumeSentence(spike) + " " : "") +
+    liveNote +
+    (plain ? plain + " " : (techDetail || ""));
+  if (techDetail) el.trendNote.title = techDetail;
+  else el.trendNote.removeAttribute("title");
   el.trendNote.hidden = !el.trendNote.textContent;
+  // The plain-words reading also sits under the price, so the reader need not
+  // open "Why this label" to learn what the badge means.
+  showPlainNote(plain);
   const outlook = document.getElementById("outlookNote");
   const c = state.data.longTermContext;
   outlook.hidden = !c;
@@ -110,6 +135,7 @@ function drawTrend() {
         "In a PSE historical holdout, bullish signals with both comparisons positive finished higher after three months in 47.9% of cases; 6.3% remained bullish throughout. Overlapping cases, surviving listings only; costs excluded. Not a forecast or guarantee.";
     }
   }
+  if (typeof drawChanceOnChart === "function") drawChanceOnChart();
 }
 
 /* ---- SVG scaffolding ---- */
@@ -132,10 +158,13 @@ function niceTicks(min, max, count) {
   return out;
 }
 
-function drawChart() {
-  const d = state.data;
+function drawChart(opts = {}) {
+  const d = shownData();   // the peso copy when that view is on (static/peso.js)
   const pts = d.points;
   const n = pts.length;
+  // A live-price redraw keeps what the reader had: the hovered bar and focus.
+  const keepIndex = opts.keep ? state.activeIndex : null;
+  const hadFocus = Boolean(opts.keep && el.plot.contains(document.activeElement));
 
   el.plot.textContent = "";
   el.plot.classList.remove("is-stale");
@@ -210,6 +239,30 @@ function drawChart() {
   const coords = pts.map((p, i) => ({ x: xOf(i), y: yOf(p.c), point: p }));
   const linePath = coords.map((c, i) => `${i ? "L" : "M"}${c.x.toFixed(2)} ${c.y.toFixed(2)}`).join(" ");
 
+  // --- volume strip (bottom 18% of plot, behind the price curve) ---
+  const vols = typeof chartVolumes === "function" ? chartVolumes(d) : null;
+  const volMed = vols && typeof volumeMedian === "function" ? volumeMedian(vols) : null;
+  const maxVol = vols ? Math.max(0, ...vols.filter((v) => Number.isFinite(v) && v > 0)) : 0;
+  if (vols && maxVol > 0) {
+    const volH = IH * 0.18;
+    const bw = Math.max(1.5, Math.min(8, (IW / Math.max(1, n - 1)) * 0.62));
+    const vg = svgEl("g", { class: "vol-bars", "aria-hidden": "true" });
+    for (let i = 0; i < n; i++) {
+      const v = Number(vols[i]);
+      if (!Number.isFinite(v) || v <= 0) continue;
+      const h = Math.max(1, (v / maxVol) * volH);
+      const isSpike = Boolean(volMed && v >= volMed * VOLUME_SPIKE);
+      vg.append(svgEl("rect", {
+        class: "vol-bar" + (isSpike ? " is-spike" : ""),
+        x: (coords[i].x - bw / 2).toFixed(2),
+        y: (M.top + IH - h).toFixed(2),
+        width: bw.toFixed(2),
+        height: h.toFixed(2),
+      }));
+    }
+    svg.append(vg);
+  }
+
   // area wash at ~10% under the line (single series -> no legend needed)
   svg.append(svgEl("path", {
     class: "series-area",
@@ -217,6 +270,78 @@ function drawChart() {
        `L ${coords[0].x.toFixed(2)} ${M.top + IH} Z`,
   }));
   svg.append(svgEl("path", { class: "series-line", d: linePath }));
+
+  // --- armed price alarms on this symbol ---
+  const symKey = String(d.symbol || "").trim().toUpperCase();
+  const armedAlarms = (typeof alarms !== "undefined" && Array.isArray(alarms))
+    ? alarms.filter((a) => !a.fired && String(a.symbol || "").trim().toUpperCase() === symKey)
+    : [];
+  let topEdgeCount = 0, botEdgeCount = 0;
+  for (const a of armedAlarms) {
+    if (!Number.isFinite(a.target)) continue;
+    // An alarm is set on the asset's own price. In the peso view it is placed
+    // at today's rate and still printed in that own currency.
+    const level = d.peso ? a.target * d.peso.rate : a.target;
+    const txt = formatPrice(a.target, state.data);
+    if (level >= lo && level <= hi) {
+      const ay = yOf(level);
+      svg.append(svgEl("line", {
+        class: "alarm-line", x1: M.left, x2: M.left + IW, y1: ay, y2: ay,
+      }));
+      const tag = svgEl("text", {
+        class: "alarm-tag", x: M.left + 6, y: Math.max(M.top + 11, ay - 5),
+        "text-anchor": "start",
+      });
+      tag.textContent = "🔔 " + txt;
+      svg.append(tag);
+    } else if (level > hi) {
+      const tag = svgEl("text", {
+        class: "alarm-tag is-edge", x: M.left + IW - 4,
+        y: M.top + 12 + topEdgeCount * 14, "text-anchor": "end",
+      });
+      tag.textContent = "▲ 🔔 " + txt;
+      svg.append(tag);
+      topEdgeCount++;
+    } else {
+      const tag = svgEl("text", {
+        class: "alarm-tag is-edge", x: M.left + IW - 4,
+        y: M.top + IH - 6 - botEdgeCount * 14, "text-anchor": "end",
+      });
+      tag.textContent = "▼ 🔔 " + txt;
+      svg.append(tag);
+      botEdgeCount++;
+    }
+  }
+
+  // --- onset marker dot (hollow ring where the current trend run started) ---
+  let onsetIdx = -1;
+  if (d.onset && Number.isFinite(d.onset.since) && !d.onset.censored && n >= 2) {
+    const targetT = d.onset.since;
+    if (targetT >= pts[0].t && targetT <= pts[n - 1].t) {
+      let best = -1, bestDiff = Infinity;
+      for (let i = 0; i < n; i++) {
+        const diff = Math.abs(pts[i].t - targetT);
+        if (diff < bestDiff) { bestDiff = diff; best = i; }
+      }
+      if (best >= 0 && bestDiff <= 86400) onsetIdx = best;
+    }
+  }
+  if (onsetIdx >= 0) {
+    const oc = coords[onsetIdx];
+    const dirCls = d.trend && (d.trend.label === "bullish" || d.trend.label === "bearish")
+      ? " is-" + d.trend.label : "";
+    const ring = svgEl("circle", {
+      class: "onset-dot" + dirCls, cx: oc.x, cy: oc.y, r: 5.5,
+    });
+    const title = svgEl("title");
+    title.textContent = `Trend started ${fullFmt.format(toDate(oc.point.t))}` +
+      (Number.isFinite(d.onset.run) ? ` (${d.onset.run} bars)` : "");
+    ring.append(title);
+    svg.append(ring);
+  }
+
+  // --- ex-dividend "D" ticks on PSE names (static/dividends.js) ---
+  if (typeof drawDividendMarks === "function") drawDividendMarks(svg, d, coords);
 
   // --- end marker + a single direct label (the endpoint) ---
   const lastC = coords[coords.length - 1];
@@ -297,6 +422,21 @@ function drawChart() {
     row.append(key, value, label);
 
     tooltip.append(dateLine, row);
+    if (vols && Number.isFinite(Number(vols[i])) && Number(vols[i]) > 0) {
+      const v = Number(vols[i]);
+      const volLine = document.createElement("div");
+      volLine.className = "tt-sub";
+      const ratioTxt = volMed && v >= volMed * VOLUME_SPIKE
+        ? ` (${(v / volMed).toFixed(1)}× usual)` : "";
+      volLine.textContent = `Vol ${shareFmt.format(v)}${ratioTxt}`;
+      tooltip.append(volLine);
+    }
+    if (i === onsetIdx) {
+      const onsetLine = document.createElement("div");
+      onsetLine.className = "tt-sub";
+      onsetLine.textContent = "Trend started on this bar";
+      tooltip.append(onsetLine);
+    }
     tooltip.hidden = false;
 
     const box = svg.getBoundingClientRect();
@@ -315,7 +455,17 @@ function drawChart() {
     tooltip.hidden = true;
   };
 
-  capture.addEventListener("pointermove", (ev) => showAt(indexFromEvent(ev)));
+  // One readout per frame, and none when the nearest bar has not changed.
+  let moveRaf = 0, moveEv = null;
+  capture.addEventListener("pointermove", (ev) => {
+    moveEv = ev;
+    if (moveRaf) return;
+    moveRaf = requestAnimationFrame(() => {
+      moveRaf = 0;
+      const i = indexFromEvent(moveEv);
+      if (i !== state.activeIndex || tooltip.hidden) showAt(i);
+    });
+  });
   capture.addEventListener("pointerleave", clear);
   svg.addEventListener("blur", clear);
 
@@ -335,16 +485,21 @@ function drawChart() {
     ev.preventDefault();
     showAt(next);
   });
+
+  if (hadFocus) svg.focus({ preventScroll: true });
+  if (keepIndex !== null && keepIndex < n) showAt(keepIndex);
 }
 
 /* ---- table view: the WCAG-clean twin of the chart ---- */
 function drawTable() {
-  const d = state.data;
+  const d = shownData();   // the peso copy when that view is on (static/peso.js)
   const pts = d.points;
   const proxyStamps = new Set((d.weekendProxy && d.weekendProxy.stamps) || []);
   const hasPts = Boolean(pts && pts.length);
   el.tableToggle.hidden = !hasPts;
   el.csvExport.hidden = !hasPts;
+  // A folded table is built when it is opened (events.js), not on every redraw.
+  if (el.tableWrap.hidden) return;
 
   el.tableWrap.textContent = "";
   const table = document.createElement("table");
@@ -405,7 +560,7 @@ function drawTable() {
 }
 
 function exportChartCsv() {
-  const d = state.data;
+  const d = shownData();   // the peso copy when that view is on (static/peso.js)
   if (!d || !d.points || !d.points.length) return;
   const pts = d.points;
   const proxyStamps = new Set((d.weekendProxy && d.weekendProxy.stamps) || []);

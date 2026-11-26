@@ -61,6 +61,7 @@ search, the shared constants and the browser runners, and re-exports every name
 
 from __future__ import annotations
 
+import faults
 import labpath  # noqa: F401  (puts lab/ on sys.path)
 
 import datetime
@@ -369,24 +370,34 @@ def stocks_index() -> dict:
         "sort": {"sortBy": "name", "sortOrder": "asc"},
         "range": [0, 400],
     }
+    source = "TradingView"
     try:
         payload = post_json(SCAN_URL, body)
         rows = payload.get("data")
         if not isinstance(rows, list):
             raise PseError("unexpected scanner payload")
-    except PseError:
+    except PseError as exc:
         with _lock:
             _, cached = _index_cache
         if cached is not None:
             return cached  # a hiccup upstream, not a broken universe
-        raise
+        # Cold start and no scanner: the exchange's own directory (PSE Edge)
+        # stands in. It lists one primary security per company -- no
+        # preferred shares -- so the note's makeup line counts what it has.
+        import pse_edge
+        try:
+            rows = pse_edge.universe()
+        except pse_edge.EdgeError:
+            raise exc
+        faults.note("pse.stocks_index", exc)
+        source = pse_edge.SOURCE
 
     ordered: list[dict] = []
     by_symbol: dict[str, dict] = {}
     for row in rows:
         if not isinstance(row, dict):
             continue
-        record = _normalize(row)
+        record = dict(row) if source != "TradingView" else _normalize(row)
         if not record:
             continue
         ordered.append(record)
@@ -398,9 +409,12 @@ def stocks_index() -> dict:
         ordered.append(dict(INDEX_ENTRY))
         by_symbol[INDEX_ENTRY["symbol"]] = dict(INDEX_ENTRY)
 
-    value = {"by_symbol": by_symbol, "ordered": ordered}
+    value = {"by_symbol": by_symbol, "ordered": ordered, "source": source}
+    # A stand-in list is kept five minutes, not an hour: the scanner is asked
+    # again soon, and its answer replaces this one.
+    stamp = now if source == "TradingView" else now - INDEX_TTL + 300
     with _lock:
-        _index_cache = (now, value)
+        _index_cache = (stamp, value)
     return value
 
 
@@ -418,7 +432,8 @@ def canonical_symbol(symbol: str) -> str | None:
         text = text[:-3]
     else:
         return None
-    if not text or not text.replace("-", "").replace("&", "").isalnum():
+    # `_` for the Mining & Oil index, which TradingView spells `PSE:M_O`.
+    if not text or not text.replace("-", "").replace("&", "").replace("_", "").isalnum():
         return None
     return "PSE:" + text
 

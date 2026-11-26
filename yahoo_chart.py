@@ -380,7 +380,7 @@ def slim_chart(payload: dict, symbol: str, span: str | None = None,
     # 3-month chart still has bars behind its window; a chart whose payload
     # starts at the window has no tail and keeps its lean unfiltered, which is
     # the honest answer to "not enough history to judge".
-    tail = S.history_tail(every_bar, points)
+    tail = S.history_tail(every_bar, points, want=100)
 
     # The trend call is scored on the same bars the chart draws, volumes aligned
     # to them. Any failure here is non-fatal: the chart is the product, the badge
@@ -392,6 +392,18 @@ def slim_chart(payload: dict, symbol: str, span: str | None = None,
     except ValueError:
         pass  # non-positive price in the series
 
+    # Yahoo's FX priceHint is often a flat 4. A micro cross (VND/PHP ~0.0025)
+    # then prints every bar the same; raise the hint to what the rate's size
+    # needs, never below Yahoo's own ask.
+    hint = meta.get("priceHint") or 2
+    try:
+        hint = int(hint)
+    except (TypeError, ValueError):
+        hint = 2
+    if ((meta.get("instrumentType") or "").upper() == "CURRENCY"
+            and points):
+        hint = max(hint, crypto.price_hint(points[-1]["c"]))
+
     return {
         "symbol": meta.get("symbol") or symbol,
         "name": meta.get("longName") or meta.get("shortName") or symbol,
@@ -399,13 +411,18 @@ def slim_chart(payload: dict, symbol: str, span: str | None = None,
         "exchange": meta.get("fullExchangeName") or meta.get("exchangeName") or "",
         "type": meta.get("instrumentType") or "",
         "timezone": meta.get("exchangeTimezoneName") or "",
-        "priceHint": meta.get("priceHint") or 2,
+        "priceHint": hint,
         "previousClose": meta.get("chartPreviousClose"),
         "marketPrice": meta.get("regularMarketPrice"),
         "extendedLastBar": S.full_day_close(meta, stamps[-1]) is not None,
         "livePrint": S.live_print(meta, stamps[-1]) if interval == "1d" else None,
         "session": S.session_window(meta, stamps[-1]),
         "points": points,
+        # Each drawn bar's volume, for the page's volume tag only. Not named
+        # `volumes`: that key means "venue volumes" to `fill_missing_days`
+        # and `completed_trade`. A point added later (a filled day, a live
+        # print) breaks the alignment, and the page then shows no tag.
+        "barVolumes": list(volumes_used),
         "trend": trend_call,
         # The bars before the window, for the badge's steadiness reading. Not
         # drawn; kept so `chart_data` can ask the same question of the previous

@@ -41,7 +41,16 @@ function recordWatchVisit(was, symbol, data) {
   }
   const current = visitReading(data);
   if (!current) return;
+  // Ring when a fresh reading flips the badge vs the last successful one this
+  // session (or the prior visit, once we have a current). Server notify.py also
+  // posts macOS banners; this is the in-page / Notification path.
+  const baseline = row.current || row.prior;
+  if (baseline && baseline !== current && typeof noteWatchLabelFlip === "function") {
+    noteWatchLabelFlip(symbol, baseline, current);
+  }
   row.current = current;
+  // Storage already holds the baseline; write only when the badge moved.
+  if (current === baseline) return;
   try { localStorage.setItem(visitKey(symbol), current); } catch {}
 }
 
@@ -49,9 +58,15 @@ function drawWatchChanges() {
   const panel = document.getElementById('watchChanges');
   panel.hidden = !state.watch.length;
   const list = document.getElementById('watchChangeList');
-  list.textContent = '';
-  if (panel.hidden) return;
-  let checked = 0, compared = 0;
+  if (panel.hidden) {
+    list.textContent = '';
+    drawWatchChanges.sig = '';
+    return;
+  }
+  // Quote ticks redraw the rail often; skip wiping the change list when the
+  // visit readings have not moved.
+  const lines = [];
+  let checked = 0, compared = 0, flips = 0;
   for (const item of state.watch) {
     const { prior, current } = openWatchVisit(item.symbol);
     if (!current) continue;
@@ -59,14 +74,31 @@ function drawWatchChanges() {
     if (!prior) continue;
     compared++;
     if (prior === current) continue;
-    const li = document.createElement('li');
-    li.textContent = `${item.symbol}: ${prior} → ${current}`;
-    list.append(li);
+    flips++;
+    lines.push(`${item.symbol}: ${prior} → ${current}`);
   }
-  const note = document.getElementById('watchChangeNote');
   const parts = [];
-  if (compared && !list.children.length) parts.push(`No trend changes among ${compared} compared.`);
+  if (compared && !flips) parts.push(`No trend changes among ${compared} compared.`);
   if (checked > compared) parts.push(`First reading for ${checked - compared}.`);
   if (checked < state.watch.length) parts.push(`Waiting for fresh readings: ${state.watch.length - checked}.`);
-  note.textContent = parts.join(' ');
+  const noteText = parts.join(' ');
+  const sig = lines.join('\n') + '\0' + noteText + '\0' + state.watch.length;
+  if (sig === drawWatchChanges.sig) return;
+  drawWatchChanges.sig = sig;
+  list.textContent = '';
+  for (const text of lines) {
+    const li = document.createElement('li');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'watch-change-btn';
+    const symbol = text.split(':')[0];
+    btn.dataset.chart = symbol;
+    btn.textContent = text;
+    btn.addEventListener('click', () => {
+      if (typeof loadChart === 'function') loadChart(symbol);
+    });
+    li.append(btn);
+    list.append(li);
+  }
+  document.getElementById('watchChangeNote').textContent = noteText;
 }

@@ -23,22 +23,28 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
 import sourcestats
 from concurrent.futures import ThreadPoolExecutor
 import faults
+import onset as onset_module
+import quality
+import trend
 
 HOST = "https://api.nasdaq.com"
 TIMEOUT = 15
 WORKERS = 4
+BREAKER_LIMIT = 5              # consecutive transport failures before aborting a batch
 DAYS = 380                     # a little over a year, like RECENT_SPAN = "1y"
 ASSET_CLASSES = ("stocks", "etf")
 TICKER_RE = re.compile(r"^[A-Z]{1,5}([.-][A-Z])?$")
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; asset-price-display)",
            "Accept": "application/json"}
 SOURCE = "Nasdaq"
+SPAN_MONTHS = {"1mo": 1, "3mo": 3, "6mo": 6, "1y": 12}
 
 
 def fetch_json(url: str) -> dict:
@@ -86,11 +92,11 @@ def parse_rows(payload: dict) -> list[tuple[int, float, float | None]]:
     return out
 
 
-def history(ticker: str, today: dt.date | None = None) -> tuple[list, list, list] | None:
-    """`(stamps, closes, volumes)` for a ticker, or None when it cannot be read."""
+def _history_status(ticker: str, today: dt.date | None = None):
+    """`(series, transport_failed)` for one ticker."""
     symbol = ticker.upper().replace("-", ".")
     if not TICKER_RE.match(ticker.upper()):
-        return None
+        return None, False
     today = today or dt.date.today()
     start = today - dt.timedelta(days=DAYS)
     for asset in ASSET_CLASSES:
@@ -101,11 +107,69 @@ def history(ticker: str, today: dt.date | None = None) -> tuple[list, list, list
         try:
             rows = parse_rows(fetch_json(url))
         except (urllib.error.URLError, OSError, ValueError):
-            return None            # transport trouble: do not try the next class
+            return None, True      # transport trouble: do not try the next class
         if rows:
             stamps, closes, volumes = (list(x) for x in zip(*rows))
-            return stamps, closes, volumes
-    return None
+            return (stamps, closes, volumes), False
+    return None, False
+
+
+def history(ticker: str, today: dt.date | None = None) -> tuple[list, list, list] | None:
+    """`(stamps, closes, volumes)` for a ticker, or None when it cannot be read."""
+    series, _ = _history_status(ticker, today)
+    return series
+
+
+def chart(ticker: str, span: str = "3mo", interval: str = "1d",
+          today: dt.date | None = None) -> dict | None:
+    """One US equity/ETF chart payload from Nasdaq daily closes, or None.
+
+    Used by `chart_route.chart_data` only when Yahoo/Moli hits a transport
+    failure, so clicking a Nasdaq-rescued row on the recent table opens the
+    same series on a cold cache instead of returning 502.
+    """
+    if interval != "1d":
+        return None
+    sym = (ticker or "").strip().upper()
+    series = history(sym, today=today)
+    if not series:
+        return None
+    stamps, closes, volumes = series
+    if not stamps:
+        return None
+    all_bars = [{"t": int(t), "c": round(float(c), 6), "v": v}
+                for t, c, v in zip(stamps, closes, volumes)]
+    months = SPAN_MONTHS.get(span, 3)
+    keep = onset_module.window_now(stamps, len(stamps) - 1, months=months)
+    if not keep:
+        return None
+    points = [{"t": all_bars[i]["t"], "c": all_bars[i]["c"]} for i in keep]
+    bar_volumes = [all_bars[i]["v"] for i in keep]
+    tail = all_bars[:keep[0]][-100:]
+    try:
+        call = trend.classify([p["c"] for p in points], bar_volumes)
+    except ValueError:
+        call = None
+    last = points[-1]["c"]
+    prev = points[-2]["c"] if len(points) > 1 else None
+    return {
+        "symbol": sym,
+        "name": sym,
+        "currency": "USD",
+        "exchange": "Nasdaq",
+        "type": "EQUITY",
+        "timezone": "America/New_York",
+        "priceHint": 2,
+        "previousClose": prev,
+        "marketPrice": last,
+        "points": points,
+        "barVolumes": bar_volumes,
+        "historyTail": tail,
+        "trend": call,
+        "source": SOURCE,
+        "quality": quality.check([p["t"] for p in points],
+                                 [p["c"] for p in points], bar_volumes),
+    }
 
 
 def fetch(tickers: list[str]) -> dict[str, tuple]:
@@ -113,14 +177,30 @@ def fetch(tickers: list[str]) -> dict[str, tuple]:
 
     The shape `server.fetch_us_bars` returns, with `meta["fallback"]` set so
     the table can say where the bars came from. Tickers that did not answer
-    are left out, never answered with an empty series.
+    are left out, never answered with an empty series. Aborts early after
+    `BREAKER_LIMIT` consecutive transport failures so a full outage does not
+    stall the sweep for minutes.
     """
+    lock = threading.Lock()
+    state = {"streak": 0, "tripped": False}
+
     def one(ticker):
+        with lock:
+            if state["tripped"]:
+                return ticker, None
         try:
-            return ticker, history(ticker)
+            series, failed = _history_status(ticker)
         except Exception as exc:                                 # one bad ticker is not an outage
             faults.note("Nasdaq bars", exc)
-            return ticker, None
+            series, failed = None, True
+        with lock:
+            if failed:
+                state["streak"] += 1
+                if state["streak"] >= BREAKER_LIMIT:
+                    state["tripped"] = True
+            else:
+                state["streak"] = 0
+        return ticker, series
 
     out = {}
     with ThreadPoolExecutor(max_workers=WORKERS) as pool:

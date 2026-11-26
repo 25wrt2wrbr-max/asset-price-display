@@ -1,28 +1,107 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Asset Trends">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
 <title>Asset price display — last 3 months</title>
+<link rel="manifest" href="static/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="static/icon.svg">
+<link rel="apple-touch-icon" sizes="180x180" href="static/apple-touch-icon.png">
 <link rel="stylesheet" href="static/app.css">
+<script>
+  /* Theme before first paint, so a dark-mode reader gets no white flash.
+     Same key and rule as initTheme in static/events.js: "light" or "dark"
+     is the reader's pick; no key (or "system") follows the computer. */
+  (function () {
+    var saved = null;
+    try { saved = localStorage.getItem("apd-theme"); } catch (e) {}
+    var dark = (saved === "light" || saved === "dark") ? saved === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  })();
+</script>
 </head>
 <body>
+<div class="skip-links">
+  <a class="skip-link" href="#form">Skip to search</a>
+  <a class="skip-link" href="#plot">Skip to chart</a>
+</div>
 <div class="wrap">
 
   <div class="alarm-banner" id="alarmBanner" role="alert" hidden></div>
+  <p class="server-banner" id="serverBanner" role="alert" hidden></p>
   <header>
     <div>
       <h1>Asset price display</h1>
-      <p class="sub">Type any ticker, crypto pair, currency pair, index, ETF or fund — the last three months of daily closes.</p>
+      <p class="sub">Search any stock, coin, currency, index or fund. See the last three months and whether the trend looks up, down or flat. Press <kbd>?</kbd> for shortcuts.</p>
     </div>
-    <button class="ghost-btn" id="theme" type="button" aria-pressed="false">Dark mode</button>
+    <button class="ghost-btn" id="modeToggle" type="button" aria-pressed="false" title="Scan mode hides chart fold-outs">Scan</button>
+    <select class="ghost-btn theme-pick" id="theme" aria-label="Colour theme" title="Match system follows your computer's light or dark setting">
+      <option value="system">Theme: match system</option>
+      <option value="light">Theme: light</option>
+      <option value="dark">Theme: dark</option>
+    </select>
   </header>
+  <nav class="section-nav" id="sectionNav" aria-label="Page sections">
+    <a href="#morningDesk">Today</a>
+    <a href="#chartTop">Chart</a>
+    <a href="#watchHeading">Watchlist</a>
+    <a href="#sectorHeading">Sectors</a>
+    <a href="#recentHeading">Recent bullish</a>
+    <a href="#leaningHeading">Leaning</a>
+    <a href="#bearishHeading">Recent bearish</a>
+  </nav>
+
+  <aside class="welcome-tip" id="welcomeTip" hidden>
+    <p>Try an example under the chart, tables refresh about every 15 minutes, and labels describe the past trend — not a forecast.</p>
+    <button type="button" id="welcomeDismiss">Got it</button>
+  </aside>
+
+  <!-- Morning triage: health → fresh turns → watched. Descriptive only. -->
+  <section class="morning-desk" id="morningDesk" aria-labelledby="morningHeading" hidden>
+    <div class="morning-head">
+      <h2 id="morningHeading">Today’s overview</h2>
+      <p class="leaders-note" id="triageSummary"></p>
+    </div>
+    <div class="morning-ribbon" id="morningRibbon" hidden></div>
+    <details class="morning-pulse-fold" id="morningPulseFold" hidden>
+      <summary>Morning pulse</summary>
+      <ul class="morning-pulse" id="morningPulse"></ul>
+    </details>
+    <p class="overnight-gap" id="overnightGap" hidden></p>
+    <div class="rates-strip" id="ratesStrip" role="group" aria-label="Peso cash rates" hidden></div>
+    <div class="commodity-shelf" id="commodityShelf" role="group" aria-label="Commodity shortcuts" hidden></div>
+    <div class="staleness-strip" id="stalenessStrip" hidden></div>
+    <p class="yield-curve-chip" id="yieldCurveChip" hidden></p>
+    <p class="yield-curve-chip" id="phUstSpreadChip" hidden></p>
+    <div class="desk-toolbar">
+      <div class="sweep-presets" id="sweepPresets" role="group" aria-label="Sweep shortcuts"></div>
+      <div class="desk-tools">
+        <p class="packet-stamp" id="packetStamp" hidden></p>
+        <p class="packet-diff" id="packetDiff" hidden></p>
+        <a class="ghost-btn digest-text-link" id="digestTextLink" href="/api/digest?format=text" download="digest.txt" title="Download digest text" aria-label="Download digest text" hidden>⤓ Digest</a>
+        <button type="button" class="ghost-btn" id="shareBriefBtn" title="Print a one-page brief" aria-label="Print brief">⎙ Print</button>
+        <div class="layout-controls" id="layoutControls" role="group" aria-label="Saved layouts"></div>
+      </div>
+    </div>
+    <div id="remindersBox" class="reminders-box" hidden></div>
+    <div class="morning-grid">
+      <div id="triageHealth" class="health triage-health"></div>
+      <div id="triageTurns"></div>
+      <div id="triageWatch"></div>
+      <div id="triageCompares"></div>
+      <div id="againstStrip"></div>
+    </div>
+  </section>
 
   <div class="layout">
     <form class="search-row" id="form" role="search" autocomplete="off">
         <div class="combo">
           <input id="symbol" name="symbol" type="text" spellcheck="false"
-                 placeholder="e.g. AAPL, BTC-USD, PSE:TEL, EURUSD=X, ^GSPC, SPY, ZB"
+                 placeholder="Search a name or symbol — e.g. Apple, Bitcoin, Jollibee, AAPL, BTC-USD"
                  aria-label="Asset symbol or name"
                   role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggestions">
           <ul class="suggestions" id="suggestions" role="listbox" aria-label="Matching assets" hidden></ul>
@@ -32,11 +111,23 @@
 
       <p class="status" id="status" role="status" aria-live="polite"></p>
 
-      <main class="card">
+      <main class="card" id="chartTop">
+        <div class="six-pack-wrap" id="sixPackWrap" hidden>
+          <div class="six-pack" id="sixPack" aria-label="Pinned six-pack"></div>
+          <div class="six-pack-nav" id="sixPackNav" hidden>
+            <button type="button" class="ghost-btn" id="sixPackPrev" aria-label="Previous six-pack page">←</button>
+            <span id="sixPackPageLabel"></span>
+            <button type="button" class="ghost-btn" id="sixPackNext" aria-label="Next six-pack page">→</button>
+          </div>
+        </div>
         <div class="card-head">
           <div>
             <h2 class="asset-name" id="assetName">—</h2>
             <p class="asset-meta" id="assetMeta">Enter a symbol above to load its price history.</p>
+            <details class="asset-about" id="assetAbout" hidden>
+              <summary>About this price</summary>
+              <p id="assetAboutBody"></p>
+            </details>
           </div>
           <div class="card-actions">
             <!-- Acts on the charted asset, not on typed text: the payload's own
@@ -46,6 +137,8 @@
                     aria-label="Add or remove the charted asset from the watchlist">
               <span class="watch-glyph" id="watchGlyph" aria-hidden="true">☆</span><span id="watchToggleLabel">Add to watchlist</span>
             </button>
+            <button class="ghost-btn" id="sixPackPin" type="button" hidden title="Pin this asset to the strip at the top">Pin to top</button>
+            <button class="ghost-btn" id="journalBtn" type="button" hidden title="Copy a plain journal line">Journal</button>
             <span class="trend" id="trendBadge" hidden>
               <span class="trend-glyph" id="trendGlyph" aria-hidden="true"></span>
               <span class="trend-label" id="trendLabel"></span>
@@ -53,92 +146,203 @@
             </span>
           </div>
         </div>
+        <p class="digest-line" id="chartDigestLine" hidden></p>
 
         <p class="hero" id="hero" hidden>—</p>
         <p class="hero-delta" id="heroDelta" hidden></p>
-        <!-- The one number about the *next* three months: a 0-1 probability of
-             profit, printed as a plain figure. It is not the badge in another
-              form: a chart-based model estimate -- see `drawProfitOdds`.
-              Hidden when the series cannot support an estimate. -->
-        <p class="stat-line" id="profitOdds" hidden>
-          <span class="stat-label">3-month profit odds</span>
-          <span class="stat-value" id="profitOddsValue">—</span>
-          <span class="stat-note" id="profitOddsNote"></span>
-        </p>
-        <!-- The smallest cheque that buys the stock. PSE only: the board lot is
-             the exchange's own rule, so nothing else has a minimum investment to
-             report and the readout is left out of the DOM for those symbols. -->
-        <p class="stat-line" id="minInvest" hidden>
-          <span class="stat-label">Min. investment</span>
-          <span class="stat-value" id="minInvestValue">—</span>
-          <span class="stat-note" id="minInvestNote"></span>
-        </p>
-        <!-- How much money changed hands on the last trading day the chart
-             draws -- close times volume on the newest bar, in pesos. A PSE
-             readout only (the bars come from TradingView, which is the one
-             source here that ships volume alongside the price), and left out
-             of the DOM for an index, which has no volume to report. -->
-        <p class="stat-line" id="lastVolume" hidden>
-          <span class="stat-label">Trading volume</span>
-          <span class="stat-value" id="lastVolumeValue">—</span>
-          <span class="stat-note" id="lastVolumeNote"></span>
-        </p>
-        <!-- Price alarm: a level on the charted asset. Fires once when a live
-             reading crosses it, up or down, and stays armed when another
-             asset is opened. See static/alarms.js. -->
-        <form class="alarm-box" id="alarmBox" hidden>
-          <label for="alarmPrice" class="stat-label">Price alarm</label>
-          <input id="alarmPrice" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="alarmNote">
-          <button class="ghost-btn" type="submit">Set alarm</button>
-          <span class="stat-note" id="alarmNote" role="status"></span>
-        </form>
-        <p class="trend-note" id="trendNote" hidden></p>
-        <p class="trend-note quality-note" id="qualityNote" role="status" hidden></p>
-        <p class="trend-note" id="outlookNote" hidden></p>
+        <p class="hero-fees" id="heroFees" hidden></p>
+        <details class="buy-planner" id="buyPlanner" hidden>
+          <summary>Cash buy planner (PSE)</summary>
+          <div id="buyPlannerBody" class="buy-planner-body"></div>
+        </details>
+        <p class="t2-line" id="t2Calendar" hidden></p>
+        <p class="chart-in-words" id="chartInWords" hidden></p>
+        <div class="filings-strip" id="filingsStrip" hidden></div>
+        <p class="thin-book-note" id="thinBookNote" hidden></p>
+        <p class="plain-reading" id="plainNote" hidden></p>
+        <p class="pse-edge-line"><a id="pseEdgeLink" hidden></a></p>
+
+        <!-- Chart directly under the price; extras sit in fold-outs below. -->
+        <div class="plot" id="plot">
+          <div class="empty-plot" id="emptyPlot">
+            <span class="empty-text">No chart yet. Search above, or try one of these:</span>
+            <span class="example-chips">
+              <button type="button" class="example-chip" data-example="BTC-USD">Bitcoin</button>
+              <button type="button" class="example-chip" data-example="AAPL">Apple</button>
+              <button type="button" class="example-chip" data-example="USDPHP=X">US dollar to peso</button>
+              <button type="button" class="example-chip" data-example="^GSPC">S&amp;P 500</button>
+            </span>
+          </div>
+        </div>
+
+        <div class="table-wrap" id="tableWrap" hidden></div>
+        <!-- The past year's labels, one slice per bar (static/labelstrip.js). -->
+        <div class="label-history" id="labelHistory" hidden></div>
+        <!-- Ex-dividend dates for PSE names (static/dividends.js). -->
+        <p class="dividend-note" id="dividendNote" hidden></p>
 
         <div class="toggle-row">
           <button class="ghost-btn" id="tableToggle" type="button" aria-pressed="false" hidden>Table view</button>
           <button class="ghost-btn" id="csvExport" type="button" hidden>Download CSV</button>
+          <button class="ghost-btn" id="pesoToggle" type="button" aria-pressed="false" hidden>Show in pesos</button>
+          <span class="range-chips" id="rangeChips" role="group" aria-label="Chart window"></span>
         </div>
+        <form class="reminder-form" id="reminderForm" hidden>
+          <label class="stat-label" for="reminderDate">Local reminder</label>
+          <input id="reminderDate" type="date" required>
+          <input id="reminderNote" type="text" maxlength="120" placeholder="ex-date, UITF hop, COL cutoff…" autocomplete="off">
+          <button class="ghost-btn" type="submit">Save</button>
+        </form>
 
-        <div class="plot" id="plot">
-          <div class="empty-plot" id="emptyPlot">No data yet</div>
-        </div>
-
-        <div class="table-wrap" id="tableWrap" hidden></div>
-        <section id="comparePanel" class="compare-panel" aria-labelledby="compareHeading" hidden>
-          <h3 id="compareHeading">Compare two assets</h3>
+        <details class="more-numbers" id="moreNumbers">
+          <summary>More numbers</summary>
+          <p class="quick-stats" id="quickStats" hidden></p>
+          <!-- Chart-based 0–1 profit estimate for the next three months; not the badge. -->
+          <p class="stat-line" id="profitOdds" hidden>
+            <span class="stat-label">Chance of a gain in 3 months</span>
+            <span class="stat-value" id="profitOddsValue">—</span>
+            <span class="stat-note" id="profitOddsNote"></span>
+          </p>
+          <p class="stat-note profit-odds-aside" id="profitOddsAside" hidden>
+            Separate from the badge above — a model estimate, not a forecast.
+          </p>
+          <p class="stat-line" id="benchLine" hidden>
+            <span class="stat-label">Against its market</span>
+            <span class="stat-value">—</span>
+            <span class="stat-note"></span>
+            <button class="ghost-btn bench-open" type="button">Compare</button>
+          </p>
+          <p class="stat-line" id="beatCash" hidden>
+            <span class="stat-label">Against cash</span>
+            <span class="stat-value" id="beatCashValue">—</span>
+            <span class="stat-note" id="beatCashNote"></span>
+          </p>
+          <p class="stat-line" id="minInvest" hidden>
+            <span class="stat-label">Min. investment</span>
+            <span class="stat-value" id="minInvestValue">—</span>
+            <span class="stat-note" id="minInvestNote"></span>
+          </p>
+          <p class="stat-line" id="pseFees" hidden>
+            <span class="stat-label">Fees, one lot</span>
+            <span class="stat-value" id="pseFeesValue">—</span>
+            <span class="stat-note" id="pseFeesNote"></span>
+          </p>
+          <p class="stat-line" id="lastVolume" hidden>
+            <span class="stat-label">Trading volume</span>
+            <span class="stat-value" id="lastVolumeValue">—</span>
+            <span class="stat-note" id="lastVolumeNote"></span>
+          </p>
+        </details>
+        <!-- Price alarm: fires once when a live reading crosses the level. -->
+        <form class="alarm-box" id="alarmBox" hidden>
+          <label for="alarmPrice" class="stat-label">Price alarm</label>
+          <input id="alarmPrice" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-describedby="alarmNote">
+          <button class="ghost-btn" type="submit">Set alarm</button>
+          <label class="alarm-need-label" title="Fire only while the chart’s trend still looks this way. Not a forecast.">
+            Only if trend still looks
+            <select id="alarmNeedLabel" aria-label="Only fire while trend still looks this way">
+              <option value="">any way</option>
+              <option value="bullish">up</option>
+              <option value="bearish">down</option>
+            </select>
+          </label>
+          <span class="stat-note" id="alarmNote" role="status"></span>
+          <div id="alarmShortcuts" class="alarm-shortcuts" hidden></div>
+        </form>
+        <p class="trend-note halt-note" id="haltNote" role="status" hidden></p>
+        <p class="trend-note quality-note" id="qualityNote" role="status" hidden></p>
+        <details class="why-notes" id="whyNotes">
+          <summary>Why this label</summary>
+          <p class="trend-note" id="trendNote" hidden></p>
+          <p class="trend-note" id="outlookNote" hidden></p>
+          <p class="trend-note chance-note" id="chanceNote" hidden></p>
+        </details>
+        <details id="comparePanel" class="compare-panel" hidden>
+          <summary id="compareHeading">Compare with other assets</summary>
           <form id="compareForm" class="compare-form">
-            <label for="compareSymbol">Second symbol</label>
+            <label for="compareSymbol">Add a symbol</label>
             <div class="combo">
               <input id="compareSymbol" type="text" placeholder="Name or symbol, e.g. CHFPHP" required spellcheck="false" autocomplete="off"
                      role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="compareSuggestions">
               <ul class="suggestions" id="compareSuggestions" role="listbox" aria-label="Matching comparison assets" hidden></ul>
             </div>
-            <button class="ghost-btn" type="submit">Compare</button>
-            <button class="ghost-btn" id="compareClear" type="button" hidden>Clear</button>
+            <button class="ghost-btn" type="submit">Add</button>
+            <button class="ghost-btn" id="compareCsv" type="button" hidden>Download CSV</button>
+            <button class="ghost-btn" id="compareClear" type="button" hidden>Clear all</button>
           </form>
+          <div id="comparePresets" class="compare-presets" role="group" aria-label="Benchmark presets"></div>
+          <div id="compareSets" class="compare-sets" role="group" aria-label="Saved compare sets"></div>
           <p id="compareStatus" class="compare-status" role="status"></p>
           <div id="compareOutput" hidden>
+            <ul id="compareLegend" class="compare-legend" aria-label="Lines on the comparison chart. Pick one to make it the baseline."></ul>
             <div id="comparePlot"></div>
             <details><summary>Comparison values by date</summary><div id="compareTable" class="table-wrap" tabindex="0" role="region" aria-label="Comparison values"></div></details>
           </div>
-        </section>
+        </details>
     </main>
 
     <aside class="rail" aria-labelledby="watchHeading">
       <section class="watch">
         <div class="watch-head">
           <h2 id="watchHeading">Watchlist</h2>
-          <div class="watch-io">
+          <div class="watch-head-tools">
             <span class="watch-count" id="watchCount"></span>
-            <button class="watch-io-btn" id="watchExport" type="button" title="Save watchlist to a JSON file">Export</button>
-            <button class="watch-io-btn" id="watchImport" type="button" title="Load symbols from a saved watchlist file">Import</button>
-            <input id="watchImportFile" type="file" accept=".json,application/json" hidden>
+            <details class="watch-io-more" id="watchIoMore">
+              <summary>List options</summary>
+              <div class="watch-io">
+                <button class="watch-io-btn" id="watchView" type="button" aria-pressed="false"
+                        title="Show the watchlist as tiles coloured by each asset's move">Tiles</button>
+                <button class="watch-io-btn" id="watchDensity" type="button" aria-pressed="false"
+                        title="Compact list: price and change only">Compact</button>
+                <button class="watch-io-btn" id="watchExport" type="button" title="Save this list to a file">Save list</button>
+                <button class="watch-io-btn" id="watchExportCsv" type="button" title="Save this list as CSV with fees and turnover">Save CSV</button>
+                <button class="watch-io-btn" id="watchImport" type="button" title="Load symbols from a saved list file">Load list</button>
+                <input id="watchImportFile" type="file" accept=".json,application/json" hidden>
+              </div>
+            </details>
           </div>
         </div>
+        <div class="watch-col-presets" id="watchColPresets" role="group" aria-label="Watchlist column presets"></div>
+        <div class="watch-tools">
+          <label class="watch-tool"><input type="checkbox" id="labelFlipToggle" checked> Alert when a trend changes</label>
+          <label class="watch-tool"><input type="checkbox" id="watchInboxToggle"> Show only dips and volume jumps</label>
+          <label class="watch-tool">Group
+            <select id="watchGroupFilter" aria-label="Filter watchlist by group"></select>
+          </label>
+        </div>
+        <div id="watchMetaBox" class="watch-meta" hidden></div>
+        <details class="holdings-box" id="holdingsBox" hidden>
+          <summary>Holdings ledger</summary>
+          <div id="holdingsList"></div>
+          <form id="holdingsForm" class="holdings-form">
+            <input id="holdingsSymbol" type="text" placeholder="Symbol (defaults to chart)" spellcheck="false" autocomplete="off">
+            <input id="holdingsShares" type="text" inputmode="decimal" placeholder="Shares" required>
+            <input id="holdingsCost" type="text" inputmode="decimal" placeholder="Avg cost" required>
+            <button class="ghost-btn" type="submit">Add</button>
+          </form>
+        </details>
+        <details class="watch-lists-box" id="watchListsBox" hidden>
+          <summary>Named watchlists</summary>
+          <div id="watchListsNames"></div>
+          <form id="watchListsForm" class="watch-lists-form">
+            <input id="watchListName" type="text" maxlength="32" placeholder="List name" required autocomplete="off">
+            <button class="ghost-btn" type="submit">Save current list</button>
+          </form>
+        </details>
 
         <ul class="watch-list" id="watchList" aria-label="Watchlist"></ul>
+        <p class="watch-stats" id="watchStats" hidden></p>
+        <div class="watch-heat" id="watchHeat" hidden>
+          <div class="heat-periods" role="group" aria-label="Move over">
+            <button type="button" class="heat-period" data-period="1D">1D</button>
+            <button type="button" class="heat-period" data-period="1W">1W</button>
+            <button type="button" class="heat-period" data-period="1M">1M</button>
+            <button type="button" class="heat-period" data-period="3M">3M</button>
+            <button type="button" class="heat-period" data-period="TO" title="Size tiles by 5-day peso turnover">₱ turn</button>
+          </div>
+          <div id="watchHeatGrid"></div>
+          <p class="watch-hint" id="watchHeatNote"></p>
+        </div>
         <p class="watch-hint" id="watchHint"></p>
         <section id="watchChanges" aria-labelledby="watchChangesTitle" hidden>
           <h3 id="watchChangesTitle">Changes since your last visit</h3>
@@ -154,10 +358,20 @@
     </aside>
   </div>
 
+  <!-- The PSEi, All Shares and the six sector indexes: a fixed eight-row
+       table, each row the chart it opens (`sectors.py`). -->
+  <section class="leaders sectors" aria-labelledby="sectorHeading">
+    <div class="leaders-head">
+      <h2 id="sectorHeading">Philippine market by sector</h2>
+      <p class="leaders-note" id="sectorNote">Loading… the first scan can take about half a minute.</p>
+    </div>
+    <div id="sectorGrid"></div>
+  </section>
+
   <section class="leaders recent" aria-labelledby="recentHeading">
     <div class="leaders-head">
       <h2 id="recentHeading">Recently bullish assets</h2>
-      <p class="leaders-note" id="recentNote"></p>
+      <p class="leaders-note" id="recentNote">Loading… the first scan can take about half a minute.</p>
     </div>
     <!-- Every market the page follows, in one list: Ondo stocks and ETFs, Ondo's
          intelligent portfolios, Philippine stocks, crypto, Treasury futures,
@@ -165,6 +379,9 @@
          Philippine table alone applies to all of them, so it sits here now. -->
     <p class="leaders-note">Past price trend only — not a forecast or a promise of
       three months of gains. Borderline calls can change quickly.</p>
+    <!-- Market health: what share of every name each market judged carries
+         each label right now. Counts of verdicts, not of table rows. -->
+    <div class="health" id="recentHealth" hidden></div>
     <div class="market-status" id="recentStatus" aria-label="Data status by market" hidden></div>
     <div id="recentGrid"></div>
   </section>
@@ -172,7 +389,7 @@
   <section class="leaders recent leaning" aria-labelledby="leaningHeading">
     <div class="leaders-head">
       <h2 id="leaningHeading">Leaning bullish — not confirmed</h2>
-      <p class="leaders-note" id="leaningNote"></p>
+      <p class="leaders-note" id="leaningNote">Loading… the first scan can take about half a minute.</p>
     </div>
     <div id="leaningGrid"></div>
   </section>
@@ -180,7 +397,7 @@
   <section class="leaders recent bearish" aria-labelledby="bearishHeading">
     <div class="leaders-head">
       <h2 id="bearishHeading">Recently bearish assets</h2>
-      <p class="leaders-note" id="bearishNote"></p>
+      <p class="leaders-note" id="bearishNote">Loading… the first scan can take about half a minute.</p>
     </div>
     <p class="leaders-note">Past price trend only — not a forecast or a promise of
       three months of losses. Borderline calls can change quickly.</p>
@@ -188,27 +405,52 @@
   </section>
 
   <footer>
-    Daily closes, last three months, via Yahoo Finance — except Philippine
-    listings, which come from TradingView, and dollar-less currency crosses,
-    whose history comes from ECB reference rates. USD/PHP's Saturdays and
-    Sundays come from Coins.ph's USDC/PHP book, because the peso does not trade
-    at the weekend. The Philippine government bond
-    yields in the table above also come from TradingView. Prices are 15 minutes
-    delayed and for information only — not investment advice. Data is fetched
-    through a local <code>moli</code>-backed proxy (<code>server.py</code>).
-    <a href="status.html">Source status</a> shows which sources are answering.
+    <details class="sources-fold">
+      <summary>Where the prices come from</summary>
+      <p>Daily closes for the last three months. Most names come from Yahoo Finance;
+        Philippine listings and government bond yields come from TradingView;
+        dollar-less currency crosses use ECB reference rates; USD/PHP weekends
+        use Coins.ph. Prices are about 15 minutes delayed and for information
+        only — not investment advice. A small program on this computer fetches
+        the data. <a href="status.html">Source status</a> shows which sources
+        are answering.</p>
+    </details>
+    <details class="kbd-help" id="kbdHelp">
+      <summary>Keyboard shortcuts</summary>
+      <ul>
+        <li><kbd>/</kbd> focus search</li>
+        <li><kbd>j</kbd> / <kbd>k</kbd> next or previous table row</li>
+        <li><kbd>w</kbd> add or remove from watchlist</li>
+        <li><kbd>t</kbd> table view</li>
+        <li><kbd>?</kbd> open this list</li>
+      </ul>
+    </details>
   </footer>
 </div>
+<button type="button" class="to-top" id="toTop" hidden title="Back to top" aria-label="Back to top">↑</button>
 
 <script src="static/core.js"></script>
 <script src="static/asset-search.js"></script>
+<script src="static/psefees.js"></script>
 <script src="static/page.js"></script>
 <script src="static/verdict.js"></script>
 <script src="static/chart.js"></script>
+<script src="static/labelstrip.js"></script>
+<script src="static/dividends.js"></script>
+<script src="export/trend.js"></script>
 <script src="static/compare.js"></script>
+<script src="static/peso.js"></script>
+<script src="static/benchmark.js"></script>
 <script src="static/watchlist.js"></script>
+<script src="static/heatmap.js"></script>
 <script src="static/watch-changes.js"></script>
 <script src="static/alarms.js"></script>
+<script src="static/glance.js"></script>
+<script src="static/desk.js"></script>
+<script src="static/deskextras.js"></script>
+<script src="static/desksuggest.js"></script>
+<script src="static/deskpack.js"></script>
+<script src="static/rates.js"></script>
 <script src="static/events.js"></script>
 <script src="static/tables.js"></script>
 <script src="static/main.js"></script>

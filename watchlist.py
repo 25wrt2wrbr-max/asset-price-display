@@ -105,9 +105,13 @@ def record_watchlist(symbols) -> None:
     items = _clean_watch_items(symbols)
     cleaned = [it["symbol"] for it in items]
     with _watch_lock:
+        # Unchanged lists (every page load and reconnect re-declares) skip
+        # the disk write; memory is still replaced so callers see one path.
+        same = items == _watch_items
         _watch_items = items
         _watch_union = cleaned
-        diskcache.store_plain(S.WATCHLIST_KEY, _watch_items)
+        if not same:
+            diskcache.store_plain(S.WATCHLIST_KEY, _watch_items)
 
 
 def adopt_watchlist(union) -> None:

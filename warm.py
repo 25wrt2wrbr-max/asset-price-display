@@ -16,11 +16,17 @@ import bullish
 import crypto
 import diskcache
 import markets
+import notify
 import ondo
 import phfunds
 import pse
 import recent
 import tv
+import datetime as dt
+
+import market_days
+import pse_outlook
+import us_bars
 
 import server as S
 import netwatch
@@ -30,7 +36,63 @@ _row_lock = threading.Lock()
 _row_thread: threading.Thread | None = None
 
 
-def row_fresh(key: str, now: float) -> bool:
+# -- closed-market pace (2026-11-24) ----------------------------------------
+#
+# While a row's market is shut, its bars cannot move, so a copy saved after
+# that market's close (plus a settling margin) is re-read hourly instead of
+# every `ROW_STALE_AFTER`. The same rule as the sweeps' closed pace
+# (`us_bars.settled`, `bullish_pause`). Only plain US share tickers and
+# `PSE:` listings are paced; every other symbol (crypto, FX, futures, funds,
+# bonds, anything unrecognised) keeps the 15-minute pace.
+_US_SHARE = re.compile(r"^[A-Z][A-Z0-9]{0,5}(?:[.-][A-Z])?$")
+
+
+def _pse_closed_since(now: float) -> float | None:
+    """When Manila's current closed stretch began (close + margin), or None
+    while the exchange trades."""
+    zone = pse_outlook.MANILA
+    here = dt.datetime.fromtimestamp(now, zone)
+    margin = dt.timedelta(seconds=S.BULL_CLOSE_MARGIN)
+    opened = dt.datetime.combine(here.date(), pse.SESSION_OPEN, tzinfo=zone)
+    closed = dt.datetime.combine(here.date(), pse.SESSION_CLOSE, tzinfo=zone) + margin
+    if market_days.pse_open_day(here.date()) and opened <= here < closed:
+        return None
+    day = here.date()
+    if not market_days.pse_open_day(day) or here < opened:
+        day -= dt.timedelta(days=1)
+    for _ in range(14):              # bounded: weekends plus holidays
+        if market_days.pse_open_day(day):
+            break
+        day -= dt.timedelta(days=1)
+    return (dt.datetime.combine(day, pse.SESSION_CLOSE, tzinfo=zone) + margin).timestamp()
+
+
+def closed_settle(symbol: str | None, now: float) -> float | None:
+    """The moment after which a copy of `symbol` holds its market's final
+    bar for the current closed stretch, or None while it trades (or when
+    the symbol is not one this pace knows)."""
+    if not symbol or not isinstance(symbol, str):
+        return None
+    sym = symbol.strip().upper()
+    if sym.startswith("PSE:"):
+        return _pse_closed_since(now)
+    if _US_SHARE.match(sym):
+        closed = us_bars.closed_since(now)
+        return None if closed is None else closed + us_bars.SETTLE
+    return None
+
+
+def row_stale_after(symbol: str | None, saved_at: float, now: float) -> float:
+    """Seconds a saved copy stays fresh: `ROW_CLOSED_STALE_AFTER` when the
+    market is shut and the copy was saved after it settled, else
+    `ROW_STALE_AFTER`."""
+    settle = closed_settle(symbol, now)
+    if settle is not None and saved_at >= settle:
+        return max(S.ROW_STALE_AFTER, S.ROW_CLOSED_STALE_AFTER)
+    return S.ROW_STALE_AFTER
+
+
+def row_fresh(key: str, now: float, symbol: str | None = None) -> bool:
     """Whether a listed symbol's chart needs no fetch right now.
 
     The first look at a key per epoch reads its disk file and adopts that
@@ -62,7 +124,7 @@ def row_fresh(key: str, now: float) -> bool:
         S._warm_due[key] = (S._refresh_epoch, at)
     else:
         at = stamp[1]
-    return 0 <= at and now - at < S.ROW_STALE_AFTER
+    return 0 <= at and now - at < row_stale_after(symbol, at, now)
 
 
 def due_rows(bull: dict | None, watch: list[str] | None, now: float,
@@ -91,7 +153,7 @@ def due_rows(bull: dict | None, watch: list[str] | None, now: float,
             return
         seen.add(norm)
         key = S.chart_key(symbol, S.WARM_SPAN, S.WARM_INTERVAL)
-        if not row_fresh(key, now):
+        if not row_fresh(key, now, symbol):
             out.append((key, symbol))
 
     if watch is not None:
@@ -140,6 +202,11 @@ def _store_chart(key: str, payload: dict) -> None:
     either the old copy or the new one, never a torn file.
     """
     diskcache.store(key, payload)
+    try:
+        watched = {s.strip().upper() for s in S.union_watchlist()}
+        notify.observe_chart(str((payload or {}).get("symbol") or ""), payload, watched)
+    except Exception as exc:
+        faults.note("notify.observe_chart", exc)
 
 
 def _warm_batch_yahoo(pairs: list[tuple[str, str]]) -> dict[str, str]:
@@ -430,6 +497,18 @@ def _warm_batch_tokens(pairs: list[tuple[str, str]]) -> dict[str, str]:
 
 
 def warm_rows_loop() -> None:
+    """Run the row warmer forever; an unexpected error restarts it after a
+    back-off instead of ending the thread (offline copies would stop
+    refreshing with nothing on screen to say so)."""
+    while True:
+        try:
+            _warm_rows_forever()
+        except Exception as exc:  # any kind: the warmer must outlive it
+            faults.note("row warmer", exc)
+            time.sleep(S.WARM_BACKOFF)
+
+
+def _warm_rows_forever() -> None:
     """Keep every table-listed chart retrievable offline. Runs on its thread.
 
     Reads the tables, the sweep and the crypto table through the same paths
@@ -495,7 +574,10 @@ def warm_rows_loop() -> None:
         # The reader's own list. Gated like the sweeps -- through the probe --
         # because an offline machine costs nothing to ask "is BTC-USD fresh",
         # but launching a browser to answer it is what the outage rules forbid.
-        live_watch = S.union_watchlist() if (netwatch._watch_online or netwatch._watch_online is None) else None
+        live_watch = None
+        if netwatch._watch_online or netwatch._watch_online is None:
+            alarm_syms = [a["symbol"] for a in notify.load_alarms() if not a.get("fired")]
+            live_watch = list(S.union_watchlist()) + alarm_syms
         queue = due_rows(live_bull, live_watch, time.time(), live_recent)
         if not queue:
             # Nothing due means every known row's disk copy re-adopted as
@@ -522,6 +604,11 @@ def warm_rows_loop() -> None:
         fund_queue = [(key, symbol) for key, symbol in queue
                       if not tv.is_bond_symbol(symbol)
                       and phfunds.is_fund_symbol(symbol)]
+        # A PSE Edge chart (`EDGE:`) is built from bars the sweep already
+        # stored for hours; it needs no warming, and neither batch below
+        # (the socket, Yahoo) could read it.
+        queue = [(key, symbol) for key, symbol in queue
+                 if not str(symbol).strip().upper().startswith("EDGE:")]
         token_queue = [(key, symbol) for key, symbol in queue
                        if not tv.is_bond_symbol(symbol)
                        and not phfunds.is_fund_symbol(symbol)

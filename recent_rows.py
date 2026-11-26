@@ -8,6 +8,7 @@ Split out of recent.py; behaviour unchanged. Every name here is re-exported from
 from __future__ import annotations
 
 import concurrent.futures
+import time
 import crypto
 import cryptobull
 import nasdaq_bars
@@ -18,8 +19,16 @@ import phfunds
 import quality
 import rates
 import tv
+import turnover as turnover_module
 
 import recent as R
+
+
+def new_tally() -> dict:
+    """The verdict count a leg ships as `stats["verdicts"]`: every series
+    that was judged, by the label its own chart carries. The market health
+    bar is drawn from it; missing and stale names are never in it."""
+    return {"bullish": 0, "bearish": 0, "neutral": 0}
 
 
 def labeled_onset(stamps, closes, volumes, **kwargs):
@@ -79,6 +88,7 @@ def us_rows(fetch_us_bars, shelf: dict | None = None) -> tuple[list[dict], dict]
         raise R.RecentError("the Ondo shelf is empty")
 
     by_symbol: dict[str, dict] = {}
+    us_cutoff = turnover_module.ny_cutoff(time.time())
     for record in records:
         by_symbol.setdefault(record.get("chartSymbol") or record.get("ticker"),
                              record)
@@ -90,6 +100,7 @@ def us_rows(fetch_us_bars, shelf: dict | None = None) -> tuple[list[dict], dict]
 
     rows: list[dict] = []
     missing: list[str] = []
+    verdicts = new_tally()
     stale: list[dict] = []
     flags: dict[str, list] = {}
     fallback: set[str] = set()
@@ -118,6 +129,7 @@ def us_rows(fetch_us_bars, shelf: dict | None = None) -> tuple[list[dict], dict]
             continue
         side, call = labeled_onset(stamps, closes, volumes,
                                    months=onset_module.WINDOW_MONTHS)
+        verdicts[side or "neutral"] += 1
         name = meta.get("name") or record.get("name") or ticker
         kind = meta.get("kind") or record.get("kind") or "Common stock"
         currency = meta.get("currency") or record.get("currency") or "USD"
@@ -127,17 +139,23 @@ def us_rows(fetch_us_bars, shelf: dict | None = None) -> tuple[list[dict], dict]
             if lean is not None:
                 rows.append(R._lean_row(
                     "US", ticker, symbol, ticker, name, kind, currency, lean))
+                rows[-1]["turnover"] = turnover_module.average(
+                    stamps, closes, volumes, us_cutoff)
             continue
         rows.append(R._price_row(
             "US", ticker, symbol, ticker, name, kind, currency, call,
             direction=side))
+        # The 5-session average of value traded, finished sessions only
+        # (`turnover.py`), in place of the newest bar's figure.
+        rows[-1]["turnover"] = turnover_module.average(
+            stamps, closes, volumes, us_cutoff)
     quality.attach(rows, flags)
     for row in rows:
         if row.get("chartSymbol") in fallback:
             # Read from the second source, not Yahoo: the row says so.
             row["source"] = nasdaq_bars.SOURCE
     return rows, {"universe": len(records), "missing": sorted(missing),
-                  "stale": stale, "shelf": from_shelf,
+                  "verdicts": verdicts, "stale": stale, "shelf": from_shelf,
                   "fallback": sorted(fallback)}
 
 
@@ -173,6 +191,7 @@ def ondo_portfolio_rows(shelf: dict | None = None) -> tuple[list[dict], dict]:
     rows: list[dict] = []
     missing: list[str] = []
     judged = 0
+    verdicts = new_tally()
     for token in tokens:
         ticker = token["ticker"]
         if listed is not None and ticker not in listed:
@@ -187,6 +206,7 @@ def ondo_portfolio_rows(shelf: dict | None = None) -> tuple[list[dict], dict]:
         judged += 1
         stamps, closes, volumes = R._series(bars)
         side, call = labeled_onset(stamps, closes, volumes)
+        verdicts[side or "neutral"] += 1
         symbol = ondo.symbol_for(ticker)
         hint = ondo.price_hint(bars)
         if call is None:
@@ -203,7 +223,8 @@ def ondo_portfolio_rows(shelf: dict | None = None) -> tuple[list[dict], dict]:
                          direction=side)
         row.update({"turnover": None, "turnoverPhp": None, "priceHint": hint})
         rows.append(row)
-    return rows, {"universe": judged + len(missing), "missing": sorted(missing)}
+    return rows, {"universe": judged + len(missing), "missing": sorted(missing),
+                  "verdicts": verdicts}
 
 
 def rate_rows(fetch_us_bars) -> tuple[list[dict], dict]:
@@ -253,6 +274,7 @@ def rate_rows(fetch_us_bars) -> tuple[list[dict], dict]:
 
     rows: list[dict] = []
     missing: list[str] = []
+    verdicts = new_tally()
     flags: dict[str, list] = {}
     for contract in contracts:
         series = bars.get(contract["symbol"])
@@ -263,6 +285,7 @@ def rate_rows(fetch_us_bars) -> tuple[list[dict], dict]:
         flags[contract["symbol"]] = quality.check(stamps, closes, volumes, volume=False)
         side, call = labeled_onset(stamps, closes, volumes,
                                    months=onset_module.WINDOW_MONTHS)
+        verdicts[side or "neutral"] += 1
         hint = rates.price_hint(closes)
         if call is None:
             lean = onset_module.steady_lean(
@@ -287,7 +310,7 @@ def rate_rows(fetch_us_bars) -> tuple[list[dict], dict]:
                   "count": sum(1 for row in rows
                                if not row.get("lean")
                                and row.get("direction") != "bearish"),
-                  "missing": sorted(missing)}
+                  "missing": sorted(missing), "verdicts": verdicts}
 
 
 def crypto_rows() -> tuple[list[dict], dict]:
@@ -318,6 +341,7 @@ def crypto_rows() -> tuple[list[dict], dict]:
     ranked = cryptobull.candidates(cryptobull.MAX_CANDIDATES)
     rows: list[dict] = []
     missing: list[str] = []
+    verdicts = new_tally()
     flags: dict[str, list] = {}
     scanned = 0
 
@@ -336,6 +360,7 @@ def crypto_rows() -> tuple[list[dict], dict]:
     retired = sum(1 for chart in charts if chart == "not-trading")
     ranked, charts = zip(*[(c, ch) for c, ch in zip(ranked, charts)
                            if ch != "not-trading"]) if retired < len(ranked) else ((), ())
+    coin_cutoff = turnover_module.crypto_cutoff(time.time())
     for index, (candidate, chart) in enumerate(zip(ranked, charts)):
         scanned += 1
         if chart is None:
@@ -346,12 +371,19 @@ def crypto_rows() -> tuple[list[dict], dict]:
         flags[chart["symbol"]] = quality.check(stamps, closes, volumes)
         side, call = labeled_onset(stamps, closes, volumes,
                                    months=R.CRYPTO_WINDOW_MONTHS)
+        verdicts[side or "neutral"] += 1
         if call is not None:
             row = R._price_row(
                 "Crypto", chart["symbol"], chart["symbol"],
                 candidate["ticker"], candidate["name"], "Coin", "USD", call,
                 direction=side,
             )
+            # No volume tag: these are one venue's volumes (Binance), while
+            # the chart the row opens is usually Yahoo's, which sums many
+            # venues. Measured 2026-11-23: NVDAB read 5.0x usual here and
+            # under 2x on its chart. A row must not claim what its chart
+            # does not show.
+            row["sparkVol"] = None
             # The rolling day's change is not carried: this table reports the
             # three-month verdict and the window's own figures, and the reader
             # asked for the three-month reading only (2026-11-07).
@@ -359,6 +391,8 @@ def crypto_rows() -> tuple[list[dict], dict]:
             # default two, a sub-cent coin prints "$0.00", which is a figure
             # that says nothing. The chart's own readout uses the same hint.
             row["priceHint"] = chart.get("priceHint")
+            row["turnover"] = turnover_module.average(
+                stamps, closes, volumes, coin_cutoff)
             rows.append(row)
             continue
         if index >= R.CRYPTO_LIMIT:
@@ -370,9 +404,11 @@ def crypto_rows() -> tuple[list[dict], dict]:
                 "Crypto", chart["symbol"], chart["symbol"],
                 candidate["ticker"], candidate["name"], "Coin", "USD",
                 lean))
+            rows[-1]["turnover"] = turnover_module.average(
+                stamps, closes, volumes, coin_cutoff)
     quality.attach(rows, flags)
     return rows, {"universe": len(ranked), "scanned": scanned,
-                  "missing": sorted(missing)}
+                  "missing": sorted(missing), "verdicts": verdicts}
 
 
 def bond_rows() -> tuple[list[dict], dict]:
@@ -396,6 +432,7 @@ def bond_rows() -> tuple[list[dict], dict]:
     """
     rows: list[dict] = []
     missing: list[str] = []
+    verdicts = new_tally()
 
     wanted = [symbol for symbol, _ in R.BONDS]
     series: dict[str, list[dict]] = {}
@@ -448,6 +485,9 @@ def bond_rows() -> tuple[list[dict], dict]:
             continue
 
         label = call["label"]
+        # Counted as the bond price reads: a falling yield is a rising price.
+        verdicts[{"bearish": "bullish", "bullish": "bearish"}.get(
+            label, "neutral")] += 1
         # A falling yield is the only one kept: read as a bond price it is the
         # one direction this table is about. A rising yield would be a bearish
         # row and a flat one has no run to date, so both are dropped here
@@ -503,6 +543,8 @@ def bond_rows() -> tuple[list[dict], dict]:
             "since": run["since"],
             "run": run["run"],
             "censored": run["censored"],
+            "spark": run.get("spark"),
+            "significance": run.get("significance"),
             "manner": run["manner"],
             "turnMove": run["turnMove"],
             "pullback": run.get("pullback"),
@@ -536,7 +578,7 @@ def bond_rows() -> tuple[list[dict], dict]:
         })
     return rows, {"universe": len(R.BONDS),
                   "count": sum(1 for row in rows if not row.get("lean")),
-                  "missing": missing}
+                  "missing": missing, "verdicts": verdicts}
 
 
 def fund_rows() -> tuple[list[dict], dict]:
@@ -571,6 +613,7 @@ def fund_rows() -> tuple[list[dict], dict]:
     answers = phfunds.refresh(codes)
     rows: list[dict] = []
     missing: list[str] = []
+    verdicts = new_tally()
     flags: dict[str, list] = {}
     for code in codes:
         answer = answers.get(code)
@@ -587,6 +630,7 @@ def fund_rows() -> tuple[list[dict], dict]:
         volumes = [0.0] * len(closes)
         flags[phfunds.symbol_for(code)] = quality.check(stamps, closes, volumes, volume=False)
         side, call = labeled_onset(stamps, closes, volumes)
+        verdicts[side or "neutral"] += 1
         if call is None:
             lean = onset_module.steady_lean(stamps, closes, volumes)
             if lean is not None:
@@ -628,6 +672,8 @@ def fund_rows() -> tuple[list[dict], dict]:
             "currency": fund["currency"],
             "direction": side,
             "since": call["since"],
+            "spark": call.get("spark"),
+            "significance": call.get("significance"),
             "run": call["run"],
             "censored": call["censored"],
             "manner": call["manner"],
@@ -652,7 +698,7 @@ def fund_rows() -> tuple[list[dict], dict]:
         })
     quality.attach(rows, flags)
     return rows, {"universe": len(codes), "scanned": len(codes),
-                  "missing": sorted(missing)}
+                  "missing": sorted(missing), "verdicts": verdicts}
 
 
 def ph_rows(sweep_rows: list[dict], direction: str = "bullish") -> list[dict]:
@@ -671,6 +717,7 @@ def ph_rows(sweep_rows: list[dict], direction: str = "bullish") -> list[dict]:
             "market": "Philippines",
             "symbol": row.get("symbol"),
             "chartSymbol": row.get("chartSymbol") or row.get("symbol"),
+            "source": row.get("source"),
             "ticker": row.get("ticker"),
             "name": row.get("name"),
             "kind": row.get("kind"),
@@ -688,7 +735,11 @@ def ph_rows(sweep_rows: list[dict], direction: str = "bullish") -> list[dict]:
             "last": row.get("last"),
             "turnover": row.get("turnover"),
             "windowMove": R._window_move(row),
+            "spark": row.get("spark"),
+            "sparkVol": row.get("sparkVol"),
+            "significance": row.get("significance"),
             "chartable": True,
+            **({"halt": row["halt"]} if row.get("halt") else {}),
         })
     return rows
 
@@ -701,6 +752,7 @@ def ph_lean_rows(sweep_leaning: list[dict]) -> list[dict]:
             "market": "Philippines",
             "symbol": row.get("symbol"),
             "chartSymbol": row.get("chartSymbol") or row.get("symbol"),
+            "source": row.get("source"),
             "ticker": row.get("ticker"),
             "name": row.get("name"),
             "kind": row.get("kind"),
@@ -716,6 +768,8 @@ def ph_lean_rows(sweep_leaning: list[dict]) -> list[dict]:
             "turnover": row.get("turnover"),
             "held": row.get("held"),
             "holdBars": row.get("holdBars"),
+            "spark": row.get("spark"),
             "chartable": True,
+            **({"halt": row["halt"]} if row.get("halt") else {}),
         })
     return rows

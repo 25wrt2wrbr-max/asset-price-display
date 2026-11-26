@@ -3,8 +3,13 @@
 /* ------------------------------------------------------------------ *
  * Config
  * ------------------------------------------------------------------ */
-const RANGE = "3mo";
+let RANGE = "3mo";
 const INTERVAL = "1d";
+const ALLOWED_RANGES_CLIENT = ["1mo", "3mo", "6mo", "1y", "2y", "5y"];
+function setRangeBinding(span) {
+  if (!ALLOWED_RANGES_CLIENT.includes(span)) return;
+  RANGE = span;
+}
 /* The watchlist row names its move by this span ("Three-month change"), so the
    label is derived from the one window every chart here draws rather than
    repeating the words in a second place. */
@@ -38,11 +43,19 @@ const el = {
   suggestions: document.getElementById("suggestions"),
   assetName: document.getElementById("assetName"),
   assetMeta: document.getElementById("assetMeta"),
+  assetAbout: document.getElementById("assetAbout"),
+  assetAboutBody: document.getElementById("assetAboutBody"),
   hero: document.getElementById("hero"),
   heroDelta: document.getElementById("heroDelta"),
+  quickStats: document.getElementById("quickStats"),
+  haltNote: document.getElementById("haltNote"),
   minInvest: document.getElementById("minInvest"),
   minInvestValue: document.getElementById("minInvestValue"),
   minInvestNote: document.getElementById("minInvestNote"),
+  heroFees: document.getElementById("heroFees"),
+  pseFees: document.getElementById("pseFees"),
+  pseFeesValue: document.getElementById("pseFeesValue"),
+  pseFeesNote: document.getElementById("pseFeesNote"),
   lastVolume: document.getElementById("lastVolume"),
   lastVolumeValue: document.getElementById("lastVolumeValue"),
   lastVolumeNote: document.getElementById("lastVolumeNote"),
@@ -72,6 +85,9 @@ const el = {
   recentGrid: document.getElementById("recentGrid"),
   recentNote: document.getElementById("recentNote"),
   recentStatus: document.getElementById("recentStatus"),
+  recentHealth: document.getElementById("recentHealth"),
+  sectorGrid: document.getElementById("sectorGrid"),
+  sectorNote: document.getElementById("sectorNote"),
   bearishGrid: document.getElementById("bearishGrid"),
   bearishNote: document.getElementById("bearishNote"),
   qualityNote: document.getElementById("qualityNote"),
@@ -208,12 +224,60 @@ function downloadCsv(filename, headers, rows) {
 /* ------------------------------------------------------------------ *
  * Data access
  * ------------------------------------------------------------------ */
-async function requestJSON(url, signal) {
-  const res = await fetch(url, { signal });
+/* "smooth" unless the reader asked the system for less motion. */
+function scrollBehavior() {
+  return window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+}
+
+/* Plain words for the failures a reader can meet. The raw text still goes to
+   the console, and an abort is passed through untouched (callers test it). */
+function friendlyError(err, status) {
+  const raw = err && err.message || "";
+  let text = null;
+  if (status === undefined) text = "Can't reach the app's server. Is it still running?";
+  else if (status === 404 || /not found|unknown symbol|no chart|no data/i.test(raw)) {
+    text = "Couldn't find that — try a company name or ticker (examples sit under the chart).";
+  } else if (/^[A-Z]\w*(Error|Exception)\b/.test(raw)) text = "Something went wrong on the app's server. Try again in a minute.";
+  else if (/^Request failed \(HTTP 5\d\d\)$/.test(raw)) text = "The price source didn't answer. Try again in a minute.";
+  if (!text) return err;
+  console.warn("request failed:", raw);
+  // A network failure stays a TypeError: the server-down banner tests for it.
+  const nice = status === undefined ? new TypeError(text) : new Error(text);
+  nice.detail = raw;
+  return nice;
+}
+
+/* Remember the last good GET body per URL so an unchanged answer can come
+   back as HTTP 304 (server already sends ETag). Cap keeps memory flat. */
+const etagMemo = new Map(); // url -> { etag, payload }
+const ETAG_MEMO_MAX = 48;
+
+async function requestJSON(url, signal, { etag = true } = {}) {
+  const headers = {};
+  const prior = etag ? etagMemo.get(url) : null;
+  if (prior && prior.etag) headers["If-None-Match"] = prior.etag;
+  let res;
+  // no-store: the browser must not answer 304 from its own disk cache while
+  // our in-memory memo is empty (a reload would then throw on an empty body).
+  try { res = await fetch(url, { signal, headers, cache: "no-store" }); }
+  catch (err) { throw err && err.name === "AbortError" ? err : friendlyError(err); }
+  // 304 is not res.ok; reuse the last payload and skip JSON parse.
+  if (res.status === 304) {
+    if (prior) return prior.payload;
+    // Unexpected 304 with nothing to reuse — ask once with no ETag header.
+    if (etag) return requestJSON(url, signal, { etag: false });
+    throw friendlyError(new Error("Request failed (HTTP 304)"), 304);
+  }
   let payload = null;
   try { payload = await res.json(); } catch { /* non-JSON body */ }
   if (!res.ok) {
-    throw new Error((payload && payload.error) || `Request failed (HTTP ${res.status})`);
+    throw friendlyError(new Error((payload && payload.error) || `Request failed (HTTP ${res.status})`), res.status);
+  }
+  const tag = res.headers.get("ETag");
+  if (tag) {
+    etagMemo.delete(url);
+    etagMemo.set(url, { etag: tag, payload });
+    while (etagMemo.size > ETAG_MEMO_MAX) etagMemo.delete(etagMemo.keys().next().value);
   }
   return payload;
 }
@@ -235,6 +299,132 @@ async function postJSON(url, value) {
   return payload;
 }
 
+/* ---- Chart memory and prefetch ----
+   A chart payload the page already holds is drawn at once. Payloads come
+   from three places: a chart load, a watchlist quote, and a *prefetch*,
+   started when the pointer rests on a row or presses it -- so by the time
+   the click lands the answer is usually already here. Entries are short
+   lived (CHART_MEMO_MS), so a click never shows a reading older than the
+   chart's own one-minute re-read would; a background refresh always asks
+   the server. Capped, oldest dropped first. */
+const CHART_MEMO_MS = 45 * 1000;
+const CHART_MEMO_MAX = 40;
+const chartMemo = new Map();      // KEY -> { data, at } or { promise }
+
+function chartUrl(symbol) {
+  return `/api/chart?symbol=${encodeURIComponent(symbol)}&range=${RANGE}&interval=${INTERVAL}`;
+}
+function memoKey(symbol) { return String(symbol || "").trim().toUpperCase(); }
+
+function rememberChart(asked, data) {
+  if (!data) return;
+  const entry = { data, at: Date.now() };
+  for (const key of new Set([memoKey(asked), memoKey(data.symbol)])) {
+    if (!key) continue;
+    chartMemo.delete(key);          // re-insert: Map order is the age order
+    chartMemo.set(key, entry);
+  }
+  while (chartMemo.size > CHART_MEMO_MAX) chartMemo.delete(chartMemo.keys().next().value);
+}
+
+/* The chart payload for `symbol`: from memory when fresh, else one request
+   shared by everyone asking at the same moment. `fresh` skips memory. */
+function getChart(symbol, { fresh = false } = {}) {
+  const key = memoKey(symbol);
+  const hit = chartMemo.get(key);
+  if (hit && hit.promise) return hit.promise;
+  if (!fresh && hit && Date.now() - hit.at < CHART_MEMO_MS) return Promise.resolve(hit.data);
+  const promise = requestJSON(chartUrl(symbol)).then(
+    (data) => { rememberChart(symbol, data); return data; },
+    (err) => { if (chartMemo.get(key) && chartMemo.get(key).promise === promise) chartMemo.delete(key); throw err; });
+  chartMemo.set(key, { promise });
+  return promise;
+}
+
+let prefetchBusy = false;   // one hover prefetch at a time
+
+function prefetchChart(symbol, force) {
+  if (!symbol || memoKey(symbol) === memoKey(state.chartSymbol)) return;
+  if (prefetchBusy && !force) return;
+  prefetchBusy = true;
+  getChart(symbol).catch(() => {})    // a failed prefetch is retried by the click
+    .finally(() => { prefetchBusy = false; });
+}
+
+/* Any element carrying `data-chart` prefetches on hover (after a short rest,
+   so sweeping the pointer across a table does not fetch every row), at once
+   on keyboard focus, and at once on press -- a click lands ~100 ms after
+   the button goes down, which is time the request gets for free. */
+(function wirePrefetch() {
+  let timer = null, pending = null;
+  const target = (ev) => ev.target && ev.target.closest && ev.target.closest("[data-chart]");
+  // Skip hover prefetch for rows that are not near the viewport (web.dev
+  // content-visibility / IntersectionObserver guidance): a fast sweep down a
+  // long table must not launch a browser run per off-screen row.
+  const nearView = (typeof WeakMap === "function") ? new WeakMap() : null;
+  let io = null;
+  if (typeof IntersectionObserver === "function" && nearView) {
+    io = new IntersectionObserver((entries) => {
+      for (const e of entries) nearView.set(e.target, e.isIntersecting);
+    }, { rootMargin: "120px 0px" });
+  }
+  const watchRow = (t) => {
+    if (!io || !t || nearView.has(t)) return;
+    // Optimistic true until the observer answers — a new row must not miss
+    // its first hover prefetch while waiting for the callback.
+    nearView.set(t, true);
+    io.observe(t);
+  };
+  const inView = (t) => !nearView || nearView.get(t) !== false;
+  document.addEventListener("pointerover", (ev) => {
+    const t = target(ev);
+    if (!t || t.dataset.chart === pending) return;
+    watchRow(t);
+    if (!inView(t)) return;
+    clearTimeout(timer);
+    pending = t.dataset.chart;
+    // 200 ms: a slow sweep down a table used to fetch row after row, each
+    // a possible browser launch on the server.
+    timer = setTimeout(() => prefetchChart(pending), 200);
+  });
+  document.addEventListener("pointerout", (ev) => {
+    const t = target(ev);
+    if (t && !t.contains(ev.relatedTarget)) { clearTimeout(timer); pending = null; }
+  });
+  document.addEventListener("pointerdown", (ev) => {
+    const t = target(ev);
+    if (t) prefetchChart(t.dataset.chart, true);
+  }, { capture: true });
+  document.addEventListener("focusin", (ev) => {
+    const t = target(ev);
+    if (t) prefetchChart(t.dataset.chart, true);
+  });
+})();
+
+/* Fields that can move the badge, hero, odds or alarm — enough to decide a
+   quiet refresh can skip the redraw without stringifying the whole payload. */
+function chartQuietSig(d) {
+  if (!d) return "";
+  const t = d.trend || {};
+  const pts = d.points || [];
+  const last = pts.length ? pts[pts.length - 1] : null;
+  const pp = d.profitProbability || {};
+  const h = d.halt || {};
+  const quality = Array.isArray(d.quality)
+    ? d.quality.map((f) => (f && f.code) || "").join(",")
+    : "";
+  return [
+    d.symbol, d.name, d.currency, d.lastBarBasis, d.fetchedAt, d.cached,
+    pts.length, last && last.t, last && last.c, last && last.v,
+    t.label, t.score, t.held, t.significance, t.pullback, t.lean, t.agreement,
+    pp.probability, pp.cost,
+    h.action, quality,
+    d.livePrice, d.prePrice, d.afterPrice,
+    d.minInvestment, d.boardLot, d.marketPrice,
+    d.staleDays, d.staleBar,
+  ].join("\0");
+}
+
 async function loadChart(symbol, { quiet = false, pushHistory = true } = {}) {
   const wanted = symbol.trim();
   if (!wanted) return;
@@ -251,12 +441,20 @@ async function loadChart(symbol, { quiet = false, pushHistory = true } = {}) {
   }
 
   try {
-    const data = await requestJSON(
-      `/api/chart?symbol=${encodeURIComponent(wanted)}&range=${RANGE}&interval=${INTERVAL}`
-    );
+    // A reader's click may draw from memory; a background refresh asks anew.
+    const data = await getChart(wanted, { fresh: quiet });
     // A slow answer that a newer request has already replaced must not land:
     // the reader asked for something else while this was in flight.
     if (seq !== state.chartSeq) return;
+    // A background re-read that came back the same changes nothing on screen.
+    // A short signature of draw-facing fields avoids stringifying the whole
+    // payload (points + historyTail) on every quiet poll.
+    if (quiet && state.data && data && state.chartSymbol === data.symbol) {
+      if (chartQuietSig(data) === chartQuietSig(state.data)) {
+        state.chartLoadedAt = Date.now();
+        return;
+      }
+    }
     state.data = data;
     state.chartSymbol = data.symbol;   // what the refresh clock re-asks for
     state.chartLoadedAt = Date.now();  // and when it last got an answer
@@ -279,10 +477,20 @@ async function loadChart(symbol, { quiet = false, pushHistory = true } = {}) {
     // answered, it just could not reach the source. Name the outage in the
     // status line (not styled as an error: the chart *did* load) so the reader
     // knows the bars they see stopped arriving at `fetchedAt`.
-    if (data.cached && data.fetchedAt) {
+    // A copy served while a fresh fetch runs behind it (`revalidate`) is not
+    // an outage: say nothing and ask again in a few seconds for the new bars.
+    if (data.cached && data.fetchedAt && !data.revalidate) {
       setStatus(`Source unreachable — showing data last retrieved ${retrievedAt(data.fetchedAt)}.`);
-    } else if (!quiet) {
+      state.outageShown = true;
+    } else if (!quiet || state.outageShown) {
       setStatus("");
+      state.outageShown = false;
+    }
+    if (data.revalidate) {
+      const sym = data.symbol;
+      setTimeout(() => {
+        if (state.chartSymbol === sym) loadChart(sym, { quiet: true, pushHistory: false });
+      }, 4000);
     }
   } catch (err) {
     // A background refresh that failed changed nothing on screen, so it stays

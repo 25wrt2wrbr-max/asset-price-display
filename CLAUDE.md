@@ -10,7 +10,7 @@ because Yahoo's chart API answers plain HTTP clients with a 429.
 python3 server.py        # started from the project folder; http://127.0.0.1:8000/
 ```
 
-`README.md` is the short guide; `docs/` is the full reference, one page per topic.
+`README.md` is the short guide; `docs/` is the full reference.
 This file is the working notes: the invariants that must not drift, and what was
 just built. `AGENTS.md` is a link to this file, so keep it under 24,000 bytes;
 the older dated notes are in `docs/agent-notes-history.md`.
@@ -55,15 +55,100 @@ threshold describe version 1.
 - Measured v1 → v2 on `research/market-history.json`: label changes per 100
   bars 8.1 → 0.8; a one-sigma nudge to the newest close flips 9.3% → 0.4%.
   The cost is strictness: ~5% of real windows carry a label.
+- **Never delete `docs/long-term-test.md`** (holdout check due after 2026-12-30).
 - `export/trend.js` mirrors it; `python3 export/verify_parity.py` → 408
   cases, 0 mismatches.
 
-## Fast price clock (2026-11-21)
+## Added 2026-11-23
 
-`live_quote.py` + `/api/quote?symbol=`: newest Yahoo 1m print, 1 s memo. While a
-Yahoo chart's `lastBarBasis` is live/pre/after, `main.js` polls it every 2 s and
-patches only the newest point's close (hero, alarms). The badge is not re-scored
-until the next full chart re-read (60 s), which replaces the patched point.
+- Health / high-low / 1W·1M / plain words / volume spike / luck check /
+  5-day peso turnover / PSE Edge backup / sector table / compare / tiles.
+  Detail in `docs/agent-notes-history.md`. None touches `trend.classify`.
+
+## Added 2026-11-24 (speed, polish, second pass)
+
+- Redraw skips, ETag/304 on JSON, Moli process groups and `MAX_BROWSERS`,
+  server-down banner, row-warmer pacing. Detail in `docs/agent-notes-history.md`.
+
+## Added 2026-11-25 (five page features)
+
+- **Fees, one lot** (`static/psefees.js`): COL online rates, ₱20 floor, 0.1%
+  sales tax; break-even rounded up to a valid PSE tick. Tested vs COL's ALI example.
+- **Chance yardstick**: `recent.CHANCE_RATE` 3.7% a side (random-walk sim);
+  `payload["chance"]`, a clause in `summarize` beside the luck check.
+- **Label strip**: `onset.history` (same walk as `onset.onset`; last bar =
+  badge) → `labelhistory.py` → `/api/labelhistory` → `static/labelstrip.js`.
+  Bonds inverted like the badge. Lazy, after the chart.
+- **Peso view**: `static/peso.js` `shownData()` feeds hero, chart, bar table,
+  CSV only. Label, quick stats, alarms, compare stay on USD. Same-or-earlier
+  USD/PHP day, never later.
+- **Against its market**: `static/benchmark.js`, PSEi / SPY / BTC via the
+  compare panel's `comparisonTable` + `ratioTrendCall`. Never a row label.
+- `run_tests.py` `JS_TESTS` lists every node test the full run executes.
+- After review: the strip re-reads once when the badge changes and waits 500 ms
+  before asking; peso rates skip Coins.ph weekend bars; alarm lines sit at the
+  peso level but print the dollar target.
+
+## Added 2026-11-25 (desk suggestion pack)
+
+- Morning desk extras (`deskextras.js`): break-even hero, heat dots, compact
+  watch, compare health, against-market strip, staleness, sweep presets,
+  ribbon + yield chip, six-pack pages, label-gated alarms, PSE turnover,
+  UITF peer drift, `/api/digest` + `/api/packet`.
+- Full build (`desksuggest.js`): sell-net + board-lot hero, tick-snap alarms,
+  thin-book, PSE Edge link, chance in Why-this-label, digest under badge,
+  PSE countdown, packet day-diff, digest text link, print CSS, against-market
+  on watch rows, label counts, layouts + column presets, turnover heat,
+  range chips, UITF ladder, fund→PSEi strip, PH–UST chip, reminders, watch
+  CSV. Tests `test_desksuggest.js`. Not `trend.classify`. Friendlier/lighter
+  and pre-IPO/FX same-day notes: `docs/agent-notes-history.md`.
+
+## Added 2026-11-25 (friendlier + lighter III)
+
+Calmer CSS (quiet nav, soft wash, plain-reading, plot rhythm); short asset
+meta + About fold; plain table headers; Today’s overview; welcome tip;
+keyboard help; live `renderAll` skips; desk visibility + shared sectors;
+label-strip when plot visible; viewport prefetch. `test_friendly_ux.js`.
+Not `trend.classify`. Detail in `docs/agent-notes-history.md`.
+
+## Added 2026-11-25 (deskpack)
+
+Full suggestion pack — not `trend.classify`. Server `deskpack.py` +
+`static/deskpack.js` + fee helpers `pseBoardLot` / `pseCashPlan`. UI: cash
+buy planner, T+2 settle, morning pulse, overnight gap, commodity shelf,
+holdings ledger, named watchlists, scan/focus, share/print brief, chart in
+words, filings strip, BSP/BTr chips, ASEAN compare presets, arrow-key bar
+walk, mobile sheet rail. APIs `/api/filings`, `/api/deskpack`; digest
+enrichment. Yahoo 429 circuit + slot-wait; memo stale-while-revalidate;
+auto next free port; `Start Asset Price Display.command`. Tests
+`test_deskpack.py` / `test_deskpack.js`. Detail in
+`docs/agent-notes-history.md`.
+
+## Added 2026-11-26 (ex-dividend markers)
+
+`pse_dividends.py` reads PSE Edge's dividend list (form-POST pages, 12 h
+disk copy) → `/api/dividends?symbol=` → `static/dividends.js`: "D" ticks on
+ex-date bars + next ex-date line. COMMON rows match by `cmpy_id`, preferred
+by code. Lazy, after the chart. Never touches `trend.classify`.
+
+## Added 2026-11-26 (rates strip, against cash, theme, desk mode)
+
+- `phrates.py` (key `phrates:v2`) → `/api/rates` → `static/rates.js`
+  `#ratesStrip`: BSP policy rate (`ECONOMICS:PHINTR`) + 1M–1Y bill yields
+  (`TVC:PH01MY`…`PH01Y`) via `pse.history_many`; hourly, saved copy on
+  outage. Market yields, not auctions. Not in `tv.BONDS`; no label.
+  bsp.gov.ph / treasury.gov.ph block scripts, so `deskpack.bsp_policy`
+  reads phrates' saved copy and `btr_auctions` is [].
+- "Against cash" (More numbers, PHP only): window price change vs a 3M
+  bill bought on the first bar (`cashHistory`, simple, before 20% tax).
+- Desk mode defaults to the full view (`apd-desk-mode-v2`, saved on click
+  only); the old one hid More numbers. Theme select: system/light/dark.
+
+## Added 2026-11-26 (overview at a glance)
+
+`static/glance.js`: Today's overview drawn as pills, rate tiles, aligned
+health bars and shaped watch chips; full sentences on hover / aria-label.
+Pure builders tested in `tests/test_glance.js`. Not `trend.classify`.
 
 ## Layout (2026-11-16) — read this before looking for a file
 
@@ -100,7 +185,7 @@ until the next full chart re-read (60 s), which replaces the patched point.
   and `static/`.
 - Research code is in `lab/`, all tests in `tests/`, data in `research/`.
   `labpath.py` / `lab/_paths.py` / `tests/__init__.py` put the folders on
-  `sys.path`. **Run tests with `python3 run_tests.py`** (552 tests + parity).
+  `sys.path`. **Run tests with `python3 run_tests.py`** (682 tests + parity).
 - Do not run a `lab/` script to "see what it does": it rewrites its report in `research/`.
 - `quality.py` flags bad bars on rows and charts (informational only). `nasdaq_bars.py`
   is the US fallback when Yahoo/Moli gives no answer at all (never for Yahoo's 404);
@@ -185,6 +270,10 @@ every row dated to the day its current run began, sorted **newest-turn first**.
 - `recent.py` builds it, `server.py` sweeps it, `/api/recent` serves it,
   `index.html` draws it in `<section class="leaders recent">`.
 - Columns: **Market · Asset · Direction · Since · Run · Price**.
+- `spark` (2026-11-23): `onset` ships the window's closes; rows carry them and
+  the 3-month cell draws them (`sparkline` in `static/watchlist.js`); the
+  leaning table (`onset.leaning`) draws its line in the price cell. A disk
+  copy from before has none, and the row then draws no line.
 - The note line above the table is built server-side by `recent.summarize(payload)`
   and shipped as `payload["note"]` — so the note and the rows cannot disagree
   about what was scanned.
@@ -202,7 +291,7 @@ every row dated to the day its current run began, sorted **newest-turn first**.
 
 `recent.scan` takes `fetch_us_bars` as an **injected callable** (the browser lives
 in `server.py`, which imports `recent.py`) — that keeps the module testable
-without a browser. Full sweep ≈ 47 s (measured 2026-11-16); the US leg is about half.
+without a browser. Legs run in 4 lanes (browser legs share one): ~11 s warm, was ~24 s.
 
 ### Stored US year, and the closed-market pace (2026-11-16)
 
@@ -227,64 +316,6 @@ without a browser. Full sweep ≈ 47 s (measured 2026-11-16); the US leg is abou
 - `run_tests.py` points `APD_CACHE_DIR` at a temp folder; tests that call
   `fetch_us_bars` start with `us_bars.reset()`.
 
-### The PSEi, and the scan's makeup in both notes (2026-11-09)
-
-- **The PSEi is scanned with the stocks.** `bullish._universe` no longer drops
-  `kind == "INDEX"`; the index goes through the same `onset` walk, so it appears
-  on the recent table or the leaning one whenever its own chart says so. Its
-  rows carry **no board lot, no minimum investment, no turnover** (an index is
-  not bought and trades no shares); `pse.chart` withholds the "Min. investment"
-  readout for `type == "index"` in both chart builders. `PSE:PSEI` opens the
-  page's own chart.
-- **Both notes print what was scanned.** `bullish.scan` ships
-  `payload["kinds"]` (`{EQUITY, PREFERRED, ETF, CLOSEDEND, INDEX}` counts over
-  its universe); `server.recent_loop` passes the sweep's `universe`/`kinds` into
-  `recent.scan(ph_sweep_stats=...)`; `recent.kinds_line` writes
-  "249 common shares, 11 preferred shares, 1 ETF, 1 closed-end fund, 1 index".
-  `recent.summarize` puts it in the recent note, and the identical sentence
-  ships as `payload["phScan"]` for the leaning note (`drawLeaningNote`). One
-  string, so the two notes cannot disagree. An older disk copy has no `kinds`;
-  the note then drops the makeup rather than guessing it.
-- Counts drift with listings: 262 scanner securities on 2026-11-09, plus the
-  index added by hand = 263 scanned.
-
-### Philippine funds (2026-10-31)
-
-A fund has no ticker, no exchange and no volume; it publishes one **NAVPU** a
-business day, which is a daily close, so the classifier reads it like any price.
-The row and the chart are one series: both go through `phfunds.series(code)`.
-
-- The raw series is **calendar-padded** (weekends repeat Friday, BPI's model
-  repeats stamps and stamps a day or two ahead). `phfunds.clean` keeps business
-  days only — never read raw points.
-- A **money market fund is always bullish** (its NAVPU only accrues). Six of the
-  47 are money-market/short-term funds; that is not a classifier bug.
-- Cold pass ~35 s (PIFA dominates; it refuses parallel reads), warm pass <5 s.
-  Six-hour cache, one-week fallback, `stale` seconds on the row.
-- `FUND:<CODE>` symbols route in `server.chart_data` before Yahoo; the warmer has
-  its own leg (`_warm_batch_funds`). Fund turnover is `null` (exempt from the
-  peso-volume floor).
-
-### US Treasury futures (2026-10-31)
-
-The rate market, added because it was **missing** rather than new: `ZB=F` was
-always chartable, but the US leg is a turnover ranking (`common`/`etf` typespecs)
-that cannot name a futures contract, and search could not answer "30-year
-treasury bond" or "long bond" (Korean ETFs and KB funds came back instead).
-
-- `rates.CONTRACTS` is the curve as a **fixed list**: ZT, Z3N, ZF, ZN, TN, ZB, UB.
-- **A future is a price** — nothing is inverted (unlike the bond yields). Only a
-  bullish contract is a row.
-- `recent.rate_rows(fetch_us_bars)` judges them on Yahoo's daily bars with
-  `months=` (Yahoo's 3mo window, like the US leg), a second call for 7 symbols.
-  `turnover: None` (a contract's volume is a count, not money) and
-  `rates.price_hint` for the 32nds.
-- Search: `rates.search_contracts` adds Yahoo-shaped rows; `named_contracts`
-  leads with the contract a query *names* (ticker, tenor, "long bond"), and the
-  bare word "treasury" only fills in the curve behind Yahoo's answer.
-- `rates.chart_alias` makes a bare `ZB` chart `ZB=F` — retried **only after**
-  Yahoo refuses the bare spelling (`UB` is a real ETF and keeps its chart).
-
 ### Bond yields read the other way, and say so
 
 The classifier reads the yield, but direction and score are inverted to reflect
@@ -301,33 +332,6 @@ the usual price movement of an existing fixed-rate bond:
 - Bond rows open a chart (since 2026-10-31): `tv.chart` draws the same yield
   series the row was judged on, with the badge reversed to the bond price.
 
-### The bond socket: browser, not a raw websocket
-
-The TradingView chart protocol *can* be driven by a plain TLS socket — that was
-tried first and the code was correct (handshake, session, symbol resolution,
-series request, `timescale_update` all arrived). The protocol **drops most of the
-sessions it accepts**: a session is told `series_loading` and the series never
-comes, a coin flip per attempt, worse for `TVC:PH05Y`, and bursty. Retrying hard
-enough to win took ~40 s for three symbols with one often missing.
-
-Driving the same protocol from the browser (`pse.history_many`) is reliable:
-all three tenors in ~1.1 s. `tv.py` is thin: it owns the bond symbols and
-borrows `pse.py`'s socket.
-
-### Bond cache, and the two ages
-
-`diskcache` under `tv:bond:<symbol>`:
-- `BOND_CACHE_TTL = 6h` — fresh enough to **skip the fetch** (a yield is a daily
-  close, so a copy a few hours old has missed at most one bar).
-- `BOND_CACHE_KEEP = 7d` — still worth **showing** when the fetch failed; the row
-  then carries `stale` (seconds) and says how old the reading is.
-
-### Time zones
-
-Bond bars are stamped at Manila 05:00 (= 21:00 UTC of the prior day), so bond rows
-carry `"tz": "Asia/Manila"` and the front end reads their dates in that zone via
-`rowDate()`. Every other row stays UTC. Do not "fix" this by shifting timestamps in
-the data — the timezone belongs on the row.
 
 ### The sweep is a background job, not a route
 

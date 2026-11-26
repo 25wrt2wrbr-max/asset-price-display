@@ -73,7 +73,11 @@ are not a cycle.
 from __future__ import annotations
 
 import markets
+import time
 import onset as onset_module
+import turnover as turnover_module
+import pse_edge
+import faults
 import pse
 
 # The window the chart trims to, in calendar days: `pse.chart` uses
@@ -160,20 +164,18 @@ def _series(rows: list) -> tuple[list[int], list[float], list]:
             [volumes[i] for i in order])
 
 
-def _finished_turnover(series: list, fallback):
-    """Value traded in the last *finished* session, else `fallback`.
+def _finished_turnover(series: list) -> float | None:
+    """The 5-session average of value traded, finished sessions only.
 
     The sweep's newest bar is today's forming candle while the PSE is open, so
     close times volume on it is a half-day figure (PAL on 2026-11-16 at noon:
-    95,000 shares, about 0.4M pesos, against 1.7M pesos the Friday before).
-    The peso floor must judge a finished session, the way the chart's own
-    readout does (`pse.completed_trade`). No finished bar with a volume
-    keeps `fallback` (the latest bar's figure), never a made-up zero.
+    about 0.4M pesos, against 1.7M the Friday before). Since 2026-11-23 the
+    peso floor and the table's column read the mean over the last five
+    finished sessions (`turnover.py`), not one day.
     """
     stamps, closes, volumes = _series(series)
-    points = [{"t": s, "c": c} for s, c in zip(stamps, closes)]
-    _, _, value = pse.completed_trade(points, volumes)
-    return fallback if value is None else value
+    return turnover_module.average(stamps, closes, volumes,
+                                   turnover_module.pse_cutoff(time.time()))
 
 
 def onset(rows: list) -> dict | None:
@@ -257,11 +259,14 @@ def _swept_row(symbol: str, record: dict, series, call: dict, is_index: bool) ->
         "lot": lot,
         "lotCost": lot_cost,
         "turnover": (None if is_index else
-                     _finished_turnover(series, call["turnover"])),
+                     _finished_turnover(series)),
         "pullback": call.get("pullback"),
         **{k: call[k] for k in
            ("since", "run", "censored", "anchored", "manner", "turnMove",
             "score", "bars", "last", "window", "windowFirst")},
+        "spark": call.get("spark"),
+        "sparkVol": call.get("sparkVol"),
+        "significance": call.get("significance"),
     }
 
 
@@ -284,7 +289,17 @@ def scan(count: int = pse.BATCH_BARS) -> dict:
     try:
         bars = pse.history_many(list(by_symbol), count=count)
     except pse.PseError as exc:
-        raise BullishError(str(exc))
+        faults.note("bullish.scan socket", exc)
+        bars = {}
+
+    # Names the socket did not answer -- all of them if TradingView refused --
+    # are read from the exchange's own site (`pse_edge`). Their rows say so,
+    # and open a chart drawn from those same bars (`EDGE:`), so a row and its
+    # chart stay one series. The index is not on PSE Edge.
+    gaps = [symbol for symbol, record in by_symbol.items()
+            if symbol not in bars and record.get("kind") != "INDEX"]
+    edge = pse_edge.history_many(gaps) if gaps else {}
+    bars.update(edge)
 
     if not bars:
         raise BullishError("no bars arrived for any PSE symbol")
@@ -330,10 +345,11 @@ def scan(count: int = pse.BATCH_BARS) -> dict:
                     # trade, and `None` keeps it out of the peso floor rather
                     # than reporting a zero the market never printed.
                     "turnover": (None if is_index else
-                                 _finished_turnover(series, lean["turnover"])),
+                                 _finished_turnover(series)),
                     **{k: lean[k] for k in
                        ("price", "score", "significance", "progress", "bars",
                         "last", "window", "held", "holdBars")},
+                    "spark": lean.get("spark"),
                 })
             continue
         # The minimum investment: the board lot for this price times the price,
@@ -349,6 +365,18 @@ def scan(count: int = pse.BATCH_BARS) -> dict:
     # last among its own date whatever its run: silence about liquidity is not
     # evidence of it. The longer run and then the ticker finish the order, so two
     # scans agree on a total one.
+    try:
+        halt_map = pse_edge.halts()
+    except Exception as exc:
+        faults.note("bullish.halts", exc)
+        halt_map = {}
+    for row in rows + bearish + leaning:
+        if row["symbol"] in edge:
+            row["chartSymbol"] = pse_edge.PREFIX + row["ticker"]
+            row["source"] = pse_edge.SOURCE
+        halt = halt_map.get(str(row.get("ticker") or "").upper())
+        if halt:
+            row["halt"] = halt
     rows.sort(key=_sweep_order)
     bearish.sort(key=_sweep_order)
 
@@ -356,6 +384,8 @@ def scan(count: int = pse.BATCH_BARS) -> dict:
         "label": "Bullish Philippine stocks",
         "currency": CURRENCY,
         "source": "TradingView",
+        # The names read from PSE Edge because the socket did not answer them.
+        "edge": sorted(edge),
         "rows": rows,
         "bearish": bearish,
         # Closest to the entry bar first.

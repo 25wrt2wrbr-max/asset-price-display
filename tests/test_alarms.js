@@ -38,4 +38,13 @@ assert.deepEqual(rung, ['BTC-USD:up']);     // fires once
 app.checkAlarms(bar('AAPL', 179.5));
 assert.deepEqual(rung, ['BTC-USD:up', 'AAPL:down']);
 assert.equal(vm.runInContext('alarms.filter(a => a.fired).length', open()), 2);
-console.log('Price alarm crossing, reload and one-shot checks passed.');
+
+// Label-conditioned: cross ignored while label does not match.
+rung.length = 0;
+app = open();
+app.addAlarm(bar('PSE:ALI', 25, { trend: { label: 'bearish' } }), 30, 'bullish');
+app.checkAlarms(bar('PSE:ALI', 31, { trend: { label: 'bearish' } }));
+assert.deepEqual(rung, []);  // crossed but still bearish
+app.checkAlarms(bar('PSE:ALI', 32, { trend: { label: 'bullish' } }));
+assert.deepEqual(rung, ['PSE:ALI:up']);
+console.log('Price alarm crossing, reload, one-shot and label-gate checks passed.');

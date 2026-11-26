@@ -111,10 +111,14 @@ it but the server.
 from __future__ import annotations
 
 import concurrent.futures
+import datetime as dt
+import math
 import time
 
 import crypto
 import cryptobull
+import diskcache
+import faults
 import markets
 import nasdaq_bars
 import ondo
@@ -464,6 +468,9 @@ def _price_row(market: str, symbol: str, chart_symbol: str, ticker: str,
         # The three-month move the row prints: the window's first close to the
         # newest, the same pair the chart's hero delta uses.
         "windowMove": _window_move(call),
+        "spark": call.get("spark"),
+        "sparkVol": call.get("sparkVol"),
+        "significance": call.get("significance"),
         "chartable": True,
     }
 
@@ -498,6 +505,7 @@ def _lean_row(market: str, symbol: str, chart_symbol: str, ticker: str,
         # `onset.steady_lean`; None on anything that reached here another way.
         "held": lean.get("held"),
         "holdBars": lean.get("holdBars"),
+        "spark": lean.get("spark"),
         "chartable": True,
     }
 
@@ -571,6 +579,130 @@ def shelf_universe(shelf: dict | None) -> tuple[list[dict], bool]:
     return records, False
 
 
+# The order the market health bar lists its markets in.
+HEALTH_ORDER = ("US", "Philippines", "Crypto", "US Treasury",
+                "Philippine bond", "Philippine fund", "Ondo portfolio")
+HEALTH_HISTORY_KEY = "recent:health-history:v1"
+HEALTH_HISTORY_DAYS = 60
+
+
+def market_health(stats: dict) -> list[dict]:
+    """One `{market, bullish, bearish, neutral, judged}` per market that
+    counted its verdicts. A market that failed, or a copy built before the
+    count existed, is simply absent: no count is not a count of zero."""
+    out = []
+    for market in HEALTH_ORDER:
+        tally = (stats.get(market) or {}).get("verdicts")
+        if not isinstance(tally, dict):
+            continue
+        counts = {k: int(tally.get(k) or 0)
+                  for k in ("bullish", "bearish", "neutral")}
+        judged = sum(counts.values())
+        if judged:
+            out.append({"market": market, **counts, "judged": judged})
+    return out
+
+
+def load_health_history() -> dict[str, list[dict]]:
+    """Persisted daily breadth snapshots `{market: [{day, bullPct, bearPct, bullish, bearish, judged}]}`."""
+    raw = diskcache.load_plain(HEALTH_HISTORY_KEY)
+    if not isinstance(raw, dict):
+        return {}
+    out: dict[str, list[dict]] = {}
+    for market, entries in raw.items():
+        if isinstance(market, str) and isinstance(entries, list):
+            clean = [e for e in entries if isinstance(e, dict) and e.get("day")]
+            if clean:
+                out[market] = clean[-HEALTH_HISTORY_DAYS:]
+    return out
+
+
+def record_health_history(health: list[dict], today: str | None = None) -> dict[str, list[dict]]:
+    """Append or overwrite today's breadth snapshot per market and persist."""
+    history = load_health_history()
+    if not health:
+        return history
+    day = today or dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d")
+    changed = False
+    for m in health:
+        market = m.get("market")
+        judged = int(m.get("judged") or 0)
+        if not market or judged <= 0:
+            continue
+        bull = int(m.get("bullish") or 0)
+        bear = int(m.get("bearish") or 0)
+        entry = {
+            "day": day,
+            "bullPct": round(100.0 * bull / judged, 1),
+            "bearPct": round(100.0 * bear / judged, 1),
+            "bullish": bull,
+            "bearish": bear,
+            "judged": judged,
+        }
+        series = [e for e in history.get(market, []) if e.get("day") != day]
+        series.append(entry)
+        series.sort(key=lambda e: e["day"])
+        history[market] = series[-HEALTH_HISTORY_DAYS:]
+        changed = True
+    if changed:
+        diskcache.store_plain(HEALTH_HISTORY_KEY, history)
+    return history
+
+
+# The false-discovery rate the luck check allows: of the labels that pass,
+# at most this share are expected to be luck.
+LUCK_FDR = 0.10
+
+
+def luck_check(drifts: list, tests: int, q: float = LUCK_FDR) -> dict | None:
+    """How many labels still stand out once every judged name is counted.
+
+    A sweep tests hundreds of names at once, so some clear a single-chart bar
+    by chance. This is the Benjamini-Yekutieli step-up rule (it holds when
+    markets move together) on each label's drift t, read as a normal p-value.
+    Only labelled names' p-values are known; leaving the neutral ones out can
+    only make the count smaller, so it is "at least". Describes the scan; it
+    never changes a label.
+    """
+    ts = [abs(float(t)) for t in drifts
+          if isinstance(t, (int, float)) and math.isfinite(t)]
+    if not ts or tests < len(ts):
+        return None
+    harmonic = sum(1.0 / i for i in range(1, tests + 1))
+    ps = sorted(math.erfc(t / math.sqrt(2.0)) for t in ts)   # two-sided
+    passed = 0
+    for rank, p in enumerate(ps, 1):
+        if p <= rank * q / (tests * harmonic):
+            passed = rank
+    return {"labelled": len(ts), "tests": tests, "pass": passed, "q": q}
+
+
+# How often `trend.classify` labels a series with no trend in it at all.
+# Measured 2026-11-24: 20,000 driftless Gaussian random walks (daily sigma 2%,
+# seeds 63 and 93) per window length; 63 bars gave 3.94% bullish / 3.60%
+# bearish, 93 bars 3.59% / 3.72%. Rounded to one rate per side. It matches the
+# ~8% labelled share in docs/variants-tried.md. Real markets are not random
+# walks, so this is a yardstick for "how many would chance alone give", not a
+# claim that any given row is chance.
+CHANCE_RATE = 0.037
+
+
+def chance_check(health: list[dict], rate: float = CHANCE_RATE) -> dict | None:
+    """Labels chance alone would give across every name judged, beside the
+    labels the scan found. Same total the luck check uses. Describes the
+    scan; it never changes a label."""
+    judged = sum(int(m.get("judged") or 0) for m in health or [])
+    if judged <= 0:
+        return None
+    return {
+        "judged": judged,
+        "rate": rate,
+        "expected": round(judged * rate),
+        "bullish": sum(int(m.get("bullish") or 0) for m in health),
+        "bearish": sum(int(m.get("bearish") or 0) for m in health),
+    }
+
+
 def scan(ph_sweep_rows: list[dict] | None = None,
          fetch_us_bars=None, ph_sweep_leaning: list[dict] | None = None,
          ondo_shelf: dict | None = None,
@@ -618,6 +750,18 @@ def scan(ph_sweep_rows: list[dict] | None = None,
         rows.extend(ph_rows(ph_sweep_bearish, direction="bearish"))
     rows.extend(ph_lean_rows(ph_sweep_leaning or []))
     stats["Philippines"] = {"count": len(ph), "bearishKnown": ph_bearish_known}
+    if isinstance(ph_sweep_stats, dict) and ph_bearish_known \
+            and ph_sweep_stats.get("universe"):
+        # Judged = the universe less the names that did not answer. Without
+        # the bearish list the neutral share would swallow the bearish one,
+        # so an older sweep gets no verdict count at all.
+        judged = (int(ph_sweep_stats["universe"])
+                  - len(ph_sweep_stats.get("missing") or []))
+        bull, bear = len(ph_sweep_rows or []), len(ph_sweep_bearish or [])
+        if judged >= bull + bear:
+            stats["Philippines"]["verdicts"] = {
+                "bullish": bull, "bearish": bear,
+                "neutral": judged - bull - bear}
     if isinstance(ph_sweep_stats, dict):
         # The universe the sweep actually read, with its makeup. Carried onto
         # the stats, which travel in the payload, so both notes and the seeded
@@ -628,55 +772,59 @@ def scan(ph_sweep_rows: list[dict] | None = None,
             stats["Philippines"]["kinds"] = dict(ph_sweep_stats["kinds"])
         if ph_sweep_stats.get("missing"):
             stats["Philippines"]["missing"] = list(ph_sweep_stats["missing"])
+        if ph_sweep_stats.get("edge"):
+            # Read from PSE Edge: the status chip says "fallback", as for
+            # Nasdaq's closes on the US leg.
+            stats["Philippines"]["fallback"] = list(ph_sweep_stats["edge"])
+            stats["Philippines"]["fallbackSource"] = "PSE Edge"
 
-    if fetch_us_bars is not None:
-        # The two Yahoo legs, each with its own error: a browser leg that
-        # answers one market's symbols and not the other's must not take both
-        # down, and the note names whichever failed. The Ondo stocks and ETFs
-        # are drawn from the shelf when it was read (see `shelf_universe`).
-        for market, leg in (("US", us_rows), ("US Treasury", rate_rows)):
+    # The legs, side by side (2026-11-23): the sweep used to run them one
+    # after another, ~24 s warm / ~47 s on a weekday. The three that drive
+    # the browser -- the two Yahoo legs and the bond socket -- stay in one
+    # lane, one after another, so they never contend for it; the plain-HTTPS
+    # legs (portfolios, crypto, funds) each get their own. Each leg keeps its
+    # own error, and stats/errors are filled in the old order afterwards so
+    # the note reads the same.
+    def us_leg():
+        if fetch_us_bars is None:
+            raise RecentError("no bar fetcher was given")
+        return us_rows(fetch_us_bars, ondo_shelf)
+
+    def rate_leg():
+        if fetch_us_bars is None:
+            raise RecentError("no bar fetcher was given")
+        return rate_rows(fetch_us_bars)
+
+    # The Ondo intelligent portfolios are plain HTTPS to DeFiLlama, so unlike
+    # the two Yahoo legs they need nothing injected and fail alone.
+    legs = [("US", us_leg), ("US Treasury", rate_leg),
+            ("Ondo portfolio", lambda: ondo_portfolio_rows(ondo_shelf)),
+            ("Crypto", crypto_rows), ("Philippine bond", bond_rows),
+            ("Philippine fund", fund_rows)]
+    lanes = [["US", "US Treasury", "Philippine bond"],
+             ["Ondo portfolio"], ["Crypto"], ["Philippine fund"]]
+    by_name = dict(legs)
+    outcome: dict[str, tuple] = {}
+
+    def run_lane(names):
+        for name in names:
             try:
-                if market == "US":
-                    found, leg_stats = leg(fetch_us_bars, ondo_shelf)
-                else:
-                    found, leg_stats = leg(fetch_us_bars)
-                rows.extend(found)
-                stats[market] = leg_stats
+                outcome[name] = ("ok", by_name[name]())
             except Exception as exc:
-                errors[market] = str(exc)
-    else:
-        errors["US"] = "no bar fetcher was given"
-        errors["US Treasury"] = "no bar fetcher was given"
+                faults.note("recent leg " + name, exc)
+                outcome[name] = ("error", exc)
 
-    # The Ondo intelligent portfolios: plain HTTPS to DeFiLlama, so unlike the
-    # two legs above this one needs nothing injected and fails alone.
-    try:
-        baskets, basket_stats = ondo_portfolio_rows(ondo_shelf)
-        rows.extend(baskets)
-        stats["Ondo portfolio"] = basket_stats
-    except Exception as exc:
-        errors["Ondo portfolio"] = str(exc)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(lanes)) as pool:
+        list(pool.map(run_lane, lanes))
 
-    try:
-        coins, coin_stats = crypto_rows()
-        rows.extend(coins)
-        stats["Crypto"] = coin_stats
-    except Exception as exc:
-        errors["Crypto"] = str(exc)
-
-    try:
-        bonds, bond_stats = bond_rows()
-        rows.extend(bonds)
-        stats["Philippine bond"] = bond_stats
-    except Exception as exc:
-        errors["Philippine bond"] = str(exc)
-
-    try:
-        funds, fund_stats = fund_rows()
-        rows.extend(funds)
-        stats["Philippine fund"] = fund_stats
-    except Exception as exc:
-        errors["Philippine fund"] = str(exc)
+    for name, _ in legs:
+        state, value = outcome[name]
+        if state == "ok":
+            found, leg_stats = value
+            rows.extend(found)
+            stats[name] = leg_stats
+        else:
+            errors[name] = str(value)
 
     if not rows:
         raise RecentError("no rows could be assembled: %s" % (
@@ -736,6 +884,15 @@ def scan(ph_sweep_rows: list[dict] | None = None,
         if isinstance(ph_stats, dict):
             ph_stats["hidden"] = len(dropped)
 
+    # The luck check reads every labelled row before the peso floor or the
+    # shelf trims them, against every name judged (the health bar's total).
+    luck = luck_check(
+        [row.get("significance") for row in rows
+         if not row.get("lean") and row.get("direction") in ("bullish", "bearish")]
+        + [row.get("significance") for row in dropped
+           if not row.get("lean") and row.get("direction") in ("bullish", "bearish")],
+        sum(m["judged"] for m in market_health(stats)))
+
     # The near-misses leave the bullish table here, into a list of their own:
     # neutral on their own charts, in the bullish hold band, closest to the
     # entry bar first.
@@ -776,6 +933,12 @@ def scan(ph_sweep_rows: list[dict] | None = None,
         # One entry per market saying whether it answered, so an outage reads as
         # an outage on the page and not as a market with nothing bullish in it.
         "markets": market_status(stats, errors, rows + bearish),
+        # Bullish / bearish / neutral shares of every name each market judged,
+        # before the peso floor or the Ondo shelf trims the tables: the bar
+        # above the table counts verdicts, not rows.
+        "health": market_health(stats),
+        "luck": luck,
+        "chance": chance_check(market_health(stats)),
         # The Philippine scan, spelled out once, in the same words both notes
         # print. The page appends it under "Leaning bullish"; `summarize` puts
         # it under "Recently bullish assets". One string, so the two cannot

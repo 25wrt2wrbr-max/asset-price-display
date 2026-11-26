@@ -1,0 +1,19 @@
+{
+  "collected_at": "2026-10-30T08:50:24.624020+00:00",
+  "split": 0.7,
+  "assets": 74,
+  "early": {
+    "windows": 249632,
+    "labelled": 0.0648,
+    "bullish": 0.0457,
+    "bearish": 0.0191,
+    "changes_per_100": 0.956
+  },
+  "late": {
+    "windows": 109069,
+    "labelled": 0.0584,
+    "bullish": 0.0456,
+    "bearish": 0.0127,
+    "changes_per_100": 0.8367
+  }
+}

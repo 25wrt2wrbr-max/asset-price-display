@@ -535,10 +535,20 @@ def chart(symbol: str, span: str, interval: str) -> dict:
 
     Raises PseNotFound for a symbol TradingView does not know and PseError for a
     transport failure, so the caller can tell a typo from an outage.
+
+    `EDGE:XXX` draws PSE Edge's bars (`pse_edge`) -- what a table row read from
+    PSE Edge opens, so the row and its chart are one series. A daily `PSE:XXX`
+    chart whose socket read fails falls back to PSE Edge too, and says so.
     """
-    canonical = P.canonical_symbol(symbol)
+    import pse_edge
+    text = (symbol or "").strip().upper()
+    from_edge = text.startswith(pse_edge.PREFIX)
+    canonical = P.canonical_symbol("PSE:" + text[len(pse_edge.PREFIX):]
+                                   if from_edge else symbol)
     if canonical is None:
         raise P.PseNotFound(f"{symbol!r} is not a PSE symbol.")
+    if from_edge and interval != "1d":
+        raise P.PseNotFound("PSE Edge has daily bars only.")
 
     days = P.RANGE_DAYS.get(span, P.RANGE_DAYS["3mo"])
     if interval == "1wk":
@@ -548,7 +558,24 @@ def chart(symbol: str, span: str, interval: str) -> dict:
         timeframe = P.TIMEFRAME_DAILY
         count = max(P.OUTLOOK_BARS, P.BAR_COUNT.get(span, P.BAR_COUNT["3mo"]))
 
-    envelope = P._history(canonical, timeframe, count)
+    source = "TradingView"
+    if from_edge:
+        source = pse_edge.SOURCE
+    else:
+        try:
+            envelope = P._history(canonical, timeframe, count)
+        except P.PseNotFound:
+            raise
+        except P.PseError as exc:
+            if interval != "1d":
+                raise
+            source = pse_edge.SOURCE
+            faults.note("pse.chart socket", exc)
+    if source == pse_edge.SOURCE:
+        try:
+            envelope = pse_edge.envelope(canonical)
+        except pse_edge.EdgeError as exc:
+            raise P.PseError(str(exc))
     meta = envelope.get("meta") or {}
 
     points: list[dict] = []
@@ -596,7 +623,13 @@ def chart(symbol: str, span: str, interval: str) -> dict:
     # thinly traded PSE name -- whose 90-day window can hold only a few dozen
     # bars -- still gets its verdict, and only bad data leaves the badge off.
     trend_call = None
+    # PSE Edge prices are not split-adjusted: a one-day move that large in the
+    # recent bars may be a split, not a trade, so the label is withheld.
+    edge_split = (source == pse_edge.SOURCE
+                  and pse_edge.suspect_split(envelope.get("bars") or []) is not None)
     try:
+        if edge_split:
+            raise ValueError("possible unadjusted split")
         trend_call = trend.classify(closes, used_volumes)
     except ValueError:
         pass
@@ -610,7 +643,7 @@ def chart(symbol: str, span: str, interval: str) -> dict:
     # reading is exact rather than approximate.
     tail = [{"t": point["t"], "c": point["c"], "v": volumes[i]}
             for i, point in list(enumerate(points))[:start]
-            [-onset.LEAN_HOLD_BARS:]]
+            [-100:]]
 
     # The board lot times the last close: the smallest cheque that buys this
     # stock, which the page shows under the price. Imported here rather than at
@@ -653,7 +686,9 @@ def chart(symbol: str, span: str, interval: str) -> dict:
         # The bars before the window, so the badge's lean can be checked over
         # the previous sessions (`server.chart_data` -> `onset.decorate`).
         "historyTail": tail,
-        "source": "TradingView",
+        "source": source,
+        **({"symbol": pse_edge.PREFIX + canonical.split(":")[-1]} if from_edge else {}),
+        **({"edgeSplit": True} if edge_split else {}),
     }
 
 

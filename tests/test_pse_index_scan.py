@@ -206,7 +206,7 @@ class NoteTests(unittest.TestCase):
                                   ph_sweep_stats={"universe": UNIVERSE,
                                                   "kinds": KINDS})
         note = recent.summarize(payload)
-        self.assertIn("1 below ₱1,000,000 volume hidden", note)
+        self.assertIn("1 below ₱1,000,000 5-day average volume hidden", note)
 
 
 if __name__ == "__main__":

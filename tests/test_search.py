@@ -120,5 +120,16 @@ class ProbeTests(unittest.TestCase):
             self.assertEqual(row["type"], kind)
 
 
+class InrVndSearchTests(unittest.TestCase):
+    def test_inrvnd_spellings_offer_the_cross(self):
+        # Yahoo's search finds nothing for "inrvnd"; the chart is built from
+        # the dollar legs, so search must offer the row itself.
+        for needle in ("inrvnd", "inrvnd=x", "inr/vnd", "inr vnd"):
+            rows = server.fx_search_extra(needle)
+            self.assertEqual([r["symbol"] for r in rows], ["INRVND=X"], needle)
+            self.assertEqual(rows[0]["name"], "INR/VND")
+            self.assertEqual(rows[0]["type"], "CURRENCY")
+
+
 if __name__ == "__main__":
     unittest.main()

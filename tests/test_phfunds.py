@@ -25,12 +25,19 @@ class UniverseTests(unittest.TestCase):
     def test_every_fund_has_one_identity(self):
         codes = [entry[0] for entry in phfunds.FUNDS]
         self.assertEqual(len(codes), len(set(codes)), "duplicate fund code")
-        self.assertEqual(len(codes), 47)
+        self.assertEqual(len(codes), 78)
         for code, name, category, source, key, currency in phfunds.FUNDS:
             with self.subTest(code=code):
                 self.assertTrue(name and category and key)
                 self.assertIn(source, {"uitf", "pifa", "bpi"})
                 self.assertIn(currency, {"PHP", "USD", "EUR"})
+
+    def test_toap_url_uses_bank_id_when_prefixed(self):
+        d1, d2 = datetime.date(2025, 8, 1), datetime.date(2026, 11, 23)
+        self.assertIn("bank_id=3&fund_id=292", phfunds.toap_url("292", d1, d2))
+        self.assertIn("bank_id=6&fund_id=258", phfunds.toap_url("6:258", d1, d2))
+        self.assertIn("bank_id=1&fund_id=247", phfunds.toap_url("1:247", d1, d2))
+        self.assertIn("bank_id=12&fund_id=263", phfunds.toap_url("12:263", d1, d2))
 
     def test_a_bpi_fund_can_only_point_at_a_page_it_has(self):
         for code, _name, _category, source, key, _currency in phfunds.FUNDS:
