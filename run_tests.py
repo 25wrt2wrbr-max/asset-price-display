@@ -34,7 +34,7 @@ JS_TESTS = (
     "test_psefees.js", "test_labelstrip.js", "test_peso.js", "test_benchmark.js",
     "test_comparison.js", "test_heatmap.js", "test_server_banner.js", "test_rates.js", "test_dividends.js",
     "test_deskextras.js", "test_desksuggest.js", "test_deskpack.js",
-    "test_friendly_ux.js", "test_glance.js",
+    "test_deskbackup.js", "test_friendly_ux.js", "test_glance.js",
 )
 
 

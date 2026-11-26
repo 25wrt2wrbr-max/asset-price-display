@@ -177,14 +177,10 @@ a:hover { text-decoration-thickness: 2px; }
      whole 396: at a 1020px viewport the rail is 340 and the chart keeps ~590. */
   grid-template-columns: minmax(0, 1fr) clamp(340px, 32%, 396px);
   grid-template-areas:
-    "search search"
-    "status status"
     "main   rail";
   column-gap: 24px;
   align-items: start;
 }
-.search-row { grid-area: search; }
-.status { grid-area: status; }
 main.card { grid-area: main; overflow: visible; } /* The comparison results extend below the card. */
 .rail { grid-area: rail; position: sticky; top: 20px; }
 
@@ -193,6 +189,7 @@ header {
   display: flex; align-items: baseline; justify-content: space-between;
   gap: 16px; flex-wrap: wrap; margin-bottom: 28px;
 }
+.header-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 h1 { margin: 0; font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
 .sub { margin: 3px 0 0; color: var(--text-secondary); font-size: 13.5px; }
 
@@ -469,7 +466,7 @@ select.theme-pick { appearance: auto; padding-right: 8px; }
 @media (max-width: 1000px) {
   .layout {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "search" "status" "main" "rail";
+    grid-template-areas: "main" "rail";
   }
   .rail { position: static; }
   .watch { min-height: 0; }   /* stacked: no dead space under a short list */
@@ -478,6 +475,7 @@ select.theme-pick { appearance: auto; padding-right: 8px; }
 
 /* ---- status ---- */
 .status { min-height: 22px; font-size: 13px; color: var(--text-secondary); margin-bottom: 18px; }
+.status:empty { min-height: 0; margin: 0; }
 .status.error { color: var(--delta-down); }
 
 /* ---- chart card ---- */
@@ -1089,7 +1087,7 @@ th[aria-sort="none"] > .sort-btn::after { content: " ↕"; opacity: 0.35; }
 /* Phone: the theme button stays beside the title, no dead band under the
    search. */
 @media (max-width: 640px) {
-  header { flex-wrap: nowrap; align-items: flex-start; margin-bottom: 18px; }
+  header { flex-direction: column; gap: 10px; align-items: flex-start; margin-bottom: 18px; }
   .status:empty { min-height: 0; margin-bottom: 8px; }
 }
 
@@ -1102,19 +1100,20 @@ th[aria-sort="none"] > .sort-btn::after { content: " ↕"; opacity: 0.35; }
 /* Clearer heading order: the charted asset outranks section titles. */
 .asset-name { font-size: 22px; letter-spacing: -0.01em; }
 .leaders-head h2 { font-size: 18px; letter-spacing: -0.01em; }
-h1 { font-size: 23px; }
+h1 { font-size: clamp(24px, 3vw, 34px); letter-spacing: -0.035em; }
 .watch-trend { font-size: 11px; }
 
 /* A quiet brand mark before the title. */
 h1::before {
-  content: ""; display: inline-block; width: 0.62em; height: 0.62em;
-  margin-right: 0.45em; border-radius: 3px; vertical-align: 0.04em;
-  background: linear-gradient(135deg, var(--series-1), var(--series-3));
+  content: ""; display: inline-block; width: 1em; height: 1em;
+  margin-right: 0.35em; vertical-align: -0.12em;
+  background: url("icon.svg") center / contain no-repeat;
 }
 
 /* Section links under the title: quiet wayfinding, not pinned. */
 .section-nav {
-  display: flex; flex-wrap: nowrap; gap: 4px 12px; margin: -14px 0 18px;
+  display: flex; flex-wrap: nowrap; gap: 4px 8px; margin: 0 0 18px; padding: 5px 2px;
+  border-block: 1px solid var(--border);
   overflow-x: auto; -webkit-overflow-scrolling: touch;
   scrollbar-width: thin; mask-image: linear-gradient(90deg, #000 92%, transparent);
 }
@@ -1183,7 +1182,7 @@ h1::before {
   position: absolute; left: 12px; top: 12px; z-index: 100;
   padding: 8px 14px; border-radius: 8px; background: var(--accent-solid); color: #fff;
   text-decoration: none; font-weight: 600; font-size: 13px;
-  transform: translateY(-120%);
+  transform: translateY(calc(-100% - 20px));
 }
 .skip-link + .skip-link { left: 140px; }
 .skip-link:focus { transform: none; outline: 2px solid var(--focus-ring); outline-offset: 2px; }
@@ -1606,7 +1605,7 @@ body.desk-focus .leaders.bearish { opacity: 0.92; }
 
 /* Phone: chart first; dense tables sit lower as a sheet-like block. */
 @media (max-width: 720px) {
-  body.desk-mobile .layout { display: flex; flex-direction: column; }
+  body.desk-mobile .layout { display: flex; flex-direction: column; align-items: stretch; }
   body.desk-mobile #chartTop { order: 0; }
   body.desk-mobile .rail {
     order: 1;
@@ -1757,3 +1756,7 @@ body.desk-focus .leaders.bearish { opacity: 0.92; }
 .watch-chip-sym { font-weight: 600; }
 .watch-chip-lean { color: var(--accent-solid); }
 .watch-chip-pct { font-size: 11px; font-variant-numeric: tabular-nums; }
+
+#labelHistory input[type="range"], .history-window { width: 100%; }
+.history-window { height: 5rem; }
+#scanCoverage summary, #labelHistory summary, .label-strip { cursor: pointer; }

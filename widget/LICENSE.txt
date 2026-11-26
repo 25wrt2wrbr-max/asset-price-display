@@ -1,0 +1,28 @@
+Trend Badge -- Commercial License
+Copyright (c) 2026 Juni Labs
+
+By buying Trend Badge you get a license to use it under these terms.
+
+YOU MAY
+  1. Use Trend Badge on any number of websites and web apps that you own or
+     run, including commercial ones.
+  2. Use it in websites and web apps you build for your clients.
+  3. Change the code to suit your project.
+
+YOU MAY NOT
+  1. Resell, share, give away or publish Trend Badge itself, changed or
+     unchanged, as code, a template, a plugin or part of a widget library.
+  2. Remove this license notice from the code.
+
+NO FINANCIAL ADVICE
+  Trend Badge labels the shape of past prices. It does not predict prices
+  and is not investment advice. You are responsible for how you present it
+  to your visitors and for following the rules that apply to your site.
+
+PRICE DATA
+  Trend Badge contains no market data. You are responsible for having the
+  right to show the prices you give it.
+
+NO WARRANTY
+  Trend Badge is provided "as is", without warranty of any kind. The seller
+  is not liable for any loss or damage that comes from using it.

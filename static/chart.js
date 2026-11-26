@@ -365,6 +365,24 @@ function drawChart(opts = {}) {
   const tooltip = document.createElement("div");
   tooltip.className = "tooltip";
   tooltip.hidden = true;
+  const dateLine = document.createElement("div");
+  dateLine.className = "tt-date";
+
+  const row = document.createElement("div");
+  row.className = "tt-row";
+  const key = document.createElement("span");
+  key.className = "tt-key";
+  const value = document.createElement("span");
+  value.className = "tt-value";
+  const label = document.createElement("span");
+  label.className = "tt-label";
+  row.append(key, value, label);
+  const volLine = document.createElement("div");
+  volLine.className = "tt-sub";
+  const onsetLine = document.createElement("div");
+  onsetLine.className = "tt-sub";
+  onsetLine.textContent = "Trend started on this bar";
+  tooltip.append(dateLine, row, volLine, onsetLine);
   el.plot.append(tooltip);
 
   // endpoint label lives in the SVG so it tracks the plot's own scale
@@ -397,20 +415,8 @@ function drawChart(opts = {}) {
     hoverDot.setAttribute("cy", c.y);
     hoverDot.setAttribute("visibility", "visible");
 
-    tooltip.textContent = "";
-    const dateLine = document.createElement("div");
-    dateLine.className = "tt-date";
     dateLine.textContent = fullFmt.format(toDate(c.point.t));
-
-    const row = document.createElement("div");
-    row.className = "tt-row";
-    const key = document.createElement("span");
-    key.className = "tt-key";
-    const value = document.createElement("span");
-    value.className = "tt-value";
-    value.textContent = formatPrice(c.point.c, d);   // value leads
-    const label = document.createElement("span");
-    label.className = "tt-label";
+    value.textContent = formatPrice(c.point.c, d);
     // Every bar but the newest is the session's own close. The newest may not
     // be -- it can be the price trading now or the last extended-hours print --
     // and `lastBarBasis` is the server's call on which, so a post-market print
@@ -419,24 +425,14 @@ function drawChart(opts = {}) {
     label.textContent = proxyStamps.has(c.point.t)
       ? basisWord("weekend", d)
       : i === n - 1 ? basisWord(d.lastBarBasis, d) : basisWord(null, d);
-    row.append(key, value, label);
-
-    tooltip.append(dateLine, row);
-    if (vols && Number.isFinite(Number(vols[i])) && Number(vols[i]) > 0) {
-      const v = Number(vols[i]);
-      const volLine = document.createElement("div");
-      volLine.className = "tt-sub";
-      const ratioTxt = volMed && v >= volMed * VOLUME_SPIKE
-        ? ` (${(v / volMed).toFixed(1)}× usual)` : "";
-      volLine.textContent = `Vol ${shareFmt.format(v)}${ratioTxt}`;
-      tooltip.append(volLine);
+    const volume = Number(vols?.[i]);
+    volLine.hidden = !(Number.isFinite(volume) && volume > 0);
+    if (!volLine.hidden) {
+      const ratioTxt = volMed && volume >= volMed * VOLUME_SPIKE
+        ? ` (${(volume / volMed).toFixed(1)}× usual)` : "";
+      volLine.textContent = `Vol ${shareFmt.format(volume)}${ratioTxt}`;
     }
-    if (i === onsetIdx) {
-      const onsetLine = document.createElement("div");
-      onsetLine.className = "tt-sub";
-      onsetLine.textContent = "Trend started on this bar";
-      tooltip.append(onsetLine);
-    }
+    onsetLine.hidden = i !== onsetIdx;
     tooltip.hidden = false;
 
     const box = svg.getBoundingClientRect();
@@ -449,6 +445,8 @@ function drawChart(opts = {}) {
   };
 
   const clear = () => {
+    if (moveRaf) cancelAnimationFrame(moveRaf);
+    moveRaf = 0;
     state.activeIndex = null;
     crosshair.setAttribute("visibility", "hidden");
     hoverDot.setAttribute("visibility", "hidden");
@@ -462,6 +460,7 @@ function drawChart(opts = {}) {
     if (moveRaf) return;
     moveRaf = requestAnimationFrame(() => {
       moveRaf = 0;
+      if (!svg.isConnected) return;
       const i = indexFromEvent(moveEv);
       if (i !== state.activeIndex || tooltip.hidden) showAt(i);
     });

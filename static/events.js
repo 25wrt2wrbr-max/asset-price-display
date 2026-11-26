@@ -167,7 +167,7 @@ function stepScannerRow(delta) {
   const sym = picked.dataset.chart;
   if (sym) {
     el.input.value = sym;
-    loadChart(sym);
+    picked.click();
   }
   const ahead = rows[(next + (delta >= 0 ? 1 : -1) + rows.length) % rows.length];
   if (ahead && ahead.dataset.chart && typeof prefetchChart === "function") {

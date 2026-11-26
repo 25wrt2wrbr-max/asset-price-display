@@ -434,7 +434,13 @@ function drawRecent(payload, listKey, view) {
     // (a payload with no `chartSymbol`), and says so rather than pretending.
     if (row.chartable && row.chartSymbol) {
       tr.dataset.chart = row.chartSymbol;
-      tr.addEventListener("click", () => loadChart(row.chartSymbol));
+      tr.addEventListener("click", () => {
+        const scan = loadRecent.last || payload;
+        loadChart(row.chartSymbol, { scanCall: {
+          label: listKey === "bearish" ? "bearish" : "bullish",
+          at: scan.checkedAt || scan.fetchedAt,
+        } });
+      });
     } else {
       tr.classList.add("no-chart");
       tr.title = "No chart for this row.";
@@ -764,9 +770,31 @@ function drawHealth(payload) {
   box.hidden = !list.length;
 }
 
+function scanCoverageText(payload) {
+  if (payload.pending && !payload.checkedAt && !payload.fetchedAt) return "Waiting for the first scan";
+  const markets = payload.markets || [];
+  const health = payload.health || [];
+  const judged = health.reduce((n, m) => n + m.judged, 0);
+  const total = markets.reduce((n, m) => n + (m.scanned || 0), 0);
+  const complete = markets.length && markets.every(m => m.scanned > 0) && total >= judged;
+  if (!health.length && !(markets.length && markets.every(m => m.state === "offline"))) {
+    return "Scan coverage unavailable";
+  }
+  const listed = (payload.rows || []).length;
+  const offline = markets.filter(m => m.state === "offline").length;
+  return listed + " bullish listed · " + judged + (complete ? " of " + total : "") +
+    " checked" + (offline ? " · " + offline + (offline === 1 ? " market offline" : " markets offline") : "") +
+    (payload.cached || payload.staleError ? " · previous scan" : "");
+}
+
 function drawRecentNote(payload) {
+  const coverage = document.getElementById("scanCoverage");
+  if (coverage) {
+    coverage.hidden = false;
+    document.getElementById("scanCoverageText").textContent = scanCoverageText(payload);
+  }
   const parts = [];
-  if (payload.pending) {
+  if (payload.pending && !payload.checkedAt && !payload.fetchedAt) {
     // The first sweep has not landed yet. Saying so is the whole reason this
     // note exists: an empty table would read as "nothing anywhere is
     // bullish", which is a far stronger claim than "not measured yet".
@@ -908,7 +936,10 @@ function drawLeaning(payload) {
 
     if (row.chartable && row.chartSymbol) {
       tr.dataset.chart = row.chartSymbol;
-      tr.addEventListener("click", () => loadChart(row.chartSymbol));
+      tr.addEventListener("click", () => {
+        const scan = loadRecent.last || payload;
+        loadChart(row.chartSymbol, { scanCall: { label: "neutral", at: scan.checkedAt || scan.fetchedAt } });
+      });
     } else {
       tr.classList.add("no-chart");
     }

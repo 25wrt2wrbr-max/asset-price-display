@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Trend Badge cover</title>
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  html, body { background: #0f172a; }
+  body {
+    width: 1280px; height: 720px; overflow: hidden; position: relative;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #e8ecf1;
+    background: radial-gradient(1100px 600px at 85% 20%, #1e3a5f 0%, #0f172a 60%);
+  }
+  .left { position: absolute; left: 72px; top: 92px; width: 500px; }
+  .kicker {
+    display: inline-block; font-size: 15px; font-weight: 700; letter-spacing: .12em;
+    color: #7dd3a8; text-transform: uppercase; margin-bottom: 18px;
+  }
+  h1 { font-size: 76px; line-height: 1; font-weight: 800; letter-spacing: -.02em; }
+  .sub { margin-top: 22px; font-size: 26px; line-height: 1.35; color: #c3cbd6; }
+  .chips { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip {
+    font-size: 16px; font-weight: 600; padding: 8px 14px; border-radius: 999px;
+    background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.16); color: #e8ecf1;
+  }
+  .code {
+    margin-top: 34px; padding: 16px 18px; border-radius: 12px; width: 500px;
+    background: #0b1220; border: 1px solid #23324a; color: #a5b4c8;
+    font: 15px/1.6 ui-monospace, Menlo, Consolas, monospace; white-space: pre;
+  }
+  .code b { color: #7dd3a8; font-weight: 500; }
+  .right { position: absolute; left: 640px; top: 70px; width: 570px; height: 590px; }
+  .right trend-badge { position: absolute; width: 360px; box-shadow: 0 18px 40px rgba(0,0,0,.35); border-radius: 12px; }
+  .c1 { left: 0; top: 0; }
+  .c2 { left: 210px; top: 205px; }
+  .c3 { left: 20px; top: 400px; }
+  .foot { position: absolute; left: 72px; bottom: 40px; font-size: 14px; color: #8391a5; }
+
+  /* Square thumbnail */
+  body.thumb { width: 1200px; height: 1200px; background: radial-gradient(900px 700px at 70% 10%, #1e3a5f 0%, #0f172a 65%); }
+  body.thumb .left { left: 96px; top: 110px; width: 1010px; }
+  body.thumb .kicker { font-size: 26px; }
+  body.thumb h1 { font-size: 150px; }
+  body.thumb .sub { font-size: 44px; margin-top: 28px; }
+  body.thumb .chips, body.thumb .code, body.thumb .foot, body.thumb .c3 { display: none; }
+  body.thumb .right { left: 96px; top: 540px; width: 650px; height: 360px; transform: scale(1.55); transform-origin: 0 0; }
+  body.thumb .c1 { left: 0; top: 0; }
+  body.thumb .c2 { left: 290px; top: 190px; }
+</style>
+</head>
+<body>
+  <div class="left">
+    <div class="kicker">Website widget</div>
+    <h1>Trend Badge</h1>
+    <p class="sub">A bullish / bearish price card for any website. You supply the prices.</p>
+    <div class="chips">
+      <span class="chip">One script tag</span>
+      <span class="chip">JSON or CSV</span>
+      <span class="chip">Light &amp; dark</span>
+      <span class="chip">Your colours</span>
+      <span class="chip">No dependencies</span>
+    </div>
+    <div class="code">&lt;script src="<b>trend-widget.js</b>"&gt;&lt;/script&gt;
+&lt;<b>trend-badge</b> src="/prices/acme.json"&gt;&lt;/<b>trend-badge</b>&gt;</div>
+  </div>
+
+  <div class="right">
+    <trend-badge class="c1" theme="light" name="Rising example" src="../demo-data/rising.json" currency="USD" note="off"></trend-badge>
+    <trend-badge class="c2" theme="light" name="Falling example" src="../demo-data/falling.csv" currency="EUR" note="off"></trend-badge>
+    <trend-badge class="c3" theme="light" name="Sideways example" src="../demo-data/sideways.json" currency="PHP" locale="en-PH" note="off"></trend-badge>
+  </div>
+
+  <div class="foot">Example prices are made up. The badge describes past prices. It is not a forecast.</div>
+
+  <script>if (location.search.indexOf("thumb") >= 0) document.body.className = "thumb";</script>
+  <script src="../trend-widget.js"></script>
+  <script>
+    // For the screenshot tool only: it reads SVG colours from attributes, not
+    // CSS. Real browsers already draw these colours from the widget's CSS.
+    var TONES = { up: "#157a43", down: "#c0392b", flat: "#5f6873" };
+    document.addEventListener("trend", function (e) {
+      var svg = e.target.shadowRoot && e.target.shadowRoot.querySelector("svg");
+      if (!svg) return;
+      var c = TONES[e.detail.tone] || TONES.flat;
+      var line = svg.querySelector(".line"), area = svg.querySelector(".area");
+      line.setAttribute("fill", "none"); line.setAttribute("stroke", c);
+      line.setAttribute("stroke-width", "2.2"); line.setAttribute("stroke-linejoin", "round");
+      area.setAttribute("fill", c); area.setAttribute("fill-opacity", "0.12");
+      svg.querySelector(".cross").setAttribute("opacity", "0");
+      svg.querySelector(".dot").setAttribute("opacity", "0");
+    });
+  </script>
+</body>
+</html>

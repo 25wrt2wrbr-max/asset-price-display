@@ -84,6 +84,64 @@ function drawLabelStrip(h) {
     " Each bar is labelled from the three months before it." +
     (h.cached && h.fetchedAt && !h.revalidate ? ` Source unreachable; bars last retrieved ${new Date(h.fetchedAt * 1000).toLocaleString()}.` : "");
   box.replaceChildren(svg, ends, note);
+  if (h.windowStarts && h.closes && h.tailTimes) {
+    const panel = document.createElement("details");
+    const summary = document.createElement("summary");
+    summary.textContent = "Inspect a historical trend call";
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.setAttribute("aria-label", "Historical bar");
+    slider.min = start;
+    slider.max = labels.length - 1;
+    slider.value = box.dataset.historyAsset === h.symbol && h.t.includes(Number(box.dataset.historyTime))
+      ? h.t.indexOf(Number(box.dataset.historyTime)) : slider.max;
+    const caption = document.createElement("p");
+    caption.setAttribute("aria-live", "polite");
+    const chart = svgEl("svg", {viewBox: "0 0 400 70", preserveAspectRatio: "none",
+      "aria-hidden": "true", class: "history-window"});
+    function selectBar() {
+      const i = Number(slider.value);
+      const first = h.windowStarts[i];
+      const end = h.offset + i;
+      const values = first == null ? [] : h.closes.slice(first, end + 1);
+      const date = day(i - start);
+      slider.setAttribute("aria-valuetext", date);
+      box.dataset.historyAsset = h.symbol;
+      box.dataset.historyTime = h.t[i];
+      chart.replaceChildren();
+      if (!values.length || !labels[i]) {
+        caption.textContent = date + " · Insufficient history";
+        return;
+      }
+      let verdict = LABEL_STRIP_WORD[labels[i]];
+      if (labels[i] !== "neutral") {
+        if (h.held[i]) verdict += " (held in the hold band)";
+        else if (labels[i-1] && labels[i-1] !== labels[i]) verdict += " (new call)";
+      }
+      const unit = h.inverted ? "%" : h.currency || h.unit || "";
+      caption.textContent = date + " · " + verdict + " · " + (h.inverted ? "Yield " : "Close ") +
+        h.closes[end] + " " + unit + " · " + values.length + " bars";
+      const startTime = first < h.offset ? h.tailTimes[first] : h.t[first - h.offset];
+      caption.textContent += " from " + fmt.format(new Date(startTime * 1000));
+      const lo = Math.min(...values), span = Math.max(...values) - lo;
+      const line = values.map((v, j) => [j * 398 / Math.max(1, values.length - 1) + 1,
+        span ? 67 - 64 * (v - lo) / span : 35].join(",")).join(" ");
+      chart.append(svgEl("polyline", {points: line, stroke: "currentColor", fill: "none",
+        "stroke-width": 2, "vector-effect": "non-scaling-stroke"}));
+    }
+    panel.open = box.dataset.historyOpen === h.symbol;
+    panel.ontoggle = () => { if (panel.isConnected) box.dataset.historyOpen = panel.open ? h.symbol : ""; };
+    slider.oninput = selectBar;
+    svg.onclick = (event) => {
+      const bounds = svg.getBoundingClientRect();
+      slider.value = start + Math.min(n - 1, Math.max(0, Math.floor(n * (event.clientX - bounds.left) / bounds.width)));
+      panel.open = true;
+      selectBar();
+    };
+    panel.append(summary, slider, caption, chart);
+    box.append(panel);
+    selectBar();
+  }
   box.hidden = false;
 }
 

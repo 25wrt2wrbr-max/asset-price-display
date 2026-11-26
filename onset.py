@@ -220,7 +220,7 @@ def window_at(stamps: list[int], end: int, days: int = WINDOW_DAYS,
     return window(stamps, end, stamps[end], days=days, months=months)
 
 
-def label(closes: list[float], volumes: list, idx: list[int]) -> str | None:
+def window_call(closes: list[float], volumes: list, idx: list[int]) -> dict | None:
     """`trend.classify`'s verdict over the bars `idx` names, or None.
 
     A window that cannot be scored has no label, and "no label" is not
@@ -228,9 +228,14 @@ def label(closes: list[float], volumes: list, idx: list[int]) -> str | None:
     """
     try:
         return trend.classify([closes[i] for i in idx],
-                              [volumes[i] for i in idx])["label"]
+                              [volumes[i] for i in idx])
     except (ValueError, IndexError):
         return None
+
+
+def label(closes, volumes, idx):
+    call = window_call(closes, volumes, idx)
+    return call["label"] if call else None
 
 
 def turn(closes: list[float], start: int, want: str) -> tuple[str | None, float | None]:
@@ -634,9 +639,9 @@ def onset(stamps: list[int], closes: list[float], volumes: list,
     }
 
 
-def history(stamps: list[int], closes: list[float], volumes: list,
+def history_windows(stamps: list[int], closes: list[float], volumes: list,
             first: int = 0, days: int = WINDOW_DAYS,
-            months: int | None = None) -> list[str | None]:
+            months: int | None = None):
     """The label each bar from `first` to the newest carried, read the way
     `onset` reads them: every earlier bar through the window the chart would
     have drawn on its own day (`window_at`), the newest bar through the badge's
@@ -649,19 +654,22 @@ def history(stamps: list[int], closes: list[float], volumes: list,
     """
     n = len(closes)
     if n < 3 or len(stamps) != n:
-        return []
+        return
     last = n - 1
-    out: list[str | None] = []
     for end in range(max(0, first), n):
         cutoff = (months_back(stamps[end], months) if months
                   else stamps[end] - days * DAY)
         if stamps[0] > cutoff:
-            out.append(None)
+            yield None, None
             continue
         idx = (window_now(stamps, end, days=days, months=months) if end == last
                else window_at(stamps, end, days=days, months=months))
-        out.append(label(closes, volumes, idx))
-    return out
+        yield idx[0], window_call(closes, volumes, idx)
+
+
+def history(stamps, closes, volumes, first=0, days=WINDOW_DAYS, months=None):
+    return [call["label"] if call else None for _, call in
+            history_windows(stamps, closes, volumes, first, days, months)]
 
 
 def history_summary(labels: list[str | None]) -> dict:

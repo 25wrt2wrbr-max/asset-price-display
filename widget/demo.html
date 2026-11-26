@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trend Badge demo</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --fg: #1d2330; --muted: #5f6873; --card: #ffffff; --border: #dfe3e8;
+    --code: #eef1f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1117; --fg: #e8ecf1; --muted: #a0a9b4; --card: #161b22; --border: #2d3541;
+      --code: #1c232c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  main { max-width: 64rem; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  h2 { font-size: 1.05rem; margin: 40px 0 6px; }
+  p { margin: 0 0 12px; color: var(--muted); max-width: 44rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  pre {
+    background: var(--code); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; overflow-x: auto; font: 12.5px/1.5 ui-monospace, Menlo, monospace; margin: 10px 0 0;
+  }
+  .inline { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .brand trend-badge {
+    --trend-up: #2563eb; --trend-down: #b45309; --trend-radius: 4px;
+    --trend-font: Georgia, "Times New Roman", serif;
+  }
+  #log { font: 12.5px/1.5 ui-monospace, Menlo, monospace; color: var(--muted); white-space: pre-wrap; }
+  footer { margin-top: 48px; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Trend Badge</h1>
+  <p>Add one script tag to your site and get a three-month price line with a Bullish, Bearish or
+    Neutral badge. You supply the prices. All prices on this page are made up for the demo.</p>
+
+  <h2>1. Cards from your own price files</h2>
+  <p>Point <code>src</code> at a JSON or CSV file on your own site.</p>
+  <div class="grid">
+    <trend-badge name="Rising example" src="demo-data/rising.json" currency="USD"></trend-badge>
+    <trend-badge name="Falling example" src="demo-data/falling.csv" currency="EUR"></trend-badge>
+    <trend-badge name="Sideways example" src="demo-data/sideways.json" currency="PHP" locale="en-PH"></trend-badge>
+  </div>
+  <pre>&lt;script src="trend-widget.js"&gt;&lt;/script&gt;
+&lt;trend-badge name="Rising example" src="/prices/rising.json" currency="USD"&gt;&lt;/trend-badge&gt;</pre>
+
+  <h2>2. A small badge inside text</h2>
+  <div class="inline">
+    Our tracked fund is currently
+    <trend-badge layout="badge" src="demo-data/rising.json"></trend-badge>
+    while the sideways one reads
+    <trend-badge layout="badge" src="demo-data/sideways.json"></trend-badge>.
+  </div>
+  <pre>&lt;trend-badge layout="badge" src="/prices/fund.json"&gt;&lt;/trend-badge&gt;</pre>
+
+  <h2>3. Your own colours and font</h2>
+  <div class="grid brand">
+    <trend-badge name="Brand colours" src="demo-data/rising.json" currency="USD"></trend-badge>
+    <trend-badge name="Dark card" theme="dark" src="demo-data/falling.csv" currency="EUR"></trend-badge>
+  </div>
+  <pre>trend-badge {
+  --trend-up: #2563eb;  --trend-down: #b45309;  --trend-radius: 4px;
+  --trend-font: Georgia, serif;
+}</pre>
+
+  <h2>4. From JavaScript</h2>
+  <p>Hand prices straight to the widget, and listen for the result.</p>
+  <div class="grid"><div id="js-slot"></div></div>
+  <pre>const el = TrendWidget.mount("#js-slot", prices, { name: "From JavaScript", currency: "USD" });
+el.addEventListener("trend", (e) =&gt; console.log(e.detail.words));</pre>
+  <div id="log"></div>
+
+  <h2>5. A file that will not load</h2>
+  <p>A missing file is shown as missing. It is never shown as a Neutral reading.</p>
+  <div class="grid"><trend-badge name="Missing file" src="demo-data/does-not-exist.json"></trend-badge></div>
+
+  <footer>Trend Badge <span id="ver"></span>. The badge describes the past three months of prices.
+    It is not a forecast and not investment advice.</footer>
+</main>
+
+<script src="trend-widget.js"></script>
+<script>
+  document.getElementById("ver").textContent = "v" + TrendWidget.version;
+
+  // Made-up prices: a steady climb with small dips.
+  var prices = [], p = 50, day = Date.UTC(2026, 7, 24) / 1000;
+  for (var i = 0; i < 70; i++) {
+    p *= 1 + (i % 7 === 3 ? -0.011 : 0.0045);
+    var d = new Date((day + i * 86400) * 1000);
+    if (d.getUTCDay() === 0 || d.getUTCDay() === 6) continue;
+    prices.push({ date: d.toISOString().slice(0, 10), close: +p.toFixed(2) });
+  }
+
+  var log = document.getElementById("log");
+  document.addEventListener("trend", function (e) {
+    var name = e.target.getAttribute("name") || "badge";
+    log.textContent += name + ": " + e.detail.words + "\n";
+  });
+  TrendWidget.mount("#js-slot", prices, { name: "From JavaScript", currency: "USD" });
+</script>
+</body>
+</html>

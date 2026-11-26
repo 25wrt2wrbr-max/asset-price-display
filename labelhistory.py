@@ -43,8 +43,9 @@ def build(symbol: str) -> dict:
     months = (S.SPAN_MONTHS[WINDOW_SPAN]
               if data.get("source") in ("Yahoo", nasdaq_bars.SOURCE) else None)
     days = pse.RANGE_DAYS[WINDOW_SPAN]
-    labels = onset.history(stamps, closes, volumes, first=len(tail),
-                           days=days, months=months)
+    windows = list(onset.history_windows(stamps, closes, volumes, first=len(tail),
+                           days=days, months=months))
+    labels = [call["label"] if call else None for _, call in windows]
     inverted = tv.is_bond_symbol(symbol) or bool(data.get("yieldSeries"))
     if inverted:
         labels = [FLIP.get(x, x) for x in labels]
@@ -54,6 +55,13 @@ def build(symbol: str) -> dict:
         "inverted": inverted,
         "t": stamps[len(tail):],
         "labels": labels,
+        "tailTimes": stamps[:len(tail)],
+        "windowStarts": [start for start, _ in windows],
+        "held": [bool(call and call.get("held")) for _, call in windows],
+        "closes": closes,
+        "offset": len(tail),
+        "currency": data.get("currency"),
+        "unit": data.get("unit"),
         "summary": onset.history_summary(labels),
         # The zone the bars' dates are read in. A Philippine series (stock,
         # yield, fund) closes in Manila; stamped in UTC, a yield lands on the
@@ -71,7 +79,7 @@ def history(symbol: str, fresh: bool = False) -> dict:
     """`build`, memoised for an hour under its own key. `fresh` drops the
     memo first: the page asks for that when its badge no longer matches the
     strip's newest label."""
-    key = f"labelhistory:v1:{symbol.strip().upper()}"
+    key = f"labelhistory:windows-v1:{symbol.strip().upper()}"
     if fresh:
         with S._cache_lock:
             S._cache.pop(key, None)

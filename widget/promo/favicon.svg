@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <radialGradient id="bg" cx="0.7" cy="0.25" r="0.9">
+      <stop offset="0" stop-color="#1e3a5f"/>
+      <stop offset="0.65" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#0b1220"/>
+    </radialGradient>
+    <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4cc38a" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#4cc38a" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect id="background" width="1024" height="1024" fill="url(#bg)"/>
+
+  <g id="monogram">
+    <text x="512" y="478" text-anchor="middle" font-family="Arial Black, Helvetica, Arial, sans-serif"
+          font-size="300" fill="#f1f5f9" letter-spacing="-6">JL</text>
+  </g>
+
+  <g id="trend" transform="translate(0 24)">
+    <path d="M 236 720 L 316 690 L 376 708 L 456 652 L 526 668 L 606 606 L 666 622 L 770 548
+             L 770 770 L 236 770 Z" fill="url(#fill)"/>
+    <polyline points="236,720 316,690 376,708 456,652 526,668 606,606 666,622 770,548"
+              fill="none" stroke="#4cc38a" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="770" cy="548" r="38" fill="#4cc38a" stroke="#0f172a" stroke-width="14"/>
+  </g>
+</svg>

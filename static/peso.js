@@ -23,10 +23,17 @@ function pesoEligible(d) {
   return !sym.startsWith("^") && !/=X$/i.test(sym);
 }
 
+const sessionDayFormats = new Map();
 function sessionDay(t, zone) {
-  const fmt = new Intl.DateTimeFormat("en-CA", {
-    timeZone: zone || "UTC", year: "numeric", month: "2-digit", day: "2-digit",
-  });
+  const timeZone = zone || "UTC";
+  let fmt = sessionDayFormats.get(timeZone);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat("en-CA", {
+      timeZone, year: "numeric", month: "2-digit", day: "2-digit",
+    });
+    if (sessionDayFormats.size >= 16) sessionDayFormats.delete(sessionDayFormats.keys().next().value);
+    sessionDayFormats.set(timeZone, fmt);
+  }
   const parts = Object.fromEntries(fmt.formatToParts(new Date(t * 1000)).map((v) => [v.type, v.value]));
   return `${parts.year}-${parts.month}-${parts.day}`;
 }

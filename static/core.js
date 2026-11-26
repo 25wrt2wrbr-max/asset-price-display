@@ -98,12 +98,22 @@ const el = {
 /* ------------------------------------------------------------------ *
  * Formatting
  * ------------------------------------------------------------------ */
-const nf = (digits, opts = {}) =>
-  new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-    ...opts,
-  });
+// Tables and chart readouts share a small set of locale formats.
+const priceFormats = new Map();
+function nf(digits, opts = {}) {
+  const key = JSON.stringify([digits, opts]);
+  let format = priceFormats.get(key);
+  if (!format) {
+    format = new Intl.NumberFormat(undefined, {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+      ...opts,
+    });
+    if (priceFormats.size >= 64) priceFormats.delete(priceFormats.keys().next().value);
+    priceFormats.set(key, format);
+  }
+  return format;
+}
 
 function digitsFor(data) {
   const hint = Number(data && data.priceHint);
@@ -344,7 +354,7 @@ function getChart(symbol, { fresh = false } = {}) {
 let prefetchBusy = false;   // one hover prefetch at a time
 
 function prefetchChart(symbol, force) {
-  if (!symbol || memoKey(symbol) === memoKey(state.chartSymbol)) return;
+  if (navigator.connection?.saveData || !symbol || memoKey(symbol) === memoKey(state.chartSymbol)) return;
   if (prefetchBusy && !force) return;
   prefetchBusy = true;
   getChart(symbol).catch(() => {})    // a failed prefetch is retried by the click
@@ -358,34 +368,17 @@ function prefetchChart(symbol, force) {
 (function wirePrefetch() {
   let timer = null, pending = null;
   const target = (ev) => ev.target && ev.target.closest && ev.target.closest("[data-chart]");
-  // Skip hover prefetch for rows that are not near the viewport (web.dev
-  // content-visibility / IntersectionObserver guidance): a fast sweep down a
-  // long table must not launch a browser run per off-screen row.
-  const nearView = (typeof WeakMap === "function") ? new WeakMap() : null;
-  let io = null;
-  if (typeof IntersectionObserver === "function" && nearView) {
-    io = new IntersectionObserver((entries) => {
-      for (const e of entries) nearView.set(e.target, e.isIntersecting);
-    }, { rootMargin: "120px 0px" });
-  }
-  const watchRow = (t) => {
-    if (!io || !t || nearView.has(t)) return;
-    // Optimistic true until the observer answers — a new row must not miss
-    // its first hover prefetch while waiting for the callback.
-    nearView.set(t, true);
-    io.observe(t);
-  };
-  const inView = (t) => !nearView || nearView.get(t) !== false;
   document.addEventListener("pointerover", (ev) => {
     const t = target(ev);
-    if (!t || t.dataset.chart === pending) return;
-    watchRow(t);
-    if (!inView(t)) return;
+    if (!t || ev.pointerType === "touch" || t === pending) return;
     clearTimeout(timer);
-    pending = t.dataset.chart;
+    pending = t;
     // 200 ms: a slow sweep down a table used to fetch row after row, each
     // a possible browser launch on the server.
-    timer = setTimeout(() => prefetchChart(pending), 200);
+    timer = setTimeout(() => {
+      if (t.isConnected && t.matches(":hover") && !document.hidden) prefetchChart(t.dataset.chart);
+      pending = null;
+    }, 200);
   });
   document.addEventListener("pointerout", (ev) => {
     const t = target(ev);
@@ -425,7 +418,7 @@ function chartQuietSig(d) {
   ].join("\0");
 }
 
-async function loadChart(symbol, { quiet = false, pushHistory = true } = {}) {
+async function loadChart(symbol, { quiet = false, pushHistory = true, scanCall = null } = {}) {
   const wanted = symbol.trim();
   if (!wanted) return;
   const seq = ++state.chartSeq;
@@ -446,6 +439,20 @@ async function loadChart(symbol, { quiet = false, pushHistory = true } = {}) {
     // A slow answer that a newer request has already replaced must not land:
     // the reader asked for something else while this was in flight.
     if (seq !== state.chartSeq) return;
+    if (!quiet || state.chartSymbol !== data.symbol) state.scanCall = scanCall;
+    const comparison = document.getElementById("scanComparison");
+    if (comparison) {
+      const scan = state.scanCall;
+      const label = data.trend && data.trend.label;
+      comparison.hidden = !(scan && label && scan.label !== label);
+      if (!comparison.hidden) {
+        const time = (seconds) => seconds ? " at " + new Date(seconds * 1000).toLocaleString() : "";
+        const read = chartMemo.get(memoKey(wanted));
+        comparison.textContent = "Scan" + time(scan.at) + " · " + scan.label +
+          ". Chart " + (data.cached && data.fetchedAt ? "copy saved" + time(data.fetchedAt) :
+          "read by browser" + time(read && read.at / 1000)) + " · " + label + ".";
+      }
+    }
     // A background re-read that came back the same changes nothing on screen.
     // A short signature of draw-facing fields avoids stringifying the whole
     // payload (points + historyTail) on every quiet poll.

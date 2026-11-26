@@ -26,7 +26,7 @@
 </head>
 <body>
 <div class="skip-links">
-  <a class="skip-link" href="#form">Skip to search</a>
+  <a class="skip-link" href="#symbol">Skip to search</a>
   <a class="skip-link" href="#plot">Skip to chart</a>
 </div>
 <div class="wrap">
@@ -36,15 +36,30 @@
   <header>
     <div>
       <h1>Asset price display</h1>
-      <p class="sub">Search any stock, coin, currency, index or fund. See the last three months and whether the trend looks up, down or flat. Press <kbd>?</kbd> for shortcuts.</p>
+      <p class="sub">Explore three months of prices for stocks, coins, currencies, indices and funds.</p>
     </div>
-    <button class="ghost-btn" id="modeToggle" type="button" aria-pressed="false" title="Scan mode hides chart fold-outs">Scan</button>
-    <select class="ghost-btn theme-pick" id="theme" aria-label="Colour theme" title="Match system follows your computer's light or dark setting">
-      <option value="system">Theme: match system</option>
-      <option value="light">Theme: light</option>
-      <option value="dark">Theme: dark</option>
-    </select>
+    <div class="header-tools">
+      <button class="ghost-btn" id="modeToggle" type="button" aria-pressed="false" title="Scan mode hides chart fold-outs">Scan</button>
+      <select class="ghost-btn theme-pick" id="theme" aria-label="Colour theme" title="Match system follows your computer's light or dark setting">
+        <option value="system">Theme: match system</option>
+        <option value="light">Theme: light</option>
+        <option value="dark">Theme: dark</option>
+      </select>
+    </div>
   </header>
+  <form class="search-row" id="form" role="search" autocomplete="off">
+    <div class="combo">
+      <input id="symbol" name="symbol" type="text" spellcheck="false"
+             placeholder="Search a name or symbol, e.g. AAPL"
+             aria-label="Asset symbol or name"
+              role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggestions">
+      <ul class="suggestions" id="suggestions" role="listbox" aria-label="Matching assets" hidden></ul>
+    </div>
+    <button class="go" id="go" type="submit">Show chart</button>
+  </form>
+
+  <p class="status" id="status" role="status" aria-live="polite"></p>
+
   <nav class="section-nav" id="sectionNav" aria-label="Page sections">
     <a href="#morningDesk">Today</a>
     <a href="#chartTop">Chart</a>
@@ -56,7 +71,7 @@
   </nav>
 
   <aside class="welcome-tip" id="welcomeTip" hidden>
-    <p>Try an example under the chart, tables refresh about every 15 minutes, and labels describe the past trend — not a forecast.</p>
+    <p>New here? Try an example in the chart. Labels describe the past three months. Market tables refresh about every 15 minutes.</p>
     <button type="button" id="welcomeDismiss">Got it</button>
   </aside>
 
@@ -98,19 +113,6 @@
   </section>
 
   <div class="layout">
-    <form class="search-row" id="form" role="search" autocomplete="off">
-        <div class="combo">
-          <input id="symbol" name="symbol" type="text" spellcheck="false"
-                 placeholder="Search a name or symbol — e.g. Apple, Bitcoin, Jollibee, AAPL, BTC-USD"
-                 aria-label="Asset symbol or name"
-                  role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggestions">
-          <ul class="suggestions" id="suggestions" role="listbox" aria-label="Matching assets" hidden></ul>
-        </div>
-        <button class="go" id="go" type="submit">Show chart</button>
-      </form>
-
-      <p class="status" id="status" role="status" aria-live="polite"></p>
-
       <main class="card" id="chartTop">
         <div class="six-pack-wrap" id="sixPackWrap" hidden>
           <div class="six-pack" id="sixPack" aria-label="Pinned six-pack"></div>
@@ -146,6 +148,7 @@
             </span>
           </div>
         </div>
+        <p id="scanComparison" class="stat-note" hidden></p>
         <p class="digest-line" id="chartDigestLine" hidden></p>
 
         <p class="hero" id="hero" hidden>—</p>
@@ -297,6 +300,10 @@
                 <button class="watch-io-btn" id="watchExport" type="button" title="Save this list to a file">Save list</button>
                 <button class="watch-io-btn" id="watchExportCsv" type="button" title="Save this list as CSV with fees and turnover">Save CSV</button>
                 <button class="watch-io-btn" id="watchImport" type="button" title="Load symbols from a saved list file">Load list</button>
+                <button class="watch-io-btn" id="deskBackup" type="button">Back up desk</button>
+                <button class="watch-io-btn" id="deskRestore" type="button">Restore desk</button>
+                <input id="deskFile" type="file" accept=".json,application/json" hidden>
+                <output id="deskBackupStatus" role="status"></output>
                 <input id="watchImportFile" type="file" accept=".json,application/json" hidden>
               </div>
             </details>
@@ -381,8 +388,12 @@
       three months of gains. Borderline calls can change quickly.</p>
     <!-- Market health: what share of every name each market judged carries
          each label right now. Counts of verdicts, not of table rows. -->
-    <div class="health" id="recentHealth" hidden></div>
+    <details id="scanCoverage" open hidden>
+      <summary id="scanCoverageText">Scan coverage</summary>
+      <div class="health" id="recentHealth" hidden></div>
     <div class="market-status" id="recentStatus" aria-label="Data status by market" hidden></div>
+      <a href="status.html">Source status</a>
+    </details>
     <div id="recentGrid"></div>
   </section>
 
@@ -451,6 +462,7 @@
 <script src="static/desksuggest.js"></script>
 <script src="static/deskpack.js"></script>
 <script src="static/rates.js"></script>
+<script src="static/deskbackup.js"></script>
 <script src="static/events.js"></script>
 <script src="static/tables.js"></script>
 <script src="static/main.js"></script>
